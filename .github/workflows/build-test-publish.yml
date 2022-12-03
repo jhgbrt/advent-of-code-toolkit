@@ -18,8 +18,6 @@ jobs:
       with:
         dotnet-version: 7.0.x
         source-url: https://api.nuget.org/v3/index.json
-      env:
-        NUGET_AUTH_TOKEN: ${{secrets.NUGET_API_KEY}}
     - name: Restore dependencies
       run: dotnet restore
       working-directory: src
@@ -35,6 +33,8 @@ jobs:
       run: dotnet pack --configuration Release Net.Code.AdventOfCode.Toolkit
       working-directory: src
     - name: Publish the package to 
-      run: dotnet nuget push Net.Code.AdventOfCode.Toolkit/bin/Release/*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
+      run: dotnet nuget push Net.Code.AdventOfCode.Toolkit/bin/Release/*.nupkg -k ${NUGET_AUTH_TOKEN} -s https://api.nuget.org/v3/index.json
       working-directory: src
+      env:
+        NUGET_AUTH_TOKEN: ${{secrets.NUGET_API_KEY}}
  
