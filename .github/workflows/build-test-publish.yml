@@ -23,8 +23,18 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
       working-directory: src
-    - name: Test
-      env:
-        AOC_SESSION: ${{ secrets.AOC_SESSION }}
-      run: dotnet test --no-build --verbosity normal
-      working-directory: src
+#    - name: Test
+#      env:
+#        AOC_SESSION: ${{ secrets.AOC_SESSION }}
+#      run: dotnet test --no-build --verbosity normal
+#      working-directory: src
+    - name: publish
+      # uses: brandedoutcast/publish-nuget@c12b8546b67672ee38ac87bea491ac94a587f7cc
+      uses: brandedoutcast/publish-nuget@v2.5.5
+      with:
+        # Filepath of the project to be packaged, relative to root of repository
+        PROJECT_FILE_PATH: src/Net.Code.AdventOfCode.Toolkit/Net.Code.AdventOfCode.Toolkit.csproj
+        # NuGet package id, used for version detection & defaults to project name
+        PACKAGE_NAME: Net.Code.AdventOfCode.Toolkit
+        # API key to authenticate with NuGet server
+        NUGET_KEY: ${{secrets.NUGET_API_KEY}}
