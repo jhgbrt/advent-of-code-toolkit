@@ -35,6 +35,6 @@ jobs:
       run: dotnet pack --configuration Release Net.Code.AdventOfCode.Toolkit
       working-directory: src
     - name: Publish the package to 
-      run: dotnet nuget push Net.Code.AdventOfCode.Toolkit/bin/Release/*.nupkg
+      run: dotnet nuget push Net.Code.AdventOfCode.Toolkit/bin/Release/*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
       working-directory: src
  
