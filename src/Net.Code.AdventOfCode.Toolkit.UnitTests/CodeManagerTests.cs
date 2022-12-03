@@ -109,7 +109,7 @@ long ToLong(int i) => i;
 record MyRecord();
 class MyClass
 {
-}", code);
+}", code, ignoreLineEndingDifferences: true);
 
     }
 }
