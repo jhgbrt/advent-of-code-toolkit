@@ -17,24 +17,20 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 7.0.x
+        NUGET_KEY: ${{secrets.NUGET_API_KEY}}
     - name: Restore dependencies
       run: dotnet restore
       working-directory: src
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore --configuration Release
       working-directory: src
 #    - name: Test
 #      env:
 #        AOC_SESSION: ${{ secrets.AOC_SESSION }}
 #      run: dotnet test --no-build --verbosity normal
 #      working-directory: src
-    - name: publish
-      # uses: brandedoutcast/publish-nuget@c12b8546b67672ee38ac87bea491ac94a587f7cc
-      uses: brandedoutcast/publish-nuget@v2.5.5
-      with:
-        # Filepath of the project to be packaged, relative to root of repository
-        PROJECT_FILE_PATH: src/Net.Code.AdventOfCode.Toolkit/Net.Code.AdventOfCode.Toolkit.csproj
-        # NuGet package id, used for version detection & defaults to project name
-        PACKAGE_NAME: Net.Code.AdventOfCode.Toolkit
-        # API key to authenticate with NuGet server
-        NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+    - name: Create the package
+      run: dotnet pack --configuration Release <my project>
+    - name: Publish the package to 
+      run: dotnet nuget push src/Net.Code.AdventOfCode.Toolkit/bin/Release/*.nupkg
+ 
