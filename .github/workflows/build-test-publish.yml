@@ -30,7 +30,9 @@ jobs:
 #      run: dotnet test --no-build --verbosity normal
 #      working-directory: src
     - name: Create the package
-      run: dotnet pack --configuration Release <my project>
+      run: dotnet pack --configuration Release Net.Code.AdventOfCode.Toolkit
+      working-directory: src
     - name: Publish the package to 
-      run: dotnet nuget push src/Net.Code.AdventOfCode.Toolkit/bin/Release/*.nupkg
+      run: dotnet nuget push Net.Code.AdventOfCode.Toolkit/bin/Release/*.nupkg
+      working-directory: src
  
