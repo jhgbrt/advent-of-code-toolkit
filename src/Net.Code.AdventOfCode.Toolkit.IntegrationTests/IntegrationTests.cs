@@ -78,7 +78,7 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
         }
         protected async Task<int> Do(params string[] args)
         {
-            return await AoC.RunAsync(resolver, io, clock, args.Concat(new[] { "--debug" }).ToArray());
+            return await AoC.RunAsync(resolver, io, clock, args.Concat(new[] { "--debug", "--loglevel=Trace" }).ToArray());
         }
         public class DuringAdvent_OnDayOfPuzzle : IntegrationTests
         {
@@ -258,7 +258,7 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
             public async Task Post()
             {
                 await Do("init", $"{Year}", $"{Day}");
-                var result = await Do("post", "123");
+                var result = await Do("post", "123", $"{Year}", $"{Day}", "--loglevel=Trace");
                 Assert.Equal(1, result); // already completed
             }
 

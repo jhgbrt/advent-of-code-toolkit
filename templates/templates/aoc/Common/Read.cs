@@ -2,6 +2,12 @@
 
 namespace AdventOfCode;
 
+// This class is part of the Net.Code.AdventOfCode.Toolkit template
+// It is used to read the input from a "sample.txt" or "input.txt" file.
+// Through [CallerFilePath] the compiler passes the full path of the
+// calling C# file (aoc.cs for that day)
+// The assumption is that the input files reside next to this class.
+
 internal static class Read
 {
     public static readonly IReader Sample = new Reader("sample.txt");
@@ -9,6 +15,9 @@ internal static class Read
     public static string InputText([CallerFilePath] string path = "") => Input.Text(path);
     public static string[] InputLines([CallerFilePath] string path = "") => Input.Lines(path).ToArray();
     public static StreamReader InputStream([CallerFilePath] string path = "") => Input.Stream(path);
+    public static string SampleText([CallerFilePath] string path = "") => Sample.Text(path);
+    public static string[] SampleLines([CallerFilePath] string path = "") => Sample.Lines(path).ToArray();
+    public static StreamReader SampleStream([CallerFilePath] string path = "") => Sample.Stream(path);
 
     public interface IReader 
     {

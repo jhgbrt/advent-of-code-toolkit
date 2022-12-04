@@ -17,6 +17,7 @@ using NodaTime;
 using Spectre.Console.Cli;
 
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Reflection;
 
 public static class AoC
@@ -53,8 +54,7 @@ public static class AoC
                 break;
             }
         }
-
-        var cookieValue = config["AOC_SESSION"] ?? throw new Exception("This operation requires AOC_SESSION to be set as an environment variable or user secret.");
+        var cookieValue = config["AOC_SESSION"];
         const string baseAddress = "https://adventofcode.com";
         var configuration = new Configuration(baseAddress, cookieValue);
         var services = new ServiceCollection();
@@ -104,22 +104,7 @@ public static class AoC
             }
         });
 
-        if (args.Contains("--debug"))
-        {
-            try
-            {
-                return await app.RunAsync(args);
-            }
-            catch (Exception ex)
-            {
-                io.WriteLine(ex.ToString());
-                return 1;
-            }
-        }
-        else
-        {
-            return await app.RunAsync(args);
-        }
+        return await app.RunAsync(args);
     }
 
     static ICommandConfigurator AddCommand<T>(IConfigurator config) where T : class, ICommand

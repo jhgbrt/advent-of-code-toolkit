@@ -8,7 +8,14 @@
     <UserSecretsId>cd1c8a1e-0d6e-4552-b229-c2832fbbf40b</UserSecretsId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Template\AoC.cs" />
+  </ItemGroup>
+
     <ItemGroup>
+        <None Include="Template\AoC.cs">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
         <None Include="Template\aoc.csproj">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
@@ -37,12 +44,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Net.Code.AdventOfCode.Toolkit\Net.Code.AdventOfCode.Toolkit.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Update="Template\AoC.cs.txt">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
     </ItemGroup>
 
     <ItemGroup>

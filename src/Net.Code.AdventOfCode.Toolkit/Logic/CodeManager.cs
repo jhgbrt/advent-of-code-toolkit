@@ -30,23 +30,19 @@ class CodeManager : ICodeManager
         var codeFolder = fileSystem.GetCodeFolder(year, day);
         var templateDir = fileSystem.GetTemplateFolder();
 
-        if (!templateDir.Exists)
-        {
-            await templateDir.Initialize();
-        }
-
         if (codeFolder.Exists && !force)
         {
             throw new Exception($"Puzzle for {year}/{day} already initialized. Use --force to re-initialize.");
         }
 
+        var input = await client.GetPuzzleInputAsync(year, day);
+        await client.GetPuzzleAsync(year, day, !force);
+
         await codeFolder.CreateIfNotExists();
         var code = await templateDir.ReadCode(year, day);
         await codeFolder.WriteCode(code);
         await codeFolder.WriteSample("");
-        var input = await client.GetPuzzleInputAsync(year, day);
         await codeFolder.WriteInput(input);
-        await client.GetPuzzleAsync(year, day, !force);
     }
 
     public async Task<string> GenerateCodeAsync(int year, int day)

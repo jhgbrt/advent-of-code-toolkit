@@ -22,7 +22,6 @@ public class CodeManagerTests
         var templateFolder = Substitute.For<ITemplateFolder>();
 
         codeFolder.Exists.Returns(codeFolderExists);
-        templateFolder.Exists.Returns(true);
 
         filesystem.GetCodeFolder(2021, 3).Returns(codeFolder);
         filesystem.GetTemplateFolder().Returns(templateFolder);

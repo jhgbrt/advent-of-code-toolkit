@@ -26,7 +26,7 @@ class Init : SinglePuzzleCommand<Init.Settings>
     public override async Task<int> ExecuteAsync(int year, int day, Settings options)
     {
         var force = options.force ?? false;
-        output.WriteLine("Puzzle is unlocked");
+        output.WriteLine($"The puzzle for {year}/{day} is unlocked; initializing code...");
         await manager.InitializeCodeAsync(year, day, force, output.WriteLine);
         return 0;
     }

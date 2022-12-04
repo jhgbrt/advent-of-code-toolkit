@@ -6,25 +6,14 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
-        <Compile Remove="Resources\AoC.cs" />
-        <Compile Remove="Resources\Read.cs" />
-    </ItemGroup>
-    <ItemGroup>
-        <EmbeddedResource Include="Resources\aoc.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-        <None Include="Resources\Read.cs" />
-        <None Include="Resources\AoC.cs" />
-    </ItemGroup>
-    <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="6.0.1" />
         <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.1" />
         <PackageReference Include="HtmlAgilityPack" Version="1.11.46" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
-        <PackageReference Include="Spectre.Console" Version="0.45.0" />
-        <PackageReference Include="Spectre.Console.Cli" Version="0.45.0" />
-        <PackageReference Include="Spectre.Console.Extensions.Logging" Version="0.2.1" />
+        <PackageReference Include="Spectre.Console" Version="0.45.1-preview.0.45" />
+        <PackageReference Include="Spectre.Console.Cli" Version="0.45.1-preview.0.45" />
+        <PackageReference Include="Spectre.Console.Extensions.Logging" Version="0.3.0-alpha0011" />
         <PackageReference Include="NodaTime" Version="3.1.2" />
         <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     </ItemGroup>
