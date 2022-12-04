@@ -2,9 +2,15 @@
 
   <PropertyGroup>
     <PackageType>Template</PackageType>
-    <PackageVersion>1.0.0</PackageVersion>
+    <PackageVersion>1.0.1</PackageVersion>
     <PackageId>Net.Code.AdventOfCode.Toolkit.Template</PackageId>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/jhgbrt/advent-of-code-toolkit</PackageProjectUrl>
+    <PackageRepositoryUrl>https://github.com/jhgbrt/advent-of-code-toolkit</PackageRepositoryUrl>
     <Title>Advent of Code template for CSharp projects</Title>
+    <PackageDescription>
+	This template provides a lightweight framework and command line tooling for interacting with adventofcode.com.
+    </PackageDescription>
     <Authors>jhgbrt</Authors>
     <Description>This template provides a basis for solving advent of code puzzles in C#.</Description>
     <PackageTags>dotnet-new;templates;advent-of-code</PackageTags>
@@ -12,6 +18,7 @@
     <IncludeContentInPack>true</IncludeContentInPack>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <ContentTargetFolders>content</ContentTargetFolders>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
