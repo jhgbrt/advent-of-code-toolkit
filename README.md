@@ -9,9 +9,9 @@ This project is not part of the official adventofcode.com website.
 
 ### Installing the template
 
-`dotnet new install Net.Code.AdventOfCode.Toolkit.Template:1.0.1`
+`dotnet new install Net.Code.AdventOfCode.Toolkit.Template:1.0.2`
 
-(the latest version is 1.0.1 at the time of writing).
+(the latest version is 1.0.2 at the time of writing).
 
 ### Creating a new project 
 
