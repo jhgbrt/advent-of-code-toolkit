@@ -4,7 +4,7 @@
   "classifications": [ "Common", "Console" ],
   "identity": "Net.Code.AdventOfCode.Toolkit.ConsoleTemplate.CSharp",
   "name": "Console template for solving Advent of Code puzzles",
-  "shortName": "aoc"
+  "shortName": "aoc",
   "tags": {
     "language": "C#",
     "type": "project"

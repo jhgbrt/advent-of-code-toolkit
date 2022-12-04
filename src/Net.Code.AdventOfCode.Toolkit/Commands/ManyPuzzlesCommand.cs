@@ -52,7 +52,7 @@ abstract class SinglePuzzleCommand<TSettings> : AsyncCommand<TSettings> where TS
             throw new Exception("Please specify year & day explicitly");
 
         if (!AoCLogic.IsValidAndUnlocked(year.Value, day.Value))
-            throw new Exception($"Not a valid puzzle: {year}/{day}");
+            throw new Exception($"Not a valid puzzle, or puzzle not yet unlocked: {year}/{day}");
 
         return await ExecuteAsync(year.Value, day.Value, options);
     }
