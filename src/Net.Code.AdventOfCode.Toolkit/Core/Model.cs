@@ -107,7 +107,7 @@ record PuzzleResultStatus(Puzzle puzzle, DayResult result)
 }
 
 
-record LeaderboardEntry(string name, long score, long stars, DateTimeOffset lastStar);
+record LeaderboardEntry(string name, int year, long score, long stars, DateTimeOffset lastStar);
 record PuzzleReportEntry(
     int year, int day, string answer1, string answer2,
     string result1, TimeSpan elapsed1, ResultStatus status1,

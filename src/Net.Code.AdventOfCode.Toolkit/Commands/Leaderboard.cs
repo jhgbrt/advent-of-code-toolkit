@@ -1,9 +1,12 @@
 ﻿using Net.Code.AdventOfCode.Toolkit.Core;
 
+using NodaTime;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 using System.ComponentModel;
+using System.Reflection.PortableExecutable;
 
 namespace Net.Code.AdventOfCode.Toolkit.Commands;
 
@@ -12,11 +15,12 @@ class Leaderboard : AsyncCommand<Leaderboard.Settings>
 {
     private readonly IReportManager manager;
     private readonly IInputOutputService io;
-
-    public Leaderboard(IReportManager manager, IInputOutputService io)
+    private readonly AoCLogic logic;
+    public Leaderboard(IReportManager manager, IInputOutputService io, AoCLogic logic)
     {
         this.manager = manager;
         this.io = io;
+        this.logic = logic;
     }
     public class Settings : CommandSettings
     {
@@ -29,6 +33,9 @@ class Leaderboard : AsyncCommand<Leaderboard.Settings>
         [Description("force update")]
         [CommandOption("-f|--force")]
         public bool force { get; set; }
+        [Description("get the overall, all time leaderboard")]
+        [CommandOption("-a|--alltimes")]
+        public bool all { get; set; }
     }
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings options)
@@ -46,10 +53,22 @@ class Leaderboard : AsyncCommand<Leaderboard.Settings>
             _ => throw new Exception("no leaderboards found")
         };
 
-        IEnumerable<LeaderboardEntry> entries = await manager.GetLeaderboardAsync(year, id);
+        var tasks = (
+            from y in (options.all ? logic.Years() : Enumerable.Repeat(year, 1))
+            select manager.GetLeaderboardAsync(y, id)
+        ).ToArray();
+        await Task.WhenAll(tasks);
+        var entries = tasks.SelectMany(t => t.Result);
 
-        var table = entries.ToTable();
+        var q = from e in entries
+                group e by e.name into g
+                select new LeaderboardEntry(g.Key, 0, g.Sum(x => x.score), g.Sum(x => x.stars), g.Max(g => g.lastStar)) into e
+                orderby e.score descending, e.stars descending
+                select e;
+
+        var table = q.ToTable();
         io.Write(table);
+                          
 
         return 0;
     }

@@ -39,7 +39,7 @@ class ReportManager : IReportManager
                where lastStar.HasValue && lastStar > Instant.MinValue
                let dt = lastStar.Value.InUtc().ToDateTimeOffset().ToLocalTime()
                orderby score descending
-               select new LeaderboardEntry(name, score, stars, dt);
+               select new LeaderboardEntry(name, year, score, stars, dt);
     }
 
     public async IAsyncEnumerable<(int year, MemberStats stats)> GetMemberStats()

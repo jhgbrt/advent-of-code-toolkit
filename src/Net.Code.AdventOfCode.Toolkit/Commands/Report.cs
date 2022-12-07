@@ -52,7 +52,7 @@ static class TableFactory
                 line.name,
                 line.score.ToString(),
                 line.stars.ToString(),
-                line.lastStar.TimeOfDay.ToString() ?? string.Empty
+                line.lastStar.ToLocalTime().ToString("dd MMM yyyy HH:mm:ss") ?? string.Empty
                 );
             n++;
         }
