@@ -37,7 +37,7 @@ public class CommandTests
     public async Task Leaderboard_WithId()
     {
         var manager = CreateReportManager();
-        var run = new Leaderboard(manager, Substitute.For<IInputOutputService>());
+        var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021, id = 123 });
         await manager.Received(1).GetLeaderboardAsync(2021, 123);
 
@@ -47,7 +47,7 @@ public class CommandTests
     public async Task Leaderboard_NoId()
     {
         var manager = CreateReportManager();
-        var run = new Leaderboard(manager, Substitute.For<IInputOutputService>());
+        var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021 });
         await manager.Received(1).GetLeaderboardAsync(2021, 123);
     }
