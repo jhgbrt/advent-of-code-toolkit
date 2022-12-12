@@ -9,11 +9,6 @@ using System.Text.Json;
 
 namespace Net.Code.AdventOfCode.Toolkit.Logic;
 
-public class AssemblyResolver : IAssemblyResolver
-{
-    public static IAssemblyResolver Instance = new AssemblyResolver();
-    public Assembly? GetEntryAssembly() => Assembly.GetEntryAssembly();
-}
 class AoCRunner : IAoCRunner
 {
     ILogger<AoCRunner> logger;

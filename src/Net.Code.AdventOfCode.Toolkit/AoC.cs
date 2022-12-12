@@ -7,6 +7,7 @@ namespace Net.Code.AdventOfCode.Toolkit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
 
 using Net.Code.AdventOfCode.Toolkit.Commands;
 using Net.Code.AdventOfCode.Toolkit.Core;
@@ -14,10 +15,11 @@ using Net.Code.AdventOfCode.Toolkit.Logic;
 
 using NodaTime;
 
+using Spectre.Console;
 using Spectre.Console.Cli;
+using Spectre.Console.Rendering;
 
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Reflection;
 
 public static class AoC
@@ -28,6 +30,17 @@ public static class AoC
             new InputOutputService(),
             SystemClock.Instance,
             args);
+
+    public static async Task<IEngine> GetEngine(
+        Assembly assembly,
+        Action<string> log
+        )
+    {
+        var services = await InitializeServicesAsync(new FixedAssemblyResolver(assembly), new DelegatingIOService(log), SystemClock.Instance, LogLevel.Trace, false);
+        var engine = services.BuildServiceProvider().GetService<IEngine>() ?? throw new Exception("could not resolve Engine");
+        return engine;
+    }
+
     public static async Task<int> RunAsync(
         IAssemblyResolver resolver,
         IInputOutputService io,
@@ -35,11 +48,6 @@ public static class AoC
         string[] args
         )
     {
-        var config = new ConfigurationBuilder()
-            .AddEnvironmentVariables()
-            .AddUserSecrets(resolver.GetEntryAssembly())
-            .Build();
-
         string? loglevel = null;
         for (int i = 0; i < args.Length; i++)
         {
@@ -54,32 +62,7 @@ public static class AoC
                 break;
             }
         }
-        var cookieValue = config["AOC_SESSION"];
-        const string baseAddress = "https://adventofcode.com";
-        var configuration = new Configuration(baseAddress, cookieValue);
-        var services = new ServiceCollection();
-        services.AddLogging(builder => builder.AddInlineSpectreConsole(c => c.LogLevel = LogLevel.Trace).SetMinimumLevel(string.IsNullOrEmpty(loglevel) ? LogLevel.Warning : Enum.Parse<LogLevel>(loglevel, true)));
-        services.AddSingleton(configuration);
-        services.AddTransient<IAoCClient, AoCClient>();
-        services.AddTransient<IPuzzleManager, PuzzleManager>();
-        services.AddTransient<IAoCRunner, AoCRunner>();
-        services.AddTransient<ICodeManager, CodeManager>();
-        services.AddTransient<IReportManager, ReportManager>();
-        services.AddTransient<ICache, Cache>();
-        services.AddTransient<IFileSystem, FileSystem>();
-        services.AddSingleton<IAssemblyResolver>(resolver);
-        services.AddTransient<IHttpClientWrapper, HttpClientWrapper>();
-        services.AddTransient<AoCLogic>();
-        services.AddSingleton(clock);
-        services.AddSingleton(io);
-        foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(ICommand))))
-        {
-            services.AddTransient(type);
-        }
-        foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(CommandSettings))))
-        {
-            services.AddTransient(type);
-        }
+        var services = await InitializeServicesAsync(resolver, io, clock, string.IsNullOrEmpty(loglevel) ? LogLevel.Warning : Enum.Parse<LogLevel>(loglevel, true), args.Contains("--debug"));
 
         var registrar = new TypeRegistrar(services);
 
@@ -107,6 +90,49 @@ public static class AoC
         return await app.RunAsync(args);
     }
 
+    static Task<ServiceCollection> InitializeServicesAsync(
+        IAssemblyResolver resolver,
+        IInputOutputService io,
+        IClock clock,
+        LogLevel level,
+        bool debug)
+    {
+        var config = new ConfigurationBuilder()
+            .AddEnvironmentVariables()
+            .AddUserSecrets(resolver.GetEntryAssembly())
+            .Build();
+
+        var cookieValue = config["AOC_SESSION"];
+        const string baseAddress = "https://adventofcode.com";
+        var configuration = new Configuration(baseAddress, cookieValue);
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder
+            .AddInlineSpectreConsole(c => c.LogLevel = LogLevel.Trace).SetMinimumLevel(level));
+        services.AddSingleton(configuration);
+        services.AddTransient<IAoCClient, AoCClient>();
+        services.AddTransient<IPuzzleManager, PuzzleManager>();
+        services.AddTransient<IAoCRunner, AoCRunner>();
+        services.AddTransient<ICodeManager, CodeManager>();
+        services.AddTransient<IReportManager, ReportManager>();
+        services.AddTransient<ICache, Cache>();
+        services.AddTransient<IFileSystem, FileSystem>();
+        services.AddSingleton<IAssemblyResolver>(resolver);
+        services.AddTransient<IHttpClientWrapper, HttpClientWrapper>();
+        services.AddTransient<AoCLogic>();
+        services.AddTransient<IEngine, Engine>();
+        services.AddSingleton(clock);
+        services.AddSingleton(io);
+        foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(ICommand))))
+        {
+            services.AddTransient(type);
+        }
+        foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(CommandSettings))))
+        {
+            services.AddTransient(type);
+        }
+        return Task.FromResult(services);
+    }
+
     static ICommandConfigurator AddCommand<T>(IConfigurator config) where T : class, ICommand
         => config.AddCommand<T>(typeof(T).Name.ToLower()).WithDescription(GetDescription(typeof(T)) ?? typeof(T).Name);
 
@@ -116,14 +142,19 @@ public static class AoC
 
 sealed class TypeRegistrar : ITypeRegistrar
 {
+    public IServiceProvider ServiceProvider => serviceProvider ?? throw new NullReferenceException("service provider not available");
     private readonly IServiceCollection _builder;
-
+    private IServiceProvider? serviceProvider;
     public TypeRegistrar(IServiceCollection builder)
     {
         _builder = builder;
     }
 
-    public ITypeResolver Build() => new TypeResolver(_builder.BuildServiceProvider());
+    public ITypeResolver Build()
+    {
+        serviceProvider = _builder.BuildServiceProvider();
+        return new TypeResolver(serviceProvider);
+    }
 
     public void Register(Type service, Type implementation) => _builder.AddTransient(service, implementation);
 

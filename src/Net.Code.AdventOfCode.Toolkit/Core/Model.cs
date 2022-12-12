@@ -79,7 +79,18 @@ record DailyStars(int Day, Instant? FirstStar, Instant? SecondStar);
 
 record PuzzleResultStatus(Puzzle puzzle, DayResult result)
 {
+    public bool Ok => result.part1.Value == puzzle.Answer.part1 && result.part2.Value == puzzle.Answer.part2;
+
     public string ToReportLine()
+    {
+        var duration = result.Elapsed.ToString();
+        var comparisonResult = puzzle.Compare(result);
+        var status1 = GetReportPart(comparisonResult.part1, puzzle.Answer.part1, result.part1.Value, 1);
+        var status2 = GetReportPart(comparisonResult.part2, puzzle.Answer.part2, result.part2.Value, 2);
+        return $"{result.year}-{result.day:00} {status1.status}/{status2.status} - {duration} - {status1.explanation} {status2.explanation}";
+    }
+
+    public string ToReportLineMarkup()
     {
         (var duration, var dcolor) = result.Elapsed.TotalMilliseconds switch
         {

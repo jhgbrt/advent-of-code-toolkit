@@ -36,7 +36,7 @@ class Run : ManyPuzzlesCommand<Run.Settings>
 
         var result = await manager.Run(typeName, year, day, (part, result) => io.MarkupLine($"part {part}: {result.Value} ({result.Elapsed})"));
         var resultStatus = await puzzleManager.GetPuzzleResult(year, day, (__, _) => { });
-        var reportLine = resultStatus.ToReportLine();
+        var reportLine = resultStatus.ToReportLineMarkup();
         io.MarkupLine(reportLine);
 
         return 0;
