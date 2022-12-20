@@ -91,7 +91,7 @@ class CodeManager : ICodeManager
                             )
                         ).WithVariables(
                             SingletonSeparatedList(
-                                fieldname != "input"
+                                fieldname != "input" || !node.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(m => m.Name.ToString().StartsWith("Read.Input"))
                                 ? node.DescendantNodes().OfType<VariableDeclaratorSyntax>().Single()
                                 : VariableDeclarator(
                                     Identifier("input")
