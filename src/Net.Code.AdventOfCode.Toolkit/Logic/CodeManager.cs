@@ -74,6 +74,7 @@ class CodeManager : ICodeManager
         var implementations = (
             from node in aocclass.DescendantNodes().OfType<MethodDeclarationSyntax>()
             where node.Identifier.ToString() is "Part1" or "Part2"
+            && node.ParameterList.Parameters.Count == 0
             from arrow in node.ChildNodes().OfType<ArrowExpressionClauseSyntax>()
             from impl in arrow.ChildNodes().OfType<ExpressionSyntax>()
             select (name: node.Identifier.ToString(), impl)
@@ -91,7 +92,7 @@ class CodeManager : ICodeManager
                             )
                         ).WithVariables(
                             SingletonSeparatedList(
-                                fieldname != "input" || !node.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(m => m.Name.ToString().StartsWith("Read.Input"))
+                                fieldname != "input" || !node.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(m => m.ToString().StartsWith("Read.Input"))
                                 ? node.DescendantNodes().OfType<VariableDeclaratorSyntax>().Single()
                                 : VariableDeclarator(
                                     Identifier("input")
@@ -109,6 +110,7 @@ class CodeManager : ICodeManager
         // methods from the AoC class are converted to top-level methods
         var methods =
             from node in aocclass.DescendantNodes().OfType<MethodDeclarationSyntax>()
+            where !node.AttributeLists.Any(al => !al.Attributes.Any(a => a.Name.ToString() is "Fact" or "Theory"))
             select node.WithModifiers(TokenList())
             ;
 
@@ -196,7 +198,7 @@ class CodeManager : ICodeManager
         var templateDir = fileSystem.GetTemplateFolder();
         await outputDir.CreateIfNotExists();
         await outputDir.WriteCode(code);
-        outputDir.CopyFiles(codeDir.GetCodeFiles());
+        outputDir.CopyFiles(codeDir.GetCodeFiles().Where(f => !f.Name.EndsWith("Tests.cs")));
         outputDir.CopyFile(codeDir.Input);
         outputDir.CopyFile(templateDir.CsProj);
     }
