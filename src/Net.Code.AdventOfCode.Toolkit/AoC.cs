@@ -104,7 +104,7 @@ public static class AoC
             .AddUserSecrets(assembly)
             .Build();
 
-        var cookieValue = config["AOC_SESSION"] ?? throw new NullReferenceException("the AOC_SESSION variable is not set");
+        var cookieValue = config["AOC_SESSION"] ?? throw new NullReferenceException("The AOC_SESSION variable is not set. Go to https://adventofcode.com, log in and copy the value of the session cookie. You need to set this value as a user secret or environment variable called AOC_SESSION.");
         
         const string baseAddress = "https://adventofcode.com";
         var configuration = new Configuration(baseAddress, cookieValue);
