@@ -97,17 +97,7 @@ class CodeManager : ICodeManager
             from node in aocclass.DescendantNodes().OfType<FieldDeclarationSyntax>()
             where node.Parent == aocclass
             let fieldname = node.DescendantNodes().OfType<VariableDeclaratorSyntax>().Single().Identifier.ToString()
-            select LocalDeclarationStatement(
-                    VariableDeclaration(
-                        IdentifierName(
-                            Identifier(TriviaList(), SyntaxKind.VarKeyword, "var", "var", TriviaList())
-                            )
-                        ).WithVariables(
-                            SingletonSeparatedList(
-                                node.DescendantNodes().OfType<VariableDeclaratorSyntax>().Single()
-                            )
-                        )
-                    );
+            select ToLocalDeclaration(node);
 
         // methods from the AoC class are converted to top-level methods
         var methods =
@@ -165,6 +155,34 @@ class CodeManager : ICodeManager
         return code;
     }
 
+    private LocalDeclarationStatementSyntax ToLocalDeclaration(FieldDeclarationSyntax node)
+    {
+        var type = node.Declaration.Type;
+
+        var implicitObjectCreationExpressions =
+            from v in node.Declaration.Variables
+            where v.Initializer is not null && v.Initializer.Value is ImplicitObjectCreationExpressionSyntax
+            select (ImplicitObjectCreationExpressionSyntax)v.Initializer!.Value;
+
+        foreach (var n in implicitObjectCreationExpressions)
+        {
+            node = node.ReplaceNode(n, ObjectCreationExpression(type).WithArgumentList(n.ArgumentList));
+        }
+
+
+        return LocalDeclarationStatement(
+                            VariableDeclaration(
+                                IdentifierName(
+                                    Identifier(TriviaList(), SyntaxKind.VarKeyword, "var", "var", TriviaList())
+                                    )
+                                ).WithVariables(
+                                    SingletonSeparatedList(
+                                        node.DescendantNodes().OfType<VariableDeclaratorSyntax>().Single()
+                                    )
+                                )
+                            );
+    }
+
     private SyntaxNode ExtractRegexGenerators(SyntaxNode root)
     {
         var regexgenerators = from m in root.DescendantNodes().OfType<MethodDeclarationSyntax>()
@@ -194,12 +212,11 @@ class CodeManager : ICodeManager
                          ))
                      );
             }
-        }
 
-        var c = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Last();
-        root = root.InsertNodesAfter(c, List(
-                    new[]
-                    { 
+            var c = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Last();
+            root = root.InsertNodesAfter(c, List(
+                        new[]
+                        {
                         ClassDeclaration("AoCRegex")
                         .WithModifiers(TokenList(
                             Token(SyntaxKind.StaticKeyword),
@@ -210,7 +227,9 @@ class CodeManager : ICodeManager
                             Token(SyntaxKind.StaticKeyword),
                             Token(SyntaxKind.PartialKeyword)
                             )) as MemberDeclarationSyntax)))
-                    }));
+                        }));
+
+        }
 
 
         return root;
