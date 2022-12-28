@@ -104,7 +104,7 @@ class CodeManager : ICodeManager
             from node in aocclass.DescendantNodes().OfType<MethodDeclarationSyntax>()
             where node.Parent == aocclass
             where !node.AttributeLists.Any(al => !al.Attributes.Any(a => a.Name.ToString() is "Fact" or "Theory"))
-            && !implementations.ContainsKey(node.Identifier.Text)
+            && !(implementations.ContainsKey(node.Identifier.Text) && node.ParameterList.Parameters.Count == 0)
             select node.WithModifiers(TokenList())
             ;
 
@@ -194,7 +194,18 @@ class CodeManager : ICodeManager
                               select m;
 
 
-        if (regexgenerators.Any())
+        var regexAsCall = (
+            from m in root.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            where m.Expression is MemberAccessExpressionSyntax
+            let exp = (MemberAccessExpressionSyntax)m.Expression
+            where exp.Name is GenericNameSyntax
+            let name = (GenericNameSyntax)exp.Name
+            where name.Identifier.ValueText is "As"
+            && name.TypeArgumentList.Arguments.Count == 1
+            select m
+            ).Any();
+
+        if (regexgenerators.Any() || regexAsCall)
         {
             var regexinvocations = from m in root.DescendantNodes().OfType<InvocationExpressionSyntax>()
                                    where m.Expression is IdentifierNameSyntax
@@ -217,16 +228,40 @@ class CodeManager : ICodeManager
             root = root.InsertNodesAfter(c, List(
                         new[]
                         {
-                        ClassDeclaration("AoCRegex")
-                        .WithModifiers(TokenList(
-                            Token(SyntaxKind.StaticKeyword),
-                            Token(SyntaxKind.PartialKeyword)
+                            ClassDeclaration("AoCRegex")
+                            .WithModifiers(TokenList(
+                                Token(SyntaxKind.StaticKeyword),
+                                Token(SyntaxKind.PartialKeyword)
+                                ))
+                            .WithMembers(
+                                List(regexgenerators.Select(m => m.WithModifiers(TokenList(
+                                    Token(SyntaxKind.PublicKeyword),
+                                    Token(SyntaxKind.StaticKeyword),
+                                    Token(SyntaxKind.PartialKeyword)
+                                    )) as MemberDeclarationSyntax)
+                                .Concat(new[]{
+                                ParseMemberDeclaration(
+                                """
+                                    public static T As<T>(this Regex regex, string s, IFormatProvider? provider = null) where T: struct
+                                    {
+                                        var match = regex.Match(s);
+                                        if (!match.Success) throw new InvalidOperationException($"input '{s}' does not match regex '{regex}'");
+
+                                        var constructor = typeof(T).GetConstructors().Single();
+        
+                                        var j = from p in constructor.GetParameters()
+                                                join m in match.Groups.OfType<Group>() on p.Name equals m.Name
+                                                select Convert.ChangeType(m.Value, p.ParameterType, provider ?? CultureInfo.InvariantCulture);
+
+                                        return (T)constructor.Invoke(j.ToArray());
+
+                                    }
+                                """)!, ParseMemberDeclaration(
+                                """
+                                    public static int GetInt32(this Match m, string name) => int.Parse(m.Groups[name].Value);
+                                """)!
+                            })
                             ))
-                        .WithMembers(List(regexgenerators.Select(m => m.WithModifiers(TokenList(
-                            Token(SyntaxKind.PublicKeyword),
-                            Token(SyntaxKind.StaticKeyword),
-                            Token(SyntaxKind.PartialKeyword)
-                            )) as MemberDeclarationSyntax)))
                         }));
 
         }
@@ -332,7 +367,9 @@ class CodeManager : ICodeManager
         var templateDir = fileSystem.GetTemplateFolder();
         await outputDir.CreateIfNotExists();
         await outputDir.WriteCode(code);
-        outputDir.CopyFiles(codeDir.GetCodeFiles().Where(f => !f.Name.EndsWith("Tests.cs")));
+        outputDir.CopyFiles(
+            codeDir.GetCodeFiles().Where(f => !f.Name.EndsWith("Tests.cs"))
+            );
         if (codeDir.Input.Exists)
             outputDir.CopyFile(codeDir.Input);
         if (codeDir.Sample.Exists)
