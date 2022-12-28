@@ -56,7 +56,7 @@ public class CommandTests
     {
         var manager = CreateReportManager();
         var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic);
-        await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", new Leaderboard.Settings { all = true }), new Leaderboard.Settings { year = 2021 });
+        await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021, all = true });
         await manager.Received(7).GetLeaderboardAsync(Arg.Is<int>(i => i <= 2021 && i >= 2015), 123);
     }
 
