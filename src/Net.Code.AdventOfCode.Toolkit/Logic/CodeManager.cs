@@ -1,5 +1,4 @@
-﻿
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Formatting;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -8,7 +7,7 @@ using Microsoft.CodeAnalysis.Formatting;
 using Net.Code.AdventOfCode.Toolkit.Core;
 
 using System.Diagnostics;
-using System.Xml.Linq;
+using System.Reflection;
 
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -51,9 +50,18 @@ class CodeManager : ICodeManager
         var aoc = await dir.ReadCode();
         var tree = CSharpSyntaxTree.ParseText(aoc);
 
+        tree = tree.WithRootAndOptions(ExtractRegexGenerators(tree.GetRoot()), tree.Options);
+
+        // TODO could be used to selectively add methods from Common
+        // var common = fileSystem.GetFolder("Common");
+        // var additionalTrees = (
+        //    from f in common.GetFiles("*.cs")
+        //    let text = common.ReadFile(f.FullName).Result
+        //    select CSharpSyntaxTree.ParseText(text)).ToArray();
+
+
         // find a class with 2 methods without arguments called Part1() and Part2()
         // the members of this class will be converted to top level statements
-
         (var aocclass, var _) = (
             from classdecl in tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>()
             let m =
@@ -70,9 +78,12 @@ class CodeManager : ICodeManager
             throw new Exception("Could not find a class with 2 methods called Part1 and Part2");
         }
 
+        aocclass = AdjustInputReading(aocclass);
+
         // the actual methods: Part1 & Part2
         var implementations = (
             from node in aocclass.DescendantNodes().OfType<MethodDeclarationSyntax>()
+            where node.Parent == aocclass
             where node.Identifier.ToString() is "Part1" or "Part2"
             && node.ParameterList.Parameters.Count == 0
             from arrow in node.ChildNodes().OfType<ArrowExpressionClauseSyntax>()
@@ -84,6 +95,7 @@ class CodeManager : ICodeManager
         // the initialization of the input variable is converted to the corresponding System.IO.File call
         var fields =
             from node in aocclass.DescendantNodes().OfType<FieldDeclarationSyntax>()
+            where node.Parent == aocclass
             let fieldname = node.DescendantNodes().OfType<VariableDeclaratorSyntax>().Single().Identifier.ToString()
             select LocalDeclarationStatement(
                     VariableDeclaration(
@@ -92,25 +104,17 @@ class CodeManager : ICodeManager
                             )
                         ).WithVariables(
                             SingletonSeparatedList(
-                                fieldname != "input" || !node.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(m => m.ToString().StartsWith("Read.Input"))
-                                ? node.DescendantNodes().OfType<VariableDeclaratorSyntax>().Single()
-                                : VariableDeclarator(
-                                    Identifier("input")
-                                    ).WithInitializer(
-                                        EqualsValueClause(
-                                            ConvertInputReaderStatement(node.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Single()
-                                        )
-                                    )
-                                )
+                                node.DescendantNodes().OfType<VariableDeclaratorSyntax>().Single()
                             )
                         )
-                    )
-                ;
+                    );
 
         // methods from the AoC class are converted to top-level methods
         var methods =
             from node in aocclass.DescendantNodes().OfType<MethodDeclarationSyntax>()
+            where node.Parent == aocclass
             where !node.AttributeLists.Any(al => !al.Attributes.Any(a => a.Name.ToString() is "Fact" or "Theory"))
+            && !implementations.ContainsKey(node.Identifier.Text)
             select node.WithModifiers(TokenList())
             ;
 
@@ -122,29 +126,30 @@ class CodeManager : ICodeManager
         var enums = tree.GetRoot().DescendantNodes().OfType<EnumDeclarationSyntax>();
 
         var classes = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>()
-            .Where(cd => cd != aocclass && !cd.Identifier.ToString().Contains("Tests"));
+            .Where(cd => cd.Identifier.Value != aocclass.Identifier.Value && !cd.Identifier.ToString().Contains("Tests"));
 
-        // build new compilation unit:
-        // - usings
-        // - top level variables
-        // - top level statements
-        // - top level methods
-        // - records, classes, enums
 
-        var result = CompilationUnit()
+            // build new compilation unit:
+            // - usings
+            // - top level variables
+            // - top level statements
+            // - top level methods
+            // - records, classes, enums
+
+            var result = CompilationUnit()
             .WithUsings(List(usings))
             .WithMembers(
                 List(
                     fields.Select(GlobalStatement)
                     .Concat(new[]
                     {
-                        ParseMemberDeclaration("var sw = Stopwatch.StartNew();\r\n")!,
-                        ParseMemberDeclaration("var part1 = Part1();\r\n")!,
-                        ParseMemberDeclaration("var part2 = Part2();\r\n")!,
+                        GlobalStatement(ParseStatement("var sw = Stopwatch.StartNew();\r\n")!),
+                        GenerateGlobalStatement(1, implementations),
+                        GenerateGlobalStatement(2, implementations)
                     })
                     .Concat(new[]
                     {
-                      GlobalStatement(ParseStatement("Console.WriteLine((part1, part2, sw.Elapsed));\r\n")!)
+                        GlobalStatement(ParseStatement("Console.WriteLine((part1, part2, sw.Elapsed));\r\n")!),
                     })
                     .Concat(List<MemberDeclarationSyntax>(methods))
                     .Concat(List<MemberDeclarationSyntax>(records))
@@ -152,54 +157,169 @@ class CodeManager : ICodeManager
                     .Concat(List<MemberDeclarationSyntax>(enums))
                 )
             );
+
         var workspace = new AdhocWorkspace();
         var code = Formatter.Format(result.NormalizeWhitespace(), workspace, workspace.Options
             .WithChangedOption(CSharpFormattingOptions.IndentBlock, true)
             ).ToString();
         return code;
     }
-    private static InvocationExpressionSyntax ConvertInputReaderStatement(MemberAccessExpressionSyntax memberAccessExpression)
+
+    private SyntaxNode ExtractRegexGenerators(SyntaxNode root)
     {
-        if (!memberAccessExpression.IsKind(SyntaxKind.SimpleMemberAccessExpression))
-            throw new NotSupportedException($"Can not convert expression {memberAccessExpression}");
+        var regexgenerators = from m in root.DescendantNodes().OfType<MethodDeclarationSyntax>()
+                              where m.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword))
+                              where (from al in m.AttributeLists
+                                     from a in al.Attributes
+                                     where a.Name.ToString() is "GeneratedRegex"
+                                     select m).Any()
+                              select m;
 
-        var methodName = memberAccessExpression.ToString() switch
+
+        if (regexgenerators.Any())
         {
-            "Read.InputLines" => "ReadAllLines",
-            "Read.InputText" => "ReadAllText",
-            _ => throw new NotSupportedException($"Can not convert expression {memberAccessExpression}")
-        };
+            var regexinvocations = from m in root.DescendantNodes().OfType<InvocationExpressionSyntax>()
+                                   where m.Expression is IdentifierNameSyntax
+                                   let x = (IdentifierNameSyntax)m.Expression
+                                   join rex in regexgenerators on x.Identifier.Value equals rex.Identifier.Value
+                                   select (m, x);
 
-        return InvocationExpression(
-            MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                IdentifierName("File"),
-                IdentifierName(methodName)
-                )
-            )
-        .WithArgumentList(
-            ArgumentList(
-            SingletonSeparatedList(
-                Argument(
-                    LiteralExpression(
-                        SyntaxKind.StringLiteralExpression,
-                        Literal("input.txt")
-                        )
-                    )
-                )
-            )
-        );
+            foreach (var (node, identifier) in regexinvocations)
+            {
+                root = root.ReplaceNode(node, InvocationExpression(
+                         MemberAccessExpression(
+                         SyntaxKind.SimpleMemberAccessExpression,
+                         IdentifierName("AoCRegex"),
+                         IdentifierName(identifier.Identifier.ValueText)
+                         ))
+                     );
+            }
+        }
+
+        var c = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Last();
+        root = root.InsertNodesAfter(c, List(
+                    new[]
+                    { 
+                        ClassDeclaration("AoCRegex")
+                        .WithModifiers(TokenList(
+                            Token(SyntaxKind.StaticKeyword),
+                            Token(SyntaxKind.PartialKeyword)
+                            ))
+                        .WithMembers(List(regexgenerators.Select(m => m.WithModifiers(TokenList(
+                            Token(SyntaxKind.PublicKeyword),
+                            Token(SyntaxKind.StaticKeyword),
+                            Token(SyntaxKind.PartialKeyword)
+                            )) as MemberDeclarationSyntax)))
+                    }));
+
+
+        return root;
     }
 
-    public async Task ExportCode(int year, int day, string code, string output)
+    private ClassDeclarationSyntax AdjustInputReading(ClassDeclarationSyntax aocclass)
+    {
+        var invocations = from i in aocclass.DescendantNodes().OfType<InvocationExpressionSyntax>()
+                          where i.Expression is MemberAccessExpressionSyntax
+                          let m = (MemberAccessExpressionSyntax)i.Expression
+                          where m.Expression is IdentifierNameSyntax
+                          let l = (IdentifierNameSyntax)m.Expression
+                          where l.Identifier.Value is "Read"
+                          let r = m.Name.Identifier.Value
+                          where r is "InputLines" or "InputText" or "InputStream" or "SampleText" or "SampleLines" or "SampleStream"
+                          select (i, r);
+
+        foreach (var (invocation, right) in invocations)
+        {
+            aocclass = aocclass
+                .ReplaceNode(invocation, InvocationExpression(
+                    MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        IdentifierName("File"),
+                        IdentifierName(right switch
+                        {
+                            "InputText" or "SampleText" => "ReadAllText",
+                            "InputLines" or "SampleLines" => "ReadAllLines",
+                            "InputStream" or "SampleStream" => "OpenRead",
+                            _ => throw new NotSupportedException("Can not convert this call")
+                        })
+                        )
+                    )
+                .WithArgumentList(
+                    ArgumentList(
+                        SingletonSeparatedList(
+                            Argument(
+                                LiteralExpression(
+                                    SyntaxKind.StringLiteralExpression,
+                                    Literal(right switch
+                                    {
+                                        "InputText" or "InputLines" or "InputStream" => "input.txt",
+                                        "SampleText" or "SampleLines" or "SampleStream" => "sample.txt",
+                                        _ => throw new NotSupportedException("Can not convert this call")
+                                    })
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+
+        }
+        return aocclass;
+    }
+
+    private static LocalFunctionStatementSyntax TransformToLocalFunctionStatement(MethodDeclarationSyntax method)
+    {
+        return LocalFunctionStatement(
+            TokenList(method.Modifiers.Where(m => !m.IsKind(SyntaxKind.PublicKeyword))),
+            method.ReturnType,
+            method.Identifier,
+            method.TypeParameterList,
+            method.ParameterList,
+            method.ConstraintClauses,
+            method.Body,
+            method.ExpressionBody
+            );
+    }
+
+    private static MemberDeclarationSyntax GenerateGlobalStatement(int part, IReadOnlyDictionary<string, ExpressionSyntax> implementations)
+    {
+        return GlobalStatement(GenerateStatement(part, implementations));
+    }
+    private static StatementSyntax GenerateStatement(int part, IReadOnlyDictionary<string, ExpressionSyntax> implementations)
+    {
+        return implementations.ContainsKey($"Part{part}")
+                        ? LocalDeclarationStatement(
+                                VariableDeclaration(
+                                    IdentifierName(Identifier(TriviaList(), SyntaxKind.VarKeyword, "var", "var", TriviaList()))
+                                    )
+                                .WithVariables(
+                                    SingletonSeparatedList(VariableDeclarator(Identifier($"part{part}"))
+                                    .WithInitializer(
+                                            EqualsValueClause(
+                                                implementations[$"Part{part}"]
+                                                ))
+                                        )
+                                    )
+                                )
+                        : ParseStatement($"var part{part} = Part{part}();\r\n")!;
+    }
+
+
+    public async Task ExportCode(int year, int day, string code, bool includecommon, string output)
     {
         var codeDir = fileSystem.GetCodeFolder(year, day);
+        var commonDir = fileSystem.GetFolder("Common");
         var outputDir = fileSystem.GetOutputFolder(output);
         var templateDir = fileSystem.GetTemplateFolder();
         await outputDir.CreateIfNotExists();
         await outputDir.WriteCode(code);
         outputDir.CopyFiles(codeDir.GetCodeFiles().Where(f => !f.Name.EndsWith("Tests.cs")));
-        outputDir.CopyFile(codeDir.Input);
+        if (codeDir.Input.Exists)
+            outputDir.CopyFile(codeDir.Input);
+        if (codeDir.Sample.Exists)
+            outputDir.CopyFile(codeDir.Sample);
         outputDir.CopyFile(templateDir.CsProj);
+        if (includecommon && commonDir.Exists)
+            outputDir.CopyFiles(commonDir.GetFiles("*.cs"));
     }
 }

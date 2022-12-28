@@ -15,6 +15,7 @@ class FileSystem : IFileSystem
     }
 
     public ICodeFolder GetCodeFolder(int year, int day) => new CodeFolder(Path.Combine(CurrentDirectory, $"Year{year}", $"Day{day:00}"), logger);
+    public IFolder GetFolder(string name) => new Folder(Path.Combine(CurrentDirectory, name), logger);
     public ITemplateFolder GetTemplateFolder() => new TemplateFolder(Path.Combine(CurrentDirectory, "Template"), logger);
     public IOutputFolder GetOutputFolder(string output) => new OutputFolder(output, logger);
 
@@ -29,11 +30,11 @@ class FileSystem : IFileSystem
     public async Task WriteAllTextAsync(string path, string content) => await File.WriteAllTextAsync(path, content);
     public bool FileExists(string path) => File.Exists(path);
     public bool DirectoryExists(string path) => Directory.Exists(path);
-    class Folder
+    class Folder : IFolder
     {
         private readonly DirectoryInfo dir;
         protected readonly ILogger logger;
-        protected Folder(string path, ILogger logger) { dir = new DirectoryInfo(path); this.logger = logger; }
+        public Folder(string path, ILogger logger) { dir = new DirectoryInfo(path); this.logger = logger; }
         public string GetFileName(string file) => Path.Combine(dir.FullName, file);
         public bool Exists => dir.Exists;
         public Task CreateIfNotExists()
@@ -51,7 +52,7 @@ class FileSystem : IFileSystem
             dir.Delete(true);
             return Task.CompletedTask;
         }
-        protected Task<string> ReadFile(string name)
+        public Task<string> ReadFile(string name)
         {
             logger.LogTrace($"READ: {name}");
             return File.ReadAllTextAsync(name);
@@ -72,7 +73,7 @@ class FileSystem : IFileSystem
             }
             return Task.CompletedTask;
         }
-        protected IEnumerable<FileInfo> GetFiles(string pattern) => dir.GetFiles(pattern);
+        public IEnumerable<FileInfo> GetFiles(string pattern) => dir.GetFiles(pattern);
         public override string ToString() => dir.FullName;
     }
     class OutputFolder : Folder, IOutputFolder
@@ -110,6 +111,7 @@ class FileSystem : IFileSystem
         public string INPUT => GetFileName("input.txt");
         public string SAMPLE => GetFileName("sample.txt");
         public FileInfo Input => new FileInfo(INPUT);
+        public FileInfo Sample => new FileInfo(SAMPLE);
         public Task<string> ReadCode() => ReadFile(CODE);
         public Task WriteCode(string content) => WriteFile(CODE, content);
         public Task WriteInput(string content) => WriteFile(INPUT, content);

@@ -28,7 +28,7 @@ interface ICache
 
 interface ICodeManager
 {
-    Task ExportCode(int year, int day, string code, string output);
+    Task ExportCode(int year, int day, string code, bool includecommon, string output);
     Task<string> GenerateCodeAsync(int year, int day);
     Task InitializeCodeAsync(int year, int day, bool force, Action<string> progress);
 }
@@ -52,6 +52,7 @@ interface IFileSystem
 {
     string CurrentDirectory { get; }
     ICodeFolder GetCodeFolder(int year, int day);
+    IFolder GetFolder(string name);
     ITemplateFolder GetTemplateFolder();
     IOutputFolder GetOutputFolder(string output);
     void CreateDirectoryIfNotExists(string path, FileAttributes? attributes = default);
@@ -67,9 +68,16 @@ interface IOutputFolder
     Task CreateIfNotExists();
     Task WriteCode(string code);
 }
+interface IFolder
+{
+    bool Exists { get; }
+    Task<string> ReadFile(string name);
+    IEnumerable<FileInfo> GetFiles(string pattern);
+}
 interface ICodeFolder
 {
     FileInfo Input { get; }
+    FileInfo Sample { get; }
     Task CreateIfNotExists();
     IEnumerable<FileInfo> GetCodeFiles();
     Task<string> ReadCode();

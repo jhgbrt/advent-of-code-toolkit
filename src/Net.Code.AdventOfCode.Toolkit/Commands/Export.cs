@@ -25,10 +25,14 @@ partial class Export : SinglePuzzleCommand<Export.Settings>
         [Description("output location. If empty, exported code is written to stdout")]
         [CommandOption("-o|--output")]
         public string? output { get; set; }
+        [Description("Include common code. If true, all code files included in 'common' are also exported.")]
+        [CommandOption("--include-common")]
+        public bool includecommon { get; set; }
     }
     public override async Task<int> ExecuteAsync(int year, int day, Settings options)
     {
         var output = options.output;
+        var includecommon = options.includecommon;
         string code = await manager.GenerateCodeAsync(year, day);
 
         if (string.IsNullOrEmpty(output))
@@ -38,7 +42,7 @@ partial class Export : SinglePuzzleCommand<Export.Settings>
         else
         {
             this.output.WriteLine($"Exporting puzzle: {year}/{day} to {output}");
-            await manager.ExportCode(year, day, code, output);
+            await manager.ExportCode(year, day, code, includecommon, output);
         }
         return 0;
     }
