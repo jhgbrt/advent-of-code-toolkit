@@ -97,12 +97,15 @@ public static class AoC
         LogLevel level,
         bool debug)
     {
+        var assembly = resolver.GetEntryAssembly() ?? throw new NullReferenceException("GetEntryAssembly returned null"); 
+
         var config = new ConfigurationBuilder()
             .AddEnvironmentVariables()
-            .AddUserSecrets(resolver.GetEntryAssembly())
+            .AddUserSecrets(assembly)
             .Build();
 
-        var cookieValue = config["AOC_SESSION"];
+        var cookieValue = config["AOC_SESSION"] ?? throw new NullReferenceException("the AOC_SESSION variable is not set");
+        
         const string baseAddress = "https://adventofcode.com";
         var configuration = new Configuration(baseAddress, cookieValue);
         var services = new ServiceCollection();
