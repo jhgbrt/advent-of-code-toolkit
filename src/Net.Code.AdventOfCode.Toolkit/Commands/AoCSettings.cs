@@ -13,7 +13,13 @@ public interface IAoCSettings
     public int? day { get; }
 #pragma warning restore IDE1006 // Naming Styles
 }
-public class AoCSettings : CommandSettings, IAoCSettings
+
+public interface IManyPuzzleSettings : IAoCSettings
+{
+    bool all { get; }
+}
+
+public class AoCSettings : CommandSettings, IManyPuzzleSettings, IAoCSettings
 {
     [Description("Year (default: current year)")]
     [CommandArgument(0, "[YEAR]")]
@@ -21,6 +27,9 @@ public class AoCSettings : CommandSettings, IAoCSettings
     [Description("Day (default during advent: current day, null otherwise)")]
     [CommandArgument(1, "[DAY]")]
     public int? day { get; set; }
+    [Description("Force executing this command for all puzzles")]
+    [CommandOption("--all")]
+    public bool all { get; set; }
     [Description("Set the log level. Valid values: Trace, Debug, Information, Warning, Error")]
     [CommandOption("--loglevel")]
     public LogLevel LogLevel { get; set; } = LogLevel.Information;

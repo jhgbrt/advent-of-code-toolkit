@@ -5,7 +5,7 @@ using Spectre.Console.Cli;
 
 namespace Net.Code.AdventOfCode.Toolkit.Commands;
 
-abstract class ManyPuzzlesCommand<TSettings> : AsyncCommand<TSettings> where TSettings : CommandSettings, IAoCSettings
+abstract class ManyPuzzlesCommand<TSettings> : AsyncCommand<TSettings> where TSettings : CommandSettings, IManyPuzzleSettings
 {
     private readonly AoCLogic AoCLogic;
 
@@ -16,9 +16,9 @@ abstract class ManyPuzzlesCommand<TSettings> : AsyncCommand<TSettings> where TSe
 
     public override async Task<int> ExecuteAsync(CommandContext context, TSettings options)
     {
-        (var year, var day) = (options.year, options.day);
+        var (year, day, all) = (options.year, options.day, options.all);
         int result = 0;
-        foreach (var (y, d) in AoCLogic.Puzzles(year, day))
+        foreach (var (y, d) in AoCLogic.Puzzles(year, day, all))
         {
             var v = await ExecuteAsync(y, d, options);
             if (v != 0)

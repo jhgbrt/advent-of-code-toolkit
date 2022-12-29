@@ -17,18 +17,17 @@ class AoCLogic
     public int? Day => Now.Month == 12 && Now.Day >= 1 && Now.Day <= 25 ? Now.Day : null;
     public IEnumerable<(int year, int day)> Puzzles()
         => from year in Years() from day in Days(year) select (year, day);
-    public IEnumerable<(int year, int day)> Puzzles(int? year, int? day)
+    public IEnumerable<(int year, int day)> Puzzles(int? year, int? day, bool all)
     {
 
-        (year, day) = (year, day) switch
+        (year, day) = (year, day, all) switch
         {
-            (year: null, day: null) when InAdvent => (Now.Year, Now.Day),
-            (year: null, day: null) when !InAdvent && Now.Month == 12 => (Now.Year, null),
-            (year: null, day: null) when !InAdvent => (null, null),
-
-            (year: null, day: not null) when InAdvent => (Now.Year, day.Value),
-            (year: null, day: not null) when !InAdvent => throw new ArgumentException("Outside the advent, it's meaningless to only specify a day"),
-
+            { all: true } => (null, null),
+            { year: null, day: null } when InAdvent => (Now.Year, Now.Day),
+            { year: null, day: null } when !InAdvent && Now.Month == 12 => (Now.Year, null),
+            { year: null, day: null } when !InAdvent => (null, null),
+            { year: null, day: not null } when InAdvent => (Now.Year, day.Value),
+            { year: null, day: not null } when !InAdvent => throw new ArgumentException("Outside the advent, it's meaningless to only specify a day"),
             _ => (year, day)
         };
 
