@@ -20,7 +20,10 @@ using Spectre.Console.Cli;
 using Spectre.Console.Rendering;
 
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Reflection;
+using System.Text;
+using System.Xml.Linq;
 
 public static class AoC
 {
@@ -84,10 +87,23 @@ public static class AoC
             {
                 config.PropagateExceptions();
                 config.ValidateExamples();
-            }
+            };
+            config.SetInterceptor(new TraceInterceptor());
         });
 
+        app.SetDefaultCommand<Run>();
         return await app.RunAsync(args);
+    }
+
+    class TraceInterceptor : ICommandInterceptor
+    {
+        public void Intercept(CommandContext context, CommandSettings settings)
+        {
+            Trace.TraceInformation($"command name: {context.Name}");
+            var info = from p in settings.GetType().GetProperties()
+                       select $"{{ {p.Name}: {p.GetValue(settings)} }}";
+            Trace.TraceInformation($"options: {{ {string.Join(",", info)} }}");
+        }
     }
 
     static Task<ServiceCollection> InitializeServicesAsync(
@@ -132,6 +148,11 @@ public static class AoC
         foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(CommandSettings))))
         {
             services.AddTransient(type);
+        }
+
+        if (level == LogLevel.Trace)
+        {
+            Trace.Listeners.Add(new ConsoleTraceListener());
         }
         return Task.FromResult(services);
     }

@@ -38,10 +38,15 @@ class CodeManager : ICodeManager
         await client.GetPuzzleAsync(year, day, !force);
 
         await codeFolder.CreateIfNotExists();
+
         var code = await templateDir.ReadCode(year, day);
         await codeFolder.WriteCode(code);
         await codeFolder.WriteSample("");
         await codeFolder.WriteInput(input);
+        if (templateDir.Notebook.Exists)
+        {
+            codeFolder.CopyFile(templateDir.Notebook);
+        }
     }
 
     public async Task<string> GenerateCodeAsync(int year, int day)

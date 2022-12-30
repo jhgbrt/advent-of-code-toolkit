@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 
 using Net.Code.AdventOfCode.Toolkit.Core;
 
+using System.Diagnostics.Tracing;
+
 namespace Net.Code.AdventOfCode.Toolkit.Logic;
 
 class FileSystem : IFileSystem
@@ -35,6 +37,7 @@ class FileSystem : IFileSystem
         private readonly DirectoryInfo dir;
         protected readonly ILogger logger;
         public Folder(string path, ILogger logger) { dir = new DirectoryInfo(path); this.logger = logger; }
+        public DirectoryInfo Directory => dir;
         public string GetFileName(string file) => Path.Combine(dir.FullName, file);
         public bool Exists => dir.Exists;
         public Task CreateIfNotExists()
@@ -73,6 +76,13 @@ class FileSystem : IFileSystem
             }
             return Task.CompletedTask;
         }
+        public void CopyFile(FileInfo source)
+        {
+            var n = GetFileName(source.Name);
+            logger.LogTrace($"COPY: {source} -> {n}");
+            source.CopyTo(n, true);
+        }
+
         public IEnumerable<FileInfo> GetFiles(string pattern) => dir.GetFiles(pattern);
         public override string ToString() => dir.FullName;
     }
@@ -89,12 +99,6 @@ class FileSystem : IFileSystem
 
         public new Task CreateIfNotExists() => base.CreateIfNotExists();
 
-        public void CopyFile(FileInfo source)
-        {
-            var destination = GetFileName(source.Name);
-            logger.LogTrace($"{source} -> {destination}");
-            source.CopyTo(destination, true);
-        }
         public void CopyFiles(IEnumerable<FileInfo> sources)
         {
             foreach (var source in sources) CopyFile(source);
@@ -126,9 +130,11 @@ class FileSystem : IFileSystem
         {
         }
         private string CODE => GetFileName("AoC.cs");
+        private string NOTEBOOK => GetFileName("aoc.ipynb");
         private string CSPROJ => GetFileName("aoc.csproj");
         public FileInfo Code => new FileInfo(CODE);
         public FileInfo CsProj => new FileInfo(CSPROJ);
+        public FileInfo Notebook => new FileInfo(NOTEBOOK);
         public async Task<string> ReadCode(int year, int day)
         {
             var template = await ReadFile(CODE);

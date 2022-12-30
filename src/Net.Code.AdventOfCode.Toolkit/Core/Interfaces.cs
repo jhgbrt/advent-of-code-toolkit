@@ -76,6 +76,7 @@ interface IFolder
 }
 interface ICodeFolder
 {
+    void CopyFile(FileInfo source);
     FileInfo Input { get; }
     FileInfo Sample { get; }
     Task CreateIfNotExists();
@@ -90,6 +91,7 @@ interface ITemplateFolder
 {
     FileInfo Code { get; }
     FileInfo CsProj { get; }
+    FileInfo Notebook { get; }
     Task<string> ReadCode(int year, int day);
 }
 interface IHttpClientWrapper : IDisposable
