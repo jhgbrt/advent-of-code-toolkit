@@ -17,7 +17,7 @@ class AoCLogic
     public int? Day => Now.Month == 12 && Now.Day >= 1 && Now.Day <= 25 ? Now.Day : null;
     public IEnumerable<(int year, int day)> Puzzles()
         => from year in Years() from day in Days(year) select (year, day);
-    public IEnumerable<(int year, int day)> Puzzles(int? year, int? day, bool all)
+    public IEnumerable<(int year, int day)> Puzzles(int? year, int? day, bool all = false)
     {
 
         (year, day) = (year, day, all) switch

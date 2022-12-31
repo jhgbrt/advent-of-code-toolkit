@@ -94,7 +94,7 @@ public class CommandTests
         var sut = new Export(manager, AoCLogic, Substitute.For<IInputOutputService>());
         await sut.ExecuteAsync(2021, 1, new());
         await manager.Received(1).GenerateCodeAsync(2021, 1);
-        await manager.DidNotReceive().ExportCode(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>());
+        await manager.DidNotReceive().ExportCode(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<string>());
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public class CommandTests
         var sut = new Export(manager, AoCLogic, Substitute.For<IInputOutputService>());
         await sut.ExecuteAsync(2021, 1, new Export.Settings { output = "output.txt" });
         await manager.Received(1).GenerateCodeAsync(2021, 1);
-        await manager.Received(1).ExportCode(2021, 1, "public class AoC202101 {}", "output.txt");
+        await manager.Received(1).ExportCode(2021, 1, "public class AoC202101 {}", false, "output.txt");
     }
 
     [Fact]
