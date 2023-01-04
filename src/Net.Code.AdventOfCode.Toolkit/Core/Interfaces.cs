@@ -31,6 +31,7 @@ interface ICodeManager
     Task ExportCode(int year, int day, string code, bool includecommon, string output);
     Task<string> GenerateCodeAsync(int year, int day);
     Task InitializeCodeAsync(int year, int day, bool force, Action<string> progress);
+    Task SyncPuzzleAsync(int year, int day);
 }
 
 interface IPuzzleManager

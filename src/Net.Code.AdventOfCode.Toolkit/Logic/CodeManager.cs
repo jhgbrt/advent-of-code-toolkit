@@ -49,6 +49,15 @@ class CodeManager : ICodeManager
         }
     }
 
+    public async Task SyncPuzzleAsync(int year, int day)
+    {
+        var input = await client.GetPuzzleInputAsync(year, day);
+        await client.GetPuzzleAsync(year, day, false);
+
+        var codeFolder = fileSystem.GetCodeFolder(year, day);
+        await codeFolder.WriteInput(input);
+    }
+
     public async Task<string> GenerateCodeAsync(int year, int day)
     {
         var dir = fileSystem.GetCodeFolder(year, day);
