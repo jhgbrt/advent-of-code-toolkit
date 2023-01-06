@@ -25,6 +25,8 @@ class AoCClient : IDisposable, IAoCClient
 
     public async Task<(HttpStatusCode status, string content)> PostAnswerAsync(int year, int day, int part, string value)
     {
+        await VerifyAuthorized();
+
         var formValues = new Dictionary<string, string>()
         {
             ["level"] = part.ToString(),
@@ -129,12 +131,19 @@ class AoCClient : IDisposable, IAoCClient
 
         }
     }
-
+    private async Task VerifyAuthorized()
+    {
+        // not all endpoints return the correct status code
+        // therefore we request a small input, this endpoint does give 404 when not authorized.
+        (var status, _) = await client.GetAsync($"{2015}/day/4/input");
+        if (status == HttpStatusCode.Unauthorized) throw new UnauthorizedAccessException("You are not logged in. This probably means you need to renew your AOC_SESSION cookie. Log in on adventofcode.com, copy the session cookie and set it as a user secret or environment variable.");
+    }
     private async Task<(HttpStatusCode StatusCode, string Content)> GetAsync(int? year, int? day, string name, string path, bool usecache)
     {
         string content;
         if (!cache.Exists(year, day, name) || !usecache)
         {
+            await VerifyAuthorized();
             (var status, content) = await client.GetAsync(path);
             if (status != HttpStatusCode.OK) return (status, content);
             await cache.WriteToCache(year, day, name, content);
