@@ -20,6 +20,7 @@ public class CodeManagerTests
 
         var codeFolder = Substitute.For<ICodeFolder>();
         var templateFolder = Substitute.For<ITemplateFolder>();
+        templateFolder.Notebook.Returns(new FileInfo("aoc.ipynb"));
 
         codeFolder.Exists.Returns(codeFolderExists);
 
@@ -90,10 +91,9 @@ class MyClass
         Assert.Equal(@"var input = File.ReadAllLines(""input.txt"");
 var myvariable = input.Select(int.Parse).ToArray();
 var sw = Stopwatch.StartNew();
-var part1 = Part1();
+var part1 = Solve(1);
 var part2 = Part2();
 Console.WriteLine((part1, part2, sw.Elapsed));
-object Part1() => Solve(1);
 object Part2()
 {
     return Solve(2);

@@ -81,10 +81,10 @@ public class CommandTests
     [Fact]
     public async Task Sync()
     {
-        var manager = CreatePuzzleManager();
+        var manager = CreateCodeManager();
         var sut = new Sync(manager, AoCLogic, Substitute.For<IInputOutputService>());
         await sut.ExecuteAsync(2021, 1, new());
-        await manager.Received(1).Sync(2021, 1);
+        await manager.Received(1).SyncPuzzleAsync(2021, 1);
     }
 
     [Fact]
