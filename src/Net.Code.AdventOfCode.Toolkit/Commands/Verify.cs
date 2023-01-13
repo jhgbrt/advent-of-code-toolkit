@@ -28,6 +28,3 @@ class Verify : ManyPuzzlesCommand<AoCSettings>
     }
 
 }
-
-
-

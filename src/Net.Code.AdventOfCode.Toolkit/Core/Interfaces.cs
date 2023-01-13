@@ -18,7 +18,13 @@ interface IAoCRunner
 {
     Task<DayResult> Run(string? typeName, int year, int day, Action<int, Result> progress);
 }
-
+interface IRepository
+{
+    IQueryable<Puzzle> Puzzles { get; }
+    IQueryable<DayResult> Results { get; }
+    public void AddPuzzle(Puzzle puzzle);
+    public void SaveResult(DayResult result);
+}
 interface ICache
 {
     bool Exists(int? year, int? day, string name);
