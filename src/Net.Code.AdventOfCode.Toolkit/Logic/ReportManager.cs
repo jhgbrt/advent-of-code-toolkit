@@ -29,11 +29,11 @@ class ReportManager : IReportManager
                 p.puzzle.Day,
                 p.puzzle.Answer.part1,
                 p.puzzle.Answer.part2,
-                p.result.part1.Value,
-                p.result.part1.Elapsed,
+                p.result.Part1.Value,
+                p.result.Part1.Elapsed,
                 comparisonResult.part1,
-                p.result.part2.Value,
-                p.result.part2.Elapsed,
+                p.result.Part2.Value,
+                p.result.Part2.Elapsed,
                 comparisonResult.part2,
                 p.result.Elapsed
                 );

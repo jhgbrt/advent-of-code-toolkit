@@ -60,7 +60,7 @@ class PuzzleManager : IPuzzleManager
 
     public async Task SaveResult(DayResult result)
     {
-        await cache.WriteToCache(result.year, result.day, "result.json", JsonSerializer.Serialize(result));
+        await cache.WriteToCache(result.Year, result.Day, "result.json", JsonSerializer.Serialize(result));
     }
 }
 

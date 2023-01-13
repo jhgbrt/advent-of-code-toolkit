@@ -11,6 +11,7 @@ using Microsoft.Win32;
 
 using Net.Code.AdventOfCode.Toolkit.Commands;
 using Net.Code.AdventOfCode.Toolkit.Core;
+using Net.Code.AdventOfCode.Toolkit.Data;
 using Net.Code.AdventOfCode.Toolkit.Logic;
 
 using NodaTime;
@@ -75,6 +76,7 @@ public static class AoC
         {
             AddCommand<Run>(config);
             AddCommand<Verify>(config);
+            AddCommand<Migrate>(config);
             AddCommand<Init>(config);
             AddCommand<Sync>(config);
             AddCommand<Show>(config);
@@ -143,6 +145,7 @@ public static class AoC
         services.AddTransient<IEngine, Engine>();
         services.AddSingleton(clock);
         services.AddSingleton(io);
+        services.AddDbContext<AoCDbContext>();
         foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(ICommand))))
         {
             services.AddTransient(type);

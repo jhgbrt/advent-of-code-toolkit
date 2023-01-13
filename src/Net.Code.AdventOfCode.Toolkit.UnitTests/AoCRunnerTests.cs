@@ -35,8 +35,8 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             resolver.GetEntryAssembly().Returns(assembly);
             var runner = new AoCRunner(logger, resolver);
             var result = await runner.Run("AoCTest.Year{0}.Day{1:00}.AoC", 2017, 3, (i, s) => { });
-            Assert.Equal("1", result.part1.Value);
-            Assert.Equal("2", result.part2.Value);
+            Assert.Equal("1", result.Part1.Value);
+            Assert.Equal("2", result.Part2.Value);
         }
         [Fact]
         public async Task Run_WithoutTypeName_Test()
@@ -47,8 +47,8 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             resolver.GetEntryAssembly().Returns(assembly);
             var runner = new AoCRunner(logger, resolver);
             var result = await runner.Run(null, 2017, 3, (i, s) => { });
-            Assert.Equal("1", result.part1.Value);
-            Assert.Equal("2", result.part2.Value);
+            Assert.Equal("1", result.Part1.Value);
+            Assert.Equal("2", result.Part2.Value);
 
         }
     }

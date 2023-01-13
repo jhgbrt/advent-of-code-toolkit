@@ -3,6 +3,7 @@
 using NodaTime;
 
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 enum ResultStatus
 {
@@ -22,11 +23,33 @@ record Answer(string part1, string part2)
 {
     public static Answer Empty => new Answer(string.Empty, string.Empty);
 }
-record DayResult(int year, int day, Result part1, Result part2)
+class DayResult
 {
+    [JsonPropertyName("year")]
+    public int Year { get; init; }
+    [JsonPropertyName("day")]
+    public int Day { get; init; }
+    [JsonPropertyName("part1")]
+    public Result Part1 { get; init; }
+    [JsonPropertyName("part2")]
+    public Result Part2 { get; init; }
+    public DayResult(int year, int day, Result part1, Result part2)
+    {
+        Year = year;
+        Day = day;
+        Part1 = part1;
+        Part2 = part2;
+    }
+
+    private DayResult()
+    {
+        Part1 = Result.Empty;
+        Part2 = Result.Empty;
+    }
+
     public readonly static DayResult Empty = new DayResult(0, 0, Result.Empty, Result.Empty);
     public static DayResult NotImplemented(int year, int day) => new DayResult(year, day, Result.Empty, Result.Empty);
-    public TimeSpan Elapsed => part1.Elapsed + part2.Elapsed;
+    public TimeSpan Elapsed => Part1.Elapsed + Part2.Elapsed;
 }
 
 record Result(ResultStatus Status, string Value, TimeSpan Elapsed)
@@ -41,8 +64,28 @@ record Result(ResultStatus Status, string Value, TimeSpan Elapsed)
     };
 }
 
-record Puzzle(int Year, int Day, string Input, Answer Answer, Status Status)
+class Puzzle
 {
+    public int Year { get; init; }
+    public int Day { get; init; }
+    public string Input { get; init; }
+    public Answer Answer { get; init; }
+    public Status Status { get;init; }
+
+    public Puzzle(int year, int day, string input, Answer answer, Status status)
+    {
+        Year = year;
+        Day = day;
+        Input = input;
+        Answer = answer;
+        Status = status;
+    }
+    private Puzzle(string input)
+    {
+        Input = input;
+        Answer = Answer.Empty;
+    }
+
     public int Unanswered => Status switch { Status.Completed => 0, Status.AnsweredPart1 => 1, _ => 2 };
     public static Puzzle Locked(int year, int day) => new(year, day, string.Empty, Answer.Empty, Status.Locked);
     public static Puzzle Unlocked(int year, int day, string input, Answer answer) => new(year, day, input, answer, answer switch
@@ -55,12 +98,12 @@ record Puzzle(int Year, int Day, string Input, Answer Answer, Status Status)
 
     public ComparisonResult Compare(DayResult result)
     {
-        if ((result.year, result.day) != (Year, Day)) throw new InvalidOperationException("Result is for another day");
+        if ((result.Year, result.Day) != (Year, Day)) throw new InvalidOperationException("Result is for another day");
 
         return Day switch
         {
-            25 => new ComparisonResult(result.part1.Verify(Answer.part1).Status, ResultStatus.Ok),
-            _ => new ComparisonResult(result.part1.Verify(Answer.part1).Status, result.part2.Verify(Answer.part2).Status)
+            25 => new ComparisonResult(result.Part1.Verify(Answer.part1).Status, ResultStatus.Ok),
+            _ => new ComparisonResult(result.Part1.Verify(Answer.part1).Status, result.Part2.Verify(Answer.part2).Status)
         };
     }
 
@@ -79,15 +122,15 @@ record DailyStars(int Day, Instant? FirstStar, Instant? SecondStar);
 
 record PuzzleResultStatus(Puzzle puzzle, DayResult result)
 {
-    public bool Ok => result.part1.Value == puzzle.Answer.part1 && result.part2.Value == puzzle.Answer.part2;
+    public bool Ok => result.Part1.Value == puzzle.Answer.part1 && result.Part2.Value == puzzle.Answer.part2;
 
     public string ToReportLine()
     {
         var duration = result.Elapsed.ToString();
         var comparisonResult = puzzle.Compare(result);
-        var status1 = GetReportPart(comparisonResult.part1, puzzle.Answer.part1, result.part1.Value, 1);
-        var status2 = GetReportPart(comparisonResult.part2, puzzle.Answer.part2, result.part2.Value, 2);
-        return $"{result.year}-{result.day:00} {status1.status}/{status2.status} - {duration} - {status1.explanation} {status2.explanation}";
+        var status1 = GetReportPart(comparisonResult.part1, puzzle.Answer.part1, result.Part1.Value, 1);
+        var status2 = GetReportPart(comparisonResult.part2, puzzle.Answer.part2, result.Part2.Value, 2);
+        return $"{result.Year}-{result.Day:00} {status1.status}/{status2.status} - {duration} - {status1.explanation} {status2.explanation}";
     }
 
     public string ToReportLineMarkup()
@@ -102,9 +145,9 @@ record PuzzleResultStatus(Puzzle puzzle, DayResult result)
         };
 
         var comparisonResult = puzzle.Compare(result);
-        var status1 = GetReportPart(comparisonResult.part1, puzzle.Answer.part1, result.part1.Value, 1);
-        var status2 = GetReportPart(comparisonResult.part2, puzzle.Answer.part2, result.part2.Value, 2);
-        return $"{result.year}-{result.day:00} [[[{status1.color}]{status1.status}[/]]]/[[[{status2.color}]{status2.status}[/]]] [{dcolor}]{duration}[/]{status1.explanation} {status2.explanation}";
+        var status1 = GetReportPart(comparisonResult.part1, puzzle.Answer.part1, result.Part1.Value, 1);
+        var status2 = GetReportPart(comparisonResult.part2, puzzle.Answer.part2, result.Part2.Value, 2);
+        return $"{result.Year}-{result.Day:00} [[[{status1.color}]{status1.status}[/]]]/[[[{status2.color}]{status2.status}[/]]] [{dcolor}]{duration}[/]{status1.explanation} {status2.explanation}";
     }
     (string status, ConsoleColor color, string explanation) GetReportPart(ResultStatus status, string answer, string result, int part) => status switch
     {
