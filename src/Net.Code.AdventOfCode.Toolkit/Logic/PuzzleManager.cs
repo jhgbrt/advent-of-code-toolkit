@@ -1,8 +1,5 @@
 ﻿
-using Microsoft.EntityFrameworkCore;
-
 using Net.Code.AdventOfCode.Toolkit.Core;
-using Net.Code.AdventOfCode.Toolkit.Data;
 
 using System.Net;
 using System.Text;
@@ -13,9 +10,9 @@ namespace Net.Code.AdventOfCode.Toolkit.Logic;
 class PuzzleManager : IPuzzleManager
 {
     private readonly IAoCClient client;
-    private readonly AoCDbContext cache;
+    private readonly ICache cache;
 
-    public PuzzleManager(IAoCClient client, AoCDbContext cache)
+    public PuzzleManager(IAoCClient client, ICache cache)
     {
         this.client = client;
         this.cache = cache;
@@ -40,8 +37,9 @@ class PuzzleManager : IPuzzleManager
     }
     public async Task<DayResult> GetPuzzleResult(int y, int d)
     {
-        return await cache.Results.FirstOrDefaultAsync(r => r.Year == y && r.Day == d)
-            ?? DayResult.NotImplemented(y, d);
+        return cache.Exists(y, d, "result.json")
+            ? JsonSerializer.Deserialize<DayResult>(await cache.ReadFromCache(y, d, "result.json"))!
+            : DayResult.NotImplemented(y, d);
     }
 
     public async Task<(bool success, HttpStatusCode status, string content)> Post(int year, int day, int part, string value)
@@ -62,17 +60,7 @@ class PuzzleManager : IPuzzleManager
 
     public async Task SaveResult(DayResult result)
     {
-        var current = await cache.Results.FirstOrDefaultAsync(r => r.Year == result.Year && r.Day == result.Day);
-        if (current != null)
-        {
-            current.Part1 = result.Part1;
-            current.Part2 = result.Part2;
-        }
-        else
-        {
-            await cache.Results.AddAsync(result);
-        }
-        await cache.SaveChangesAsync();
+        await cache.WriteToCache(result.Year, result.Day, "result.json", JsonSerializer.Serialize(result));
     }
 }
 

@@ -30,9 +30,9 @@ class DayResult
     [JsonPropertyName("day")]
     public int Day { get; init; }
     [JsonPropertyName("part1")]
-    public Result Part1 { get; set; }
+    public Result Part1 { get; init; }
     [JsonPropertyName("part2")]
-    public Result Part2 { get; set; }
+    public Result Part2 { get; init; }
     public DayResult(int year, int day, Result part1, Result part2)
     {
         Year = year;

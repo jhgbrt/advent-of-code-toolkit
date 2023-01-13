@@ -12,36 +12,14 @@ namespace Net.Code.AdventOfCode.Toolkit.Commands;
 class Migrate : AsyncCommand<Migrate.Settings>
 {
     public class Settings : CommandSettings { }
-    private readonly IAoCClient aocclient;
-    private readonly ICache cache;
-    private readonly IPuzzleManager puzzleManager;
-    private readonly AoCDbContext dbcontext;
-    private readonly AoCLogic AoCLogic;
-
-    public Migrate(AoCDbContext dbcontext, IAoCClient client, AoCLogic aoCLogic, IPuzzleManager puzzleManager, ICache cache)
+    private readonly IAoCDbContext dbcontext;
+    public Migrate(IAoCDbContext dbcontext)
     {
         this.dbcontext = dbcontext;
-        this.aocclient = client;
-        this.AoCLogic = aoCLogic;
-        this.puzzleManager = puzzleManager;
-        this.cache = cache;
     }
     public async override Task<int> ExecuteAsync(CommandContext context, Settings settings)
     {
         dbcontext.Migrate();
-        foreach (var (y, d) in AoCLogic.Puzzles())
-        {
-            Console.WriteLine((y,d));
-            var json = await cache.ReadFromCache(y, d, "result.json");
-            if (json != null)
-            {
-                var result = JsonSerializer.Deserialize<DayResult>(json)!;
-                Console.WriteLine((result.Year, result.Day));
-                dbcontext.Results.Add(result);
-            }
-        }
-        await dbcontext.SaveChangesAsync();
-
         return 0;
     }
 }
