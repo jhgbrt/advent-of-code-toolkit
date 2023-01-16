@@ -30,11 +30,10 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         public async Task Run_WithTypeName_Test()
         {
             var logger = Substitute.For<ILogger<AoCRunner>>();
-            var cache = Substitute.For<ICache>();
             var resolver = Substitute.For<IAssemblyResolver>();
             var assembly = Assembly.GetExecutingAssembly();
             resolver.GetEntryAssembly().Returns(assembly);
-            var runner = new AoCRunner(logger, cache, resolver);
+            var runner = new AoCRunner(logger, resolver);
             var result = await runner.Run("AoCTest.Year{0}.Day{1:00}.AoC", 2017, 3, (i, s) => { });
             Assert.Equal("1", result.part1.Value);
             Assert.Equal("2", result.part2.Value);
@@ -43,11 +42,10 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         public async Task Run_WithoutTypeName_Test()
         {
             var logger = Substitute.For<ILogger<AoCRunner>>();
-            var cache = Substitute.For<ICache>();
             var resolver = Substitute.For<IAssemblyResolver>();
             var assembly = Assembly.GetExecutingAssembly();
             resolver.GetEntryAssembly().Returns(assembly);
-            var runner = new AoCRunner(logger, cache, resolver);
+            var runner = new AoCRunner(logger, resolver);
             var result = await runner.Run(null, 2017, 3, (i, s) => { });
             Assert.Equal("1", result.part1.Value);
             Assert.Equal("2", result.part2.Value);

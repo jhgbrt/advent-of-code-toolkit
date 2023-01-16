@@ -14,7 +14,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
     public class PuzzleManagerTests
     {
         [Fact]
-        public async Task GetPuzzle_Calls_GetPuzzleWithoutCache()
+        public async Task GetPuzzle_Calls_GetPuzzleAsync()
         {
             var client = Substitute.For<IAoCClient>();
             var cache = Substitute.For<ICache>();
@@ -22,20 +22,9 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
 
             var puzzle = await m.GetPuzzle(2021, 1);
 
-            await client.Received().GetPuzzleAsync(2021, 1, false);
+            await client.Received().GetPuzzleAsync(2021, 1);
         }
 
-        [Fact]
-        public async Task GetPuzzleResult_Calls_GetPuzzleWithCache()
-        {
-            var client = Substitute.For<IAoCClient>();
-            var cache = Substitute.For<ICache>();
-            var m = new PuzzleManager(client, cache);
-
-            await m.GetPuzzleResult(2021, 1);
-
-            await client.Received().GetPuzzleAsync(2021, 1, true);
-        }
 
         [Theory]
         [InlineData(Status.Locked, false, 0)]

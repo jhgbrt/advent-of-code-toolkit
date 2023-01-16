@@ -20,10 +20,11 @@ public class ReportManagerTests
         var client = Substitute.For<IAoCClient>();
         var manager = Substitute.For<IPuzzleManager>();
 
+        manager.GetPuzzle(Arg.Any<int>(), Arg.Any<int>())
+            .Returns(callInfo => Puzzle.Unlocked(callInfo.ArgAt<int>(0), callInfo.ArgAt<int>(1), "input", Answer.Empty));
+
         manager.GetPuzzleResult(Arg.Any<int>(), Arg.Any<int>())
-            .Returns(callInfo => new PuzzleResultStatus(
-                new Puzzle(callInfo.ArgAt<int>(0), callInfo.ArgAt<int>(1), "", Answer.Empty, Status.Unlocked),
-                DayResult.NotImplemented(callInfo.ArgAt<int>(0), callInfo.ArgAt<int>(1)))
+            .Returns(callInfo => DayResult.NotImplemented(callInfo.ArgAt<int>(0), callInfo.ArgAt<int>(1))
             );
 
         var rm = new ReportManager(client, manager, new AoCLogic(TestClock.Create(2017,1,1,0,0,0)));

@@ -35,31 +35,32 @@ class PuzzleManager : IPuzzleManager
         var puzzle = await client.GetPuzzleAsync(y, d);
         return puzzle;
     }
-
-    public async Task<PuzzleResultStatus> GetPuzzleResult(int y, int d)
+    public async Task<DayResult> GetPuzzleResult(int y, int d)
     {
-        var puzzle = await client.GetPuzzleAsync(y, d);
-
-        var result = cache.Exists(y, d, "result.json")
+        return cache.Exists(y, d, "result.json")
             ? JsonSerializer.Deserialize<DayResult>(await cache.ReadFromCache(y, d, "result.json"))!
             : DayResult.NotImplemented(y, d);
-        return new PuzzleResultStatus(puzzle, result);
     }
 
     public async Task<(bool success, HttpStatusCode status, string content)> Post(int year, int day, int part, string value)
     {
         var (status, content) = await client.PostAnswerAsync(year, day, part, value);
         var success = content.StartsWith("That's the right answer");
-        var puzzle = await GetPuzzle(year, day);
+
 
         if (success)
         {
+            // when a new result is posted successfully, we need to update the puzzle data
+            await client.GetPuzzleAsync(year, day, false);
             var stats = await client.GetMemberAsync(year, false);
             content = new StringBuilder(content).AppendLine().AppendLine($"You now have {stats?.TotalStars} stars and a score of {stats?.LocalScore}").ToString();
         }
         return (success, status, content);
     }
 
-
+    public async Task SaveResult(DayResult result)
+    {
+        await cache.WriteToCache(result.year, result.day, "result.json", JsonSerializer.Serialize(result));
+    }
 }
 

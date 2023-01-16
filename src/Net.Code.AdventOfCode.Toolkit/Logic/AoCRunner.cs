@@ -6,7 +6,6 @@ using Net.Code.AdventOfCode.Toolkit.Core;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Net.Code.AdventOfCode.Toolkit.Logic;
@@ -14,13 +13,11 @@ namespace Net.Code.AdventOfCode.Toolkit.Logic;
 class AoCRunner : IAoCRunner
 {
     ILogger<AoCRunner> logger;
-    private readonly ICache cache;
     private readonly IAssemblyResolver resolver;
 
-    public AoCRunner(ILogger<AoCRunner> logger, ICache cache, IAssemblyResolver resolver)
+    public AoCRunner(ILogger<AoCRunner> logger, IAssemblyResolver resolver)
     {
         this.logger = logger;
-        this.cache = cache;
         this.resolver = resolver;
     }
 
@@ -44,8 +41,6 @@ class AoCRunner : IAoCRunner
         progress(2, t2);
 
         var result = new DayResult(year, day, t1, t2);
-
-        await cache.WriteToCache(year, day, "result.json", JsonSerializer.Serialize(result));
 
         return result;
     }

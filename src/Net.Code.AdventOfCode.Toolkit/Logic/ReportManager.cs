@@ -56,7 +56,9 @@ class ReportManager : IReportManager
     {
         foreach (var (year, day) in AoCLogic.Puzzles())
         {
-            var p = await manager.GetPuzzleResult(year, day);
+            var puzzle = await manager.GetPuzzle(year, day);
+            var result = await manager.GetPuzzleResult(year, day);
+            var p = new PuzzleResultStatus(puzzle, result);
             var comparisonResult = p.puzzle.Compare(p.result);
 
             if (status.HasValue && (comparisonResult.part1 != status.Value || comparisonResult.part2 != status.Value)) continue;

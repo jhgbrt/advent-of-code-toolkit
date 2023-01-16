@@ -19,7 +19,9 @@ class Verify : ManyPuzzlesCommand<AoCSettings>
 
     public override async Task<int> ExecuteAsync(int year, int day, AoCSettings options)
     {
-        var resultStatus = await manager.GetPuzzleResult(year, day);
+        var puzzle = await manager.GetPuzzle(year, day);
+        var result = await manager.GetPuzzleResult(year, day);
+        var resultStatus = new PuzzleResultStatus(puzzle, result);
         var reportLine = resultStatus.ToReportLineMarkup();
         io.MarkupLine(reportLine.ToString());
         if (!resultStatus.Ok)
