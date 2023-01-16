@@ -32,7 +32,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             var cache = Substitute.For<ICache>();
             var m = new PuzzleManager(client, cache);
 
-            await m.GetPuzzleResult(2021, 1, (i,r) => { });
+            await m.GetPuzzleResult(2021, 1);
 
             await client.Received().GetPuzzleAsync(2021, 1, true);
         }

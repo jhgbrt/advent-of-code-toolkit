@@ -36,7 +36,7 @@ interface ICodeManager
 
 interface IPuzzleManager
 {
-    Task<PuzzleResultStatus> GetPuzzleResult(int y, int d, Action<int, Result> status);
+    Task<PuzzleResultStatus> GetPuzzleResult(int y, int d);
     Task<(bool success, HttpStatusCode status, string content)> Post(int year, int day, int part, string value);
     Task<(bool status, string reason, int part)> PreparePost(int year, int day);
     Task Sync(int year, int day);

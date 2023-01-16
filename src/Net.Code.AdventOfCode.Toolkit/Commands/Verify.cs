@@ -19,7 +19,7 @@ class Verify : ManyPuzzlesCommand<AoCSettings>
 
     public override async Task<int> ExecuteAsync(int year, int day, AoCSettings options)
     {
-        var resultStatus = await manager.GetPuzzleResult(year, day, (part, result) => io.MarkupLine($"{year}-{day:00} part {part}: {result.Value} ({result.Elapsed})"));
+        var resultStatus = await manager.GetPuzzleResult(year, day);
         var reportLine = resultStatus.ToReportLineMarkup();
         io.MarkupLine(reportLine.ToString());
         if (!resultStatus.Ok)

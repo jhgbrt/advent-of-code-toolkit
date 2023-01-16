@@ -75,7 +75,7 @@ public class CommandTests
         IPuzzleManager manager = CreatePuzzleManager();
         var run = new Verify(manager, AoCLogic, Substitute.For<IInputOutputService>());
         await run.ExecuteAsync(2021, 1, new());
-        await manager.Received(1).GetPuzzleResult(2021, 1, Arg.Any<Action<int, Result>>());
+        await manager.Received(1).GetPuzzleResult(2021, 1);
     }
 
     [Fact]
@@ -168,7 +168,7 @@ public class CommandTests
         var manager = Substitute.For<IPuzzleManager>();
         foreach (var y in AoCLogic.Years())
             foreach (var d in Enumerable.Range(1, 25))
-                manager.GetPuzzleResult(y, d, Arg.Any<Action<int, Result>>()).Returns(
+                manager.GetPuzzleResult(y, d).Returns(
                     Task.FromResult(new PuzzleResultStatus(
                         new Puzzle(y, d, string.Empty, string.Empty, string.Empty, Answer.Empty, Status.Unlocked),
                         DayResult.NotImplemented(y, d)))

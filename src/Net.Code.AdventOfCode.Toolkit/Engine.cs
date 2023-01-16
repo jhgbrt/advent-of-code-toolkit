@@ -23,7 +23,7 @@ class Engine : IEngine
     /// <returns>(bool ok, string message): ok is true when the puzzle result is verifiably correct; false otherwise. The message gives more info.</returns>
     public async Task<(bool, string)> GetResultAsync(int year, int day)
     {
-        var status = await manager.GetPuzzleResult(year, day, (i, r) => { });
+        var status = await manager.GetPuzzleResult(year, day);
         return (status.Ok, status.ToReportLine());
     }
 }

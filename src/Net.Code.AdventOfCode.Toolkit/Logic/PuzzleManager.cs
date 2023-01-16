@@ -36,8 +36,7 @@ class PuzzleManager : IPuzzleManager
     }
 
     public async Task<PuzzleResultStatus> GetPuzzleResult(
-        int y, int d, Action<int, Result> status
-        )
+        int y, int d)
     {
         var puzzle = await client.GetPuzzleAsync(y, d);
 

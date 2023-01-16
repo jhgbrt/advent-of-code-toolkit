@@ -20,7 +20,7 @@ public class ReportManagerTests
         var client = Substitute.For<IAoCClient>();
         var manager = Substitute.For<IPuzzleManager>();
 
-        manager.GetPuzzleResult(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<Action<int,Result>>())
+        manager.GetPuzzleResult(Arg.Any<int>(), Arg.Any<int>())
             .Returns(callInfo => new PuzzleResultStatus(
                 new Puzzle(callInfo.ArgAt<int>(0), callInfo.ArgAt<int>(1), "", "", "", Answer.Empty, Status.Unlocked),
                 DayResult.NotImplemented(callInfo.ArgAt<int>(0), callInfo.ArgAt<int>(1)))
