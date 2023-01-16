@@ -22,7 +22,7 @@ public class ReportManagerTests
 
         manager.GetPuzzleResult(Arg.Any<int>(), Arg.Any<int>())
             .Returns(callInfo => new PuzzleResultStatus(
-                new Puzzle(callInfo.ArgAt<int>(0), callInfo.ArgAt<int>(1), "", "", "", Answer.Empty, Status.Unlocked),
+                new Puzzle(callInfo.ArgAt<int>(0), callInfo.ArgAt<int>(1), "", Answer.Empty, Status.Unlocked),
                 DayResult.NotImplemented(callInfo.ArgAt<int>(0), callInfo.ArgAt<int>(1)))
             );
 

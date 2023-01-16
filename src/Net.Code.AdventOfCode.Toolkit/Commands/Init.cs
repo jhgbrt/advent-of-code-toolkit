@@ -9,12 +9,14 @@ using System.ComponentModel;
 [Description("Initialize the code for a specific puzzle. Requires AOC_SESSION set as an environment variable")]
 class Init : SinglePuzzleCommand<Init.Settings>
 {
-    private readonly ICodeManager manager;
+    private readonly IPuzzleManager puzzleManager;
+    private readonly ICodeManager codeManager;
     private readonly IInputOutputService output;
 
-    public Init(ICodeManager manager, AoCLogic logic, IInputOutputService output) : base(logic)
+    public Init(IPuzzleManager puzzleManager, ICodeManager codeManager, AoCLogic logic, IInputOutputService output) : base(logic)
     {
-        this.manager = manager;
+        this.puzzleManager = puzzleManager;
+        this.codeManager = codeManager;
         this.output = output;
     }
     public class Settings : AoCSettings
@@ -27,7 +29,8 @@ class Init : SinglePuzzleCommand<Init.Settings>
     {
         var force = options.force ?? false;
         output.WriteLine($"The puzzle for {year}/{day} is unlocked; initializing code...");
-        await manager.InitializeCodeAsync(year, day, force, output.WriteLine);
+        var puzzle = await puzzleManager.GetPuzzle(year, day);
+        await codeManager.InitializeCodeAsync(puzzle, force, output.WriteLine);
         return 0;
     }
 

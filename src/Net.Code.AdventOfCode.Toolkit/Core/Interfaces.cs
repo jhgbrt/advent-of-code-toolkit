@@ -30,16 +30,16 @@ interface ICodeManager
 {
     Task ExportCode(int year, int day, string code, bool includecommon, string output);
     Task<string> GenerateCodeAsync(int year, int day);
-    Task InitializeCodeAsync(int year, int day, bool force, Action<string> progress);
-    Task SyncPuzzleAsync(int year, int day);
+    Task InitializeCodeAsync(Puzzle puzzle, bool force, Action<string> progress);
+    Task SyncPuzzleAsync(Puzzle puzzle);
 }
 
 interface IPuzzleManager
 {
+    Task<Puzzle> GetPuzzle(int y, int d);
     Task<PuzzleResultStatus> GetPuzzleResult(int y, int d);
     Task<(bool success, HttpStatusCode status, string content)> Post(int year, int day, int part, string value);
     Task<(bool status, string reason, int part)> PreparePost(int year, int day);
-    Task Sync(int year, int day);
 }
 
 interface IReportManager

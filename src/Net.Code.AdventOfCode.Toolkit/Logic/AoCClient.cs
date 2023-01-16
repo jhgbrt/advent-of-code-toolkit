@@ -192,7 +192,7 @@ class AoCClient : IDisposable, IAoCClient
         var innerHtml = string.Join("", articles.Zip(answers.Select(a => a.ParentNode)).Select(n => n.First.InnerHtml + n.Second.InnerHtml));
         var innerText = string.Join("", articles.Zip(answers.Select(a => a.ParentNode)).Select(n => n.First.InnerText + n.Second.InnerText));
 
-        return Puzzle.Unlocked(year, day, innerHtml, innerText, input, answer);
+        return Puzzle.Unlocked(year, day, input, answer);
     }
 
     public async Task<IEnumerable<(int id, string description)>> GetLeaderboardIds(bool usecache)

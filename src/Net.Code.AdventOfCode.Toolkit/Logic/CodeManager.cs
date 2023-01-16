@@ -6,8 +6,6 @@ using Microsoft.CodeAnalysis.Formatting;
 
 using Net.Code.AdventOfCode.Toolkit.Core;
 
-using System.Diagnostics;
-using System.Reflection;
 
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -15,17 +13,16 @@ namespace Net.Code.AdventOfCode.Toolkit.Logic;
 
 class CodeManager : ICodeManager
 {
-    private readonly IAoCClient client;
     private readonly IFileSystem fileSystem;
 
-    public CodeManager(IAoCClient client, IFileSystem fileSystem)
+    public CodeManager(IFileSystem fileSystem)
     {
-        this.client = client;
         this.fileSystem = fileSystem;
     }
 
-    public async Task InitializeCodeAsync(int year, int day, bool force, Action<string> progress)
+    public async Task InitializeCodeAsync(Puzzle puzzle, bool force, Action<string> progress)
     {
+        var (year, day) = (puzzle.Year, puzzle.Day);
         var codeFolder = fileSystem.GetCodeFolder(year, day);
         var templateDir = fileSystem.GetTemplateFolder();
 
@@ -34,8 +31,7 @@ class CodeManager : ICodeManager
             throw new Exception($"Puzzle for {year}/{day} already initialized. Use --force to re-initialize.");
         }
 
-        var input = await client.GetPuzzleInputAsync(year, day);
-        await client.GetPuzzleAsync(year, day, !force);
+        var input = puzzle.Input;
 
         await codeFolder.CreateIfNotExists();
 
@@ -49,13 +45,10 @@ class CodeManager : ICodeManager
         }
     }
 
-    public async Task SyncPuzzleAsync(int year, int day)
+    public async Task SyncPuzzleAsync(Puzzle puzzle)
     {
-        var input = await client.GetPuzzleInputAsync(year, day);
-        await client.GetPuzzleAsync(year, day, false);
-
-        var codeFolder = fileSystem.GetCodeFolder(year, day);
-        await codeFolder.WriteInput(input);
+        var codeFolder = fileSystem.GetCodeFolder(puzzle.Year, puzzle.Day);
+        await codeFolder.WriteInput(puzzle.Input);
     }
 
     public async Task<string> GenerateCodeAsync(int year, int day)

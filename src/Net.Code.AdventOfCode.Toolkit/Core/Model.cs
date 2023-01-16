@@ -41,11 +41,11 @@ record Result(ResultStatus Status, string Value, TimeSpan Elapsed)
     };
 }
 
-record Puzzle(int Year, int Day, string Html, string Text, string Input, Answer Answer, Status Status)
+record Puzzle(int Year, int Day, string Input, Answer Answer, Status Status)
 {
     public int Unanswered => Status switch { Status.Completed => 0, Status.AnsweredPart1 => 1, _ => 2 };
-    public static Puzzle Locked(int year, int day) => new(year, day, string.Empty, string.Empty, string.Empty, Answer.Empty, Status.Locked);
-    public static Puzzle Unlocked(int year, int day, string html, string text, string input, Answer answer) => new(year, day, html, text, input, answer, answer switch
+    public static Puzzle Locked(int year, int day) => new(year, day, string.Empty, Answer.Empty, Status.Locked);
+    public static Puzzle Unlocked(int year, int day, string input, Answer answer) => new(year, day, input, answer, answer switch
     {
         { part1: "", part2: "" } => Status.Unlocked,
         { part1: not "", part2: "" } => day < 25 ? Status.AnsweredPart1 : Status.Completed,

@@ -14,13 +14,13 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
     public class PuzzleManagerTests
     {
         [Fact]
-        public async Task Sync_Calls_GetPuzzleWithoutCache()
+        public async Task GetPuzzle_Calls_GetPuzzleWithoutCache()
         {
             var client = Substitute.For<IAoCClient>();
             var cache = Substitute.For<ICache>();
             var m = new PuzzleManager(client, cache);
 
-            await m.Sync(2021, 1);
+            var puzzle = await m.GetPuzzle(2021, 1);
 
             await client.Received().GetPuzzleAsync(2021, 1, false);
         }
@@ -48,7 +48,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             var cache = Substitute.For<ICache>();
             var m = new PuzzleManager(client, cache);
 
-            var puzzle = new Puzzle(2021, 1, "", "", "", Answer.Empty, status);
+            var puzzle = new Puzzle(2021, 1, "input", Answer.Empty, status);
             client.GetPuzzleAsync(2021, 1).Returns(Task.FromResult(puzzle));
 
             var result = await m.PreparePost(2021, 1);

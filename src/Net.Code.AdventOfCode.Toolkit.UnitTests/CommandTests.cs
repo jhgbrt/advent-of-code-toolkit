@@ -28,9 +28,10 @@ public class CommandTests
     public async Task Init()
     {
         var manager = CreateCodeManager();
-        var sut = new Init(manager, AoCLogic, Substitute.For<IInputOutputService>());
+        var puzzleManager = CreatePuzzleManager();
+        var sut = new Init(puzzleManager, manager, AoCLogic, Substitute.For<IInputOutputService>());
         await sut.ExecuteAsync(2021, 1, new());
-        await manager.Received(1).InitializeCodeAsync(2021, 1, false, Arg.Any<Action<string>>());
+        await manager.Received(1).InitializeCodeAsync(Arg.Is<Puzzle>(p => p.Year == 2021 && p.Day == 1), false, Arg.Any<Action<string>>());
     }
 
     [Fact]
@@ -64,7 +65,7 @@ public class CommandTests
     public async Task Run()
     {
         var manager = Substitute.For<IAoCRunner>();
-        IPuzzleManager puzzleManager = CreatePuzzleManager();
+        var puzzleManager = CreatePuzzleManager();
         var run = new Run(manager, puzzleManager, AoCLogic, Substitute.For<IInputOutputService>());
         await run.ExecuteAsync(2021, 1, new());
         await manager.Received(1).Run(null, 2021, 1, Arg.Any<Action<int, Result>>());
@@ -82,9 +83,10 @@ public class CommandTests
     public async Task Sync()
     {
         var manager = CreateCodeManager();
-        var sut = new Sync(manager, AoCLogic, Substitute.For<IInputOutputService>());
+        var puzzleManager = CreatePuzzleManager();
+        var sut = new Sync(puzzleManager, manager, AoCLogic, Substitute.For<IInputOutputService>());
         await sut.ExecuteAsync(2021, 1, new());
-        await manager.Received(1).SyncPuzzleAsync(2021, 1);
+        await manager.Received(1).SyncPuzzleAsync(Arg.Is<Puzzle>(p => p.Year == 2021 && p.Day == 1));
     }
 
     [Fact]
@@ -168,11 +170,13 @@ public class CommandTests
         var manager = Substitute.For<IPuzzleManager>();
         foreach (var y in AoCLogic.Years())
             foreach (var d in Enumerable.Range(1, 25))
+            {
+                var puzzle = Puzzle.Unlocked(y, d, "input", Answer.Empty);
+                manager.GetPuzzle(y, d).Returns(puzzle);
                 manager.GetPuzzleResult(y, d).Returns(
-                    Task.FromResult(new PuzzleResultStatus(
-                        new Puzzle(y, d, string.Empty, string.Empty, string.Empty, Answer.Empty, Status.Unlocked),
-                        DayResult.NotImplemented(y, d)))
+                    Task.FromResult(new PuzzleResultStatus(puzzle, DayResult.NotImplemented(y, d)))
                     );
+            }
 
         return manager;
     }

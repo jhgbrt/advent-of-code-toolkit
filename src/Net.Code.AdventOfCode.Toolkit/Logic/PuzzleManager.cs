@@ -30,13 +30,13 @@ class PuzzleManager : IPuzzleManager
         };
     }
 
-    public async Task Sync(int year, int day)
+    public async Task<Puzzle> GetPuzzle(int y, int d)
     {
-        await client.GetPuzzleAsync(year, day, false);
+        var puzzle = await client.GetPuzzleAsync(y, d);
+        return puzzle;
     }
 
-    public async Task<PuzzleResultStatus> GetPuzzleResult(
-        int y, int d)
+    public async Task<PuzzleResultStatus> GetPuzzleResult(int y, int d)
     {
         var puzzle = await client.GetPuzzleAsync(y, d);
 
@@ -50,7 +50,8 @@ class PuzzleManager : IPuzzleManager
     {
         var (status, content) = await client.PostAnswerAsync(year, day, part, value);
         var success = content.StartsWith("That's the right answer");
-        await Sync(year, day);
+        var puzzle = await GetPuzzle(year, day);
+
         if (success)
         {
             var stats = await client.GetMemberAsync(year, false);

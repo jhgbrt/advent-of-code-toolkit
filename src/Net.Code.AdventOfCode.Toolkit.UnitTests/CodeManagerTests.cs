@@ -14,9 +14,8 @@ public class CodeManagerTests
 {
     private static CodeManager CreateCodeManager(bool codeFolderExists)
     {
-        var client = Substitute.For<IAoCClient>();
         var filesystem = Substitute.For<IFileSystem>();
-        var m = new CodeManager(client, filesystem);
+        var m = new CodeManager(filesystem);
 
         var codeFolder = Substitute.For<ICodeFolder>();
         var templateFolder = Substitute.For<ITemplateFolder>();
@@ -61,8 +60,8 @@ class MyClass
     public async Task InitializeCode_WhenCodeFolderDoesNotExist_Succeeds()
     {
         CodeManager m = CreateCodeManager(false);
-
-        await m.InitializeCodeAsync(2021, 3, false, s => { });
+        var puzzle = Puzzle.Unlocked(2021, 3, "input", Answer.Empty);
+        await m.InitializeCodeAsync(puzzle, false, s => { });
     }
 
     [Fact]
@@ -70,15 +69,16 @@ class MyClass
     {
         CodeManager m = CreateCodeManager(true);
 
-        await m.InitializeCodeAsync(2021, 3, true, s => { });
+        var puzzle = Puzzle.Unlocked(2021, 3, "input", Answer.Empty);
+        await m.InitializeCodeAsync(puzzle, true, s => { });
     }
 
     [Fact]
-    public async Task InitializeCode_WhenCodeFolderExists_Trhows()
+    public async Task InitializeCode_WhenCodeFolderExists_Throws()
     {
         CodeManager m = CreateCodeManager(true);
-
-        await Assert.ThrowsAsync<Exception>(async () => await m.InitializeCodeAsync(2021, 3, false, s => { }));
+        var puzzle = Puzzle.Unlocked(2021, 3, "input", Answer.Empty);
+        await Assert.ThrowsAsync<Exception>(async () => await m.InitializeCodeAsync(puzzle, false, s => { }));
     }
 
     [Fact]
