@@ -30,12 +30,12 @@ class AoCRunner : IAoCRunner
             return DayResult.NotImplemented(year, day);
         }
 
-        var t1 = Run(() => aoc.Part1());
+        var t1 = await Run(() => aoc.Part1());
         logger.LogDebug($"{year}/{day}, Part 1: result = {t1.Value} - {t1.Elapsed}");
         progress(1, t1);
 
         var t2 = day < 25
-            ? Run(() => aoc.Part2())
+            ? await Run(() => aoc.Part2())
             : new Result(ResultStatus.Ok, "", TimeSpan.Zero);
         logger.LogDebug($"{year}/{day}, Part 2: result = {t2.Value} - {t2.Elapsed}");
         progress(2, t2);
@@ -119,10 +119,10 @@ class AoCRunner : IAoCRunner
         public object Part2() => part2();
     }
    
-    static Result Run(Func<object> f)
+    static async Task<Result> Run(Func<object> f)
     {
         var sw = Stopwatch.StartNew();
-        var result = f();
+        var result = await Task.Run(f);
         return result is null or "" or -1 ? Result.Empty : new Result(ResultStatus.Unknown, result.ToString() ?? string.Empty, sw.Elapsed);
     }
 

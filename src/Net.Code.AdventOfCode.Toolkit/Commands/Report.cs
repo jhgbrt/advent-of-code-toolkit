@@ -12,11 +12,13 @@ class Report : AsyncCommand<Report.Settings>
 {
     private readonly IReportManager manager;
     private readonly IInputOutputService io;
+    private readonly AoCLogic logic;
 
-    public Report(IReportManager manager, IInputOutputService io)
+    public Report(IReportManager manager, IInputOutputService io, AoCLogic logic)
     {
         this.manager = manager;
         this.io = io;
+        this.logic = logic;
     }
     public class Settings : CommandSettings
     {
@@ -30,7 +32,7 @@ class Report : AsyncCommand<Report.Settings>
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings options)
     {
-        var report = await manager.GetPuzzleReport(options.status, options.slowerthan).ToListAsync();
+        var report = await manager.GetPuzzleReport(options.status, options.slowerthan, logic.Puzzles()).ToListAsync();
         io.Write(report.ToTable());
         return 0;
     }

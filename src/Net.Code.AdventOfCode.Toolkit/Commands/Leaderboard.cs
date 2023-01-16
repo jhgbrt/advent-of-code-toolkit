@@ -13,10 +13,10 @@ namespace Net.Code.AdventOfCode.Toolkit.Commands;
 [Description("Show some stats from the configured private leaderboard. ")]
 class Leaderboard : AsyncCommand<Leaderboard.Settings>
 {
-    private readonly IReportManager manager;
+    private readonly ILeaderboardManager manager;
     private readonly IInputOutputService io;
     private readonly AoCLogic logic;
-    public Leaderboard(IReportManager manager, IInputOutputService io, AoCLogic logic)
+    public Leaderboard(ILeaderboardManager manager, IInputOutputService io, AoCLogic logic)
     {
         this.manager = manager;
         this.io = io;
@@ -53,13 +53,10 @@ class Leaderboard : AsyncCommand<Leaderboard.Settings>
             _ => throw new Exception("no leaderboards found")
         };
 
-        var tasks = (
-            from y in (options.all ? logic.Years() : Enumerable.Repeat(year, 1))
-            select manager.GetLeaderboardAsync(y, id)
-        ).ToArray();
-        await Task.WhenAll(tasks);
-        var entries = tasks.SelectMany(t => t.Result);
-
+        var entries = options.all
+            ? await manager.GetLeaderboardsAsync(id, logic.Years())
+            : await manager.GetLeaderboardAsync(year, id);
+            
         var q = from e in entries
                 group e by e.name into g
                 select new LeaderboardEntry(g.Key, 0, g.Sum(x => x.score), g.Sum(x => x.stars), g.Max(g => g.lastStar)) into e

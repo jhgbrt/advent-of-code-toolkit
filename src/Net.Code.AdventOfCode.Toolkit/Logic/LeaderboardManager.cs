@@ -1,0 +1,50 @@
+﻿
+using Net.Code.AdventOfCode.Toolkit.Core;
+
+using NodaTime;
+
+namespace Net.Code.AdventOfCode.Toolkit.Logic;
+
+class LeaderboardManager : ILeaderboardManager
+{
+    private readonly IAoCClient client;
+
+    public LeaderboardManager(IAoCClient client)
+    {
+        this.client = client;
+    }
+
+    public Task<IEnumerable<(int id, string description)>> GetLeaderboardIds(bool usecache)
+          => client.GetLeaderboardIds(usecache);
+
+    public async Task<IEnumerable<LeaderboardEntry>> GetLeaderboardsAsync(int id, IEnumerable<int> years)
+    {
+        var tasks = (
+            from y in years
+            select GetLeaderboardAsync(y, id)
+        ).ToArray();
+        await Task.WhenAll(tasks);
+        var entries = tasks.SelectMany(t => t.Result);
+        return entries;
+    }
+    public async Task<IEnumerable<LeaderboardEntry>> GetLeaderboardAsync(int year, int id)
+    {
+        var leaderboard = await client.GetLeaderBoardAsync(year, id, false);
+
+        if (leaderboard == null)
+        {
+            return Enumerable.Empty<LeaderboardEntry>();
+        }
+
+        return from m in leaderboard.Members.Values
+               let name = m.Name
+               let score = m.LocalScore
+               let stars = m.TotalStars
+               let lastStar = m.LastStarTimeStamp
+               where lastStar.HasValue && lastStar > Instant.MinValue
+               let dt = lastStar.Value.InUtc().ToDateTimeOffset().ToLocalTime()
+               orderby score descending
+               select new LeaderboardEntry(name, year, score, stars, dt);
+    }
+
+}

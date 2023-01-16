@@ -37,7 +37,7 @@ public class CommandTests
     [Fact]
     public async Task Leaderboard_WithId()
     {
-        var manager = CreateReportManager();
+        var manager = CreateLeaderboardManager();
         var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021, id = 123 });
         await manager.Received(1).GetLeaderboardAsync(2021, 123);
@@ -47,7 +47,7 @@ public class CommandTests
     [Fact]
     public async Task Leaderboard_NoId()
     {
-        var manager = CreateReportManager();
+        var manager = CreateLeaderboardManager();
         var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021 });
         await manager.Received(1).GetLeaderboardAsync(2021, 123);
@@ -55,10 +55,10 @@ public class CommandTests
     [Fact]
     public async Task Leaderboard_All()
     {
-        var manager = CreateReportManager();
+        var manager = CreateLeaderboardManager();
         var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021, all = true });
-        await manager.Received(7).GetLeaderboardAsync(Arg.Is<int>(i => i <= 2021 && i >= 2015), 123);
+        await manager.Received().GetLeaderboardsAsync(123, Arg.Any<IEnumerable<int>>());
     }
 
     [Fact]
@@ -134,26 +134,36 @@ public class CommandTests
     public async Task Report()
     {
         var manager = CreateReportManager();
-        var run = new Report(manager, Substitute.For<IInputOutputService>());
+        var run = new Report(manager, Substitute.For<IInputOutputService>(), AoCLogic);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "report", default), new() );
-        manager.Received().GetPuzzleReport(default, default);
+        manager.Received().GetPuzzleReport(default, default, Arg.Any<IEnumerable<(int y,int d)>>());
     }
 
     [Fact]
     public async Task Stats()
     {
-        var manager = CreateReportManager();
-        var run = new Stats(manager, Substitute.For<IInputOutputService>());
+        var manager = CreateMemberManager();
+        var run = new Stats(manager, Substitute.For<IInputOutputService>(), AoCLogic);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "stats", default), default!);
-        manager.Received().GetMemberStats();
+        manager.Received().GetMemberStats(Arg.Any<IEnumerable<int>>());
     }
-
     private IReportManager CreateReportManager()
     {
         var manager = Substitute.For<IReportManager>();
+        return manager;
+    }
+    private IMemberManager CreateMemberManager()
+    {
+        var manager = Substitute.For<IMemberManager>();
+        return manager;
+    }
+    private ILeaderboardManager CreateLeaderboardManager()
+    {
+        var manager = Substitute.For<ILeaderboardManager>();
         manager.GetLeaderboardIds(Arg.Any<bool>()).Returns(new[] { (123, "") });
         return manager;
     }
+
 
     private ICodeManager CreateCodeManager()
     {

@@ -43,12 +43,21 @@ interface IPuzzleManager
     Task<(bool status, string reason, int part)> PreparePost(int year, int day);
 }
 
-interface IReportManager
+interface ILeaderboardManager
 {
+    Task<IEnumerable<LeaderboardEntry>> GetLeaderboardsAsync(int id, IEnumerable<int> years);
     Task<IEnumerable<LeaderboardEntry>> GetLeaderboardAsync(int year, int id);
     Task<IEnumerable<(int id, string description)>> GetLeaderboardIds(bool usecache);
-    IAsyncEnumerable<(int year, MemberStats stats)> GetMemberStats();
-    IAsyncEnumerable<PuzzleReportEntry> GetPuzzleReport(ResultStatus? status, int? slowerthan);
+}
+
+interface IMemberManager
+{
+    IAsyncEnumerable<(int year, MemberStats stats)> GetMemberStats(IEnumerable<int> years);
+}
+
+interface IReportManager
+{
+    IAsyncEnumerable<PuzzleReportEntry> GetPuzzleReport(ResultStatus? status, int? slowerthan, IEnumerable<(int, int)> puzzles);
 }
 interface IFileSystem
 {

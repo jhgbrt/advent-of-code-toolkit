@@ -27,9 +27,10 @@ public class ReportManagerTests
             .Returns(callInfo => DayResult.NotImplemented(callInfo.ArgAt<int>(0), callInfo.ArgAt<int>(1))
             );
 
-        var rm = new ReportManager(client, manager, new AoCLogic(TestClock.Create(2017,1,1,0,0,0)));
+        var logic = new AoCLogic(TestClock.Create(2017, 1, 1, 0, 0, 0));
+        var rm = new ReportManager(manager);
 
-        var report = await rm.GetPuzzleReport(null, null).ToListAsync();
+        var report = await rm.GetPuzzleReport(null, null, logic.Puzzles()).ToListAsync();
 
         Assert.Equal(50, report.Count);
     }
@@ -49,9 +50,10 @@ public class ReportManagerTests
         client.GetMemberAsync(Arg.Any<int>(), true)
             .Returns(task);
 
-        var rm = new ReportManager(client, manager, new AoCLogic(clock));
+        var logic = new AoCLogic(clock);
+        var rm = new MemberManager(client);
 
-        var report = await rm.GetMemberStats().ToListAsync();
+        var report = await rm.GetMemberStats(logic.Years()).ToListAsync();
 
         Assert.Equal(3, report.Count);
 

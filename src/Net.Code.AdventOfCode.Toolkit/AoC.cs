@@ -133,6 +133,8 @@ public static class AoC
         services.AddTransient<IAoCRunner, AoCRunner>();
         services.AddTransient<ICodeManager, CodeManager>();
         services.AddTransient<IReportManager, ReportManager>();
+        services.AddTransient<ILeaderboardManager, LeaderboardManager>();
+        services.AddTransient<IMemberManager, MemberManager>();
         services.AddTransient<ICache, Cache>();
         services.AddTransient<IFileSystem, FileSystem>();
         services.AddSingleton<IAssemblyResolver>(resolver);
