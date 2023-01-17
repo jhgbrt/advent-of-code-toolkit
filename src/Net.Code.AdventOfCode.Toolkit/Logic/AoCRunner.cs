@@ -21,22 +21,21 @@ class AoCRunner : IAoCRunner
         this.logger = logger;
         this.resolver = resolver;
     }
-    public Task Test(string? typeName, int year, int day, Action<int, Result> progress)
+    public async Task Test(string? typeName, int year, int day, Action<int, Result> progress)
     {
         dynamic? aoc = GetAoC(typeName, year, day);
 
         if (aoc == null)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         int i = 1;
         foreach (Func<object> test in aoc.GetTests())
         {
-            var t = Run(() => test());
+            var t = await Run(() => test());
             progress(i++, t);
         }
-        return Task.CompletedTask;
     }
 
     public async Task<DayResult> Run(string? typeName, int year, int day, Action<int, Result> progress)
