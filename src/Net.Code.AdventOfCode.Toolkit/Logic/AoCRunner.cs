@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Net.Code.AdventOfCode.Toolkit.Core;
 
 using System.Diagnostics;
+using System.Dynamic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -19,6 +20,23 @@ class AoCRunner : IAoCRunner
     {
         this.logger = logger;
         this.resolver = resolver;
+    }
+    public Task Test(string? typeName, int year, int day, Action<int, Result> progress)
+    {
+        dynamic? aoc = GetAoC(typeName, year, day);
+
+        if (aoc == null)
+        {
+            return Task.CompletedTask;
+        }
+
+        int i = 1;
+        foreach (Func<object> test in aoc.GetTests())
+        {
+            var t = Run(() => test());
+            progress(i++, t);
+        }
+        return Task.CompletedTask;
     }
 
     public async Task<DayResult> Run(string? typeName, int year, int day, Action<int, Result> progress)
@@ -44,6 +62,8 @@ class AoCRunner : IAoCRunner
 
         return result;
     }
+
+
     bool IsCompilerGenerated(Type type) => type.GetCustomAttribute<CompilerGeneratedAttribute>() != null;
     private dynamic? GetAoC(string? typeName, int year, int day)
     {
@@ -99,24 +119,48 @@ class AoCRunner : IAoCRunner
             return null;
         }
 
+        var tests = type.GetMethods().Where(m => m.Name.StartsWith("Test")).ToArray();
+
         logger.LogInformation($"Using implementation type: {type}");
 
         if (type.IsAbstract)
-            return new Runner(part1, part2);
+            return new Runner(part1, part2, tests);
         else
             return Activator.CreateInstance(type);
     }
-    class Runner
+    class Runner : DynamicObject
     {
         readonly Func<object> part1;
         readonly Func<object> part2;
-        public Runner(MethodInfo part1, MethodInfo part2)
+        readonly Dictionary<string, Func<object>> tests;
+        public Runner(MethodInfo part1, MethodInfo part2, MethodInfo[] tests)
         {
             this.part1 = part1.CreateDelegate<Func<object>>();
             this.part2 = part2.CreateDelegate<Func<object>>();
+            this.tests = tests.ToDictionary(m => m.Name, m => m.CreateDelegate<Func<object>>());
         }
         public object Part1() => part1();
         public object Part2() => part2();
+
+        public Func<object>[] GetTests() => tests.Values.ToArray();
+
+        public override bool TryInvokeMember(InvokeMemberBinder binder, object?[]? args, out object? result)
+        {
+            if (tests.ContainsKey(binder.Name))
+            {
+                result = tests[binder.Name]();
+                return true;
+            }
+            return base.TryInvokeMember(binder, args, out result);
+        }
+    }
+
+    class Tester
+    {
+        public Tester(MethodInfo[] tests)
+        {
+
+        }
     }
    
     static async Task<Result> Run(Func<object> f)

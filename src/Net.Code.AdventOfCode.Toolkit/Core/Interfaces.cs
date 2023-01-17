@@ -17,6 +17,7 @@ interface IAoCClient : IDisposable
 interface IAoCRunner
 {
     Task<DayResult> Run(string? typeName, int year, int day, Action<int, Result> progress);
+    Task Test(string? typeName, int year, int day, Action<int, Result> progress);
 }
 interface IRepository
 {

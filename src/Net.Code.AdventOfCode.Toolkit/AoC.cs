@@ -75,6 +75,7 @@ public static class AoC
         app.Configure(config =>
         {
             AddCommand<Run>(config);
+            AddCommand<Test>(config);
             AddCommand<Verify>(config);
             AddCommand<Migrate>(config);
             AddCommand<Init>(config);
