@@ -14,13 +14,11 @@ class AoCClient : IDisposable, IAoCClient
 {
     readonly IHttpClientWrapper client;
     private readonly ILogger<AoCClient> logger;
-    private readonly ICache cache;
 
-    public AoCClient(IHttpClientWrapper client, ILogger<AoCClient> logger, ICache cache)
+    public AoCClient(IHttpClientWrapper client, ILogger<AoCClient> logger)
     {
         this.client = client;
         this.logger = logger;
-        this.cache = cache;
     }
 
     public async Task<(HttpStatusCode status, string content)> PostAnswerAsync(int year, int day, int part, string value)
@@ -42,9 +40,9 @@ class AoCClient : IDisposable, IAoCClient
         return (status, articles.First().InnerText);
     }
 
-    public async Task<LeaderBoard?> GetLeaderBoardAsync(int year, int id, bool usecache = true)
+    public async Task<LeaderBoard?> GetLeaderBoardAsync(int year, int id)
     {
-        (var statusCode, var content) = await GetAsync(year, null, $"leaderboard-{id}.json", $"{year}/leaderboard/private/view/{id}.json", usecache);
+        (var statusCode, var content) = await GetAsync($"{year}/leaderboard/private/view/{id}.json");
         if (statusCode != HttpStatusCode.OK || content.StartsWith("<"))
             return null;
         return Deserialize(year, content);
@@ -53,7 +51,7 @@ class AoCClient : IDisposable, IAoCClient
     public async Task<Member?> GetMemberAsync(int year, bool usecache = true)
     {
         var id = await GetMemberId();
-        var lb = await GetLeaderBoardAsync(year, id, usecache);
+        var lb = await GetLeaderBoardAsync(year, id);
         if (lb is null) return null;
         return lb.Members[id];
     }
@@ -138,64 +136,34 @@ class AoCClient : IDisposable, IAoCClient
         (var status, _) = await client.GetAsync($"{2015}/day/4/input");
         if (status == HttpStatusCode.Unauthorized) throw new UnauthorizedAccessException("You are not logged in. This probably means you need to renew your AOC_SESSION cookie. Log in on adventofcode.com, copy the session cookie and set it as a user secret or environment variable.");
     }
-    private async Task<(HttpStatusCode StatusCode, string Content)> GetAsync(int? year, int? day, string name, string path, bool usecache)
+    private async Task<(HttpStatusCode StatusCode, string Content)> GetAsync(string path)
     {
         string content;
-        if (!cache.Exists(year, day, name) || !usecache)
-        {
-            await VerifyAuthorized();
-            (var status, content) = await client.GetAsync(path);
-            if (status != HttpStatusCode.OK) return (status, content);
-            await cache.WriteToCache(year, day, name, content);
-        }
-        else
-        {
-            content = await cache.ReadFromCache(year, day, name);
-        }
-        return (HttpStatusCode.OK, content);
+        await VerifyAuthorized();
+        (var status, content) = await client.GetAsync(path);
+        return (status, content);
     }
 
     public async Task<string> GetPuzzleInputAsync(int year, int day)
     {
-        (var statusCode, var input) = await GetAsync(year, day, "input.txt", $"{year}/day/{day}/input", true);
+        (var statusCode, var input) = await GetAsync($"{year}/day/{day}/input");
         if (statusCode != HttpStatusCode.OK) return string.Empty;
         return input;
     }
 
-    public async Task<Puzzle> GetPuzzleAsync(int year, int day, bool usecache = true)
+    public async Task<Puzzle> GetPuzzleAsync(int year, int day)
     {
         HttpStatusCode statusCode;
-        (statusCode, var html) = await GetAsync(year, day, "puzzle.html", $"{year}/day/{day}", usecache);
+        (statusCode, var html) = await GetAsync($"{year}/day/{day}");
         if (statusCode != HttpStatusCode.OK) return Puzzle.Locked(year, day);
-
         var input = await GetPuzzleInputAsync(year, day);
-
-        var document = new HtmlDocument();
-        document.LoadHtml(html);
-
-        var articles = document.DocumentNode.SelectNodes("//article").ToArray();
-
-        var answers = (
-            from node in document.DocumentNode.SelectNodes("//p")
-            where node.InnerText.StartsWith("Your puzzle answer was")
-            select node.SelectSingleNode("code")
-            ).ToArray();
-
-        var answer = answers.Length switch
-        {
-            2 => new Answer(answers[0].InnerText, answers[1].InnerText),
-            1 => new Answer(answers[0].InnerText, string.Empty),
-            0 => Answer.Empty,
-            _ => throw new Exception($"expected 0, 1 or 2 answers, not {answers.Length}")
-        };
-
-        return Puzzle.Unlocked(year, day, input, answer);
+        return new PuzzleHtml(year, day, html, input).GetPuzzle();
     }
 
-    public async Task<IEnumerable<(int id, string description)>> GetLeaderboardIds(bool usecache)
+    public async Task<IEnumerable<(int id, string description)>> GetLeaderboardIds()
     {
         var year = DateTime.Now.Year;
-        (var statusCode, var html) = await GetAsync(null, null, "leaderboard.html", $"{year}/leaderboard/private", usecache);
+        (var statusCode, var html) = await GetAsync($"{year}/leaderboard/private");
         if (statusCode != HttpStatusCode.OK) return Enumerable.Empty<(int, string)>();
 
         var document = new HtmlDocument();
@@ -218,7 +186,7 @@ class AoCClient : IDisposable, IAoCClient
 
     public async Task<int> GetMemberId()
     {
-        (var statusCode, var html) = await GetAsync(null, null, "settings.html", "/settings", true);
+        (var statusCode, var html) = await GetAsync("/settings");
         if (statusCode != HttpStatusCode.OK) return 0;
 
         var document = new HtmlDocument();

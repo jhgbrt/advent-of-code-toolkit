@@ -1,5 +1,4 @@
-﻿
-using Net.Code.AdventOfCode.Toolkit.Core;
+﻿using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Data;
 
 using Spectre.Console.Cli;
@@ -31,7 +30,7 @@ class Migrate : AsyncCommand<Migrate.Settings>
             Console.WriteLine((y,d));
 
             var key = new PuzzleKey(y, d);
-            var puzzle = await aocclient.GetPuzzleAsync(y, d);
+            var puzzle = await GetPuzzle(y, d);
             if (puzzle != null)
                 await UpsertPuzzle(key, puzzle);
 
@@ -40,9 +39,13 @@ class Migrate : AsyncCommand<Migrate.Settings>
                 await UpsertResult(key, result);
 
         }
-        await dbcontext.SaveChangesAsync();
-
         return 0;
+    }
+    private async Task<Puzzle> GetPuzzle(int year, int day)
+    {
+        var html = await cache.ReadFromCache(year, day, "puzzle.html");
+        var input = await cache.ReadFromCache(year, day, "input.txt");
+        return new PuzzleHtml(year, day, html, input).GetPuzzle();
     }
 
     private async Task<DayResultV1?> GetResult(int y, int d)

@@ -23,6 +23,7 @@ using Spectre.Console.Cli;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
+using System.Transactions;
 
 public static class AoC
 {
@@ -92,7 +93,14 @@ public static class AoC
         });
 
         app.SetDefaultCommand<Run>();
-        return await app.RunAsync(args);
+
+
+        var returnValue = await app.RunAsync(args);
+        var db = registrar.ServiceProvider.GetService<AoCDbContext>()!;
+
+        await db.SaveChangesAsync();
+
+        return returnValue;
     }
 
     class TraceInterceptor : ICommandInterceptor
@@ -154,7 +162,7 @@ public static class AoC
                 }
                 options.UseSqlite(new SqliteConnectionStringBuilder() { DataSource = @".cache\aoc.db" }.ToString());
                 //options.LogTo(Console.WriteLine);
-            }
+            }, contextLifetime: ServiceLifetime.Singleton
             );
         foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(ICommand))))
         {

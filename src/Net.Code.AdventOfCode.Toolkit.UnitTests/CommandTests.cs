@@ -136,7 +136,7 @@ public class CommandTests
         var manager = CreateReportManager();
         var run = new Report(manager, Substitute.For<IInputOutputService>(), AoCLogic);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "report", default), new() );
-        manager.Received().GetPuzzleReport(default, default, Arg.Any<IEnumerable<(int y,int d)>>());
+        await manager.Received().GetPuzzleReport(default, default, Arg.Any<int?>());
     }
 
     [Fact]

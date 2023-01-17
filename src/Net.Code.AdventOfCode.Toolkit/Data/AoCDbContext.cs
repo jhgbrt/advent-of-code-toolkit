@@ -1,5 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -40,11 +39,6 @@ internal class AoCDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        //var puzzle = modelBuilder.Entity<Puzzle>();
-        //puzzle.HasKey(p => new { p.Year, p.Day });
-        //puzzle.OwnsOne(p => p.Answer);
-
-
         var results = modelBuilder.Entity<DayResult>();
         ConfigureKey(results);
         results.OwnsOne(p => p.Part1);
@@ -78,17 +72,6 @@ internal class AoCDbContext : DbContext
     public void AddPuzzle(Puzzle puzzle)
     {
         Puzzles.Add(puzzle);
-        SaveChanges();
-    }
-
-    public void SaveResult(DayResult result)
-    {
-        var item = Results.FirstOrDefault(p => p.Year == result.Year && p.Day == result.Day);
-        if (item is null)
-            Results.Add(result);
-        else
-            Results.Update(result);
-        SaveChanges();
     }
 
     public DbSet<Puzzle> Puzzles { get; set; }

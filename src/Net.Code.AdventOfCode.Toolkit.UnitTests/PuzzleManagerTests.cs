@@ -64,7 +64,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
 
             var result = await m.Post(2021, 1, 1, "answer");
 
-            Assert.Equal((success: expectedSuccess, status: statusCode), (result.success, result.status));
+            Assert.Equal(expectedSuccess, result.success);
         }
     }
 }
