@@ -4,21 +4,19 @@ using Microsoft.EntityFrameworkCore;
 using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Data;
 
-using System.Net;
 using System.Text;
-using System.Text.Json;
 
 namespace Net.Code.AdventOfCode.Toolkit.Logic;
 
 class PuzzleManager : IPuzzleManager
 {
     private readonly IAoCClient client;
-    private readonly AoCDbContext cache;
+    private readonly AoCDbContext db;
 
-    public PuzzleManager(IAoCClient client, AoCDbContext cache)
+    public PuzzleManager(IAoCClient client, AoCDbContext db)
     {
         this.client = client;
-        this.cache = cache;
+        this.db = db;
     }
 
     public async Task<(bool status, string reason, int part)> PreparePost(int year, int day)
@@ -35,20 +33,46 @@ class PuzzleManager : IPuzzleManager
 
     public async Task<Puzzle> GetPuzzle(int y, int d)
     {
-        var puzzle = cache.Puzzles.Find(new PuzzleKey(y,d));
+        var puzzle = db.Puzzles.Find(new PuzzleKey(y,d));
 
         if (puzzle == null)
         {
             puzzle = await client.GetPuzzleAsync(y, d);
-            cache.AddPuzzle(puzzle);
-            await cache.SaveChangesAsync();
+            db.AddPuzzle(puzzle);
         }
 
         return puzzle;
     }
+    public async Task<Puzzle[]> GetPuzzles()
+    {
+        return await db.Puzzles.ToArrayAsync();
+    }
+    public async Task<(Puzzle, DayResult)[]> GetPuzzlesWithResults(int? year, TimeSpan? slowerthan)
+    {
+        var puzzles = db.Puzzles.AsNoTracking().AsQueryable();
+        if (year.HasValue)
+        {
+            puzzles = puzzles.Where(p => p.Year == year.Value);
+        }
+        var results = db.Results.AsNoTracking().AsQueryable();
+        if (slowerthan.HasValue)
+            results = results.Where(r => r.Elapsed > slowerthan.Value);
+
+
+        var query = await (from puzzle in puzzles
+                     join result in results on puzzle.Key equals result.Key into g
+                     from result in g.DefaultIfEmpty()
+                     select new { puzzle, result }
+                     ).ToArrayAsync();
+
+        return (from item in query
+                let puzzle = item.puzzle
+                let result = item.result ?? DayResult.NotImplemented(puzzle.Year, puzzle.Day)
+                select (puzzle, result)).ToArray();
+    }
     public async Task<DayResult[]> GetPuzzleResults(int? slowerthan)
     {
-        var queryable = cache.Results.AsQueryable();
+        var queryable = db.Results.AsQueryable();
         if (slowerthan.HasValue)
         {
             var min = TimeSpan.FromSeconds(slowerthan.Value);
@@ -61,7 +85,7 @@ class PuzzleManager : IPuzzleManager
     public async Task<DayResult> GetPuzzleResult(int y, int d)
     {
         var key = new PuzzleKey(y, d);
-        return await cache.Results.FirstOrDefaultAsync(r => r.Key == key)
+        return await db.Results.FindAsync(key)
             ?? DayResult.NotImplemented(y, d);
     }
 
@@ -74,14 +98,11 @@ class PuzzleManager : IPuzzleManager
         if (success)
         {
             // when a new result is posted successfully, we need to update the puzzle data
+            var updated = await client.GetPuzzleAsync(year, day);
+
             var puzzle = await GetPuzzle(year, day);
-
-            var updated = await client.GetPuzzleAsync(year, day, false);
-
             puzzle.Answer = updated.Answer;
             puzzle.Status = updated.Status;
-
-            await cache.SaveChangesAsync();
 
             var stats = await client.GetMemberAsync(year, false);
             content = new StringBuilder(content).AppendLine().AppendLine($"You now have {stats?.TotalStars} stars and a score of {stats?.LocalScore}").ToString();
@@ -91,7 +112,7 @@ class PuzzleManager : IPuzzleManager
 
     public async Task SaveResult(DayResult result)
     {
-        var current = await cache.Results.FirstOrDefaultAsync(r => r.Year == result.Year && r.Day == result.Day);
+        var current = await db.Results.FirstOrDefaultAsync(r => r.Year == result.Year && r.Day == result.Day);
         if (current != null)
         {
             current.Part1 = result.Part1;
@@ -99,9 +120,8 @@ class PuzzleManager : IPuzzleManager
         }
         else
         {
-            await cache.Results.AddAsync(result);
+            await db.Results.AddAsync(result);
         }
-        await cache.SaveChangesAsync();
     }
 }
 

@@ -15,7 +15,7 @@ class LeaderboardManager : ILeaderboardManager
     }
 
     public Task<IEnumerable<(int id, string description)>> GetLeaderboardIds(bool usecache)
-          => client.GetLeaderboardIds(usecache);
+          => client.GetLeaderboardIds();
 
     public async Task<IEnumerable<LeaderboardEntry>> GetLeaderboardsAsync(int id, IEnumerable<int> years)
     {
@@ -29,7 +29,7 @@ class LeaderboardManager : ILeaderboardManager
     }
     public async Task<IEnumerable<LeaderboardEntry>> GetLeaderboardAsync(int year, int id)
     {
-        var leaderboard = await client.GetLeaderBoardAsync(year, id, false);
+        var leaderboard = await client.GetLeaderBoardAsync(year, id);
 
         if (leaderboard == null)
         {

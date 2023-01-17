@@ -28,11 +28,14 @@ class Report : AsyncCommand<Report.Settings>
         [Description("Only include entries for puzzles that take longer than the indicated number of seconds")]
         [CommandOption("--slower-than")]
         public int? slowerthan { get; set; }
+        [Description("Only include entries for puzzles of this year")]
+        [CommandOption("--year")]
+        public int? year { get; set; }
     }
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings options)
     {
-        var report = await manager.GetPuzzleReport(options.status, options.slowerthan, logic.Puzzles()).ToListAsync();
+        var report = await manager.GetPuzzleReport(options.status, options.slowerthan, options.year);
         io.Write(report.ToTable());
         return 0;
     }

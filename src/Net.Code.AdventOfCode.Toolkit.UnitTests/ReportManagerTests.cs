@@ -30,9 +30,9 @@ public class ReportManagerTests
         var logic = new AoCLogic(TestClock.Create(2017, 1, 1, 0, 0, 0));
         var rm = new ReportManager(manager);
 
-        var report = await rm.GetPuzzleReport(null, null, logic.Puzzles()).ToListAsync();
+        var report = await rm.GetPuzzleReport(null, null, null);
 
-        Assert.Equal(50, report.Count);
+        Assert.Equal(50, report.Count());
     }
 
     [Fact]

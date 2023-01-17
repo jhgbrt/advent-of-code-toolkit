@@ -22,10 +22,9 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         {
             var wrapper = Substitute.For<IHttpClientWrapper>();
             var logger = Substitute.For<ILogger<AoCClient>>();
-            var cache = Substitute.For<ICache>();
             var year = DateTime.Now.Year;
             wrapper.GetAsync(path).Returns(Task.FromResult((statusCode, content)));
-            var client = new AoCClient(wrapper, logger, cache);
+            var client = new AoCClient(wrapper, logger);
             return client;
         }
         [Fact]
@@ -35,7 +34,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             var path = $"{year}/leaderboard/private";
             var content = File.ReadAllText("leaderboard.html");
             var client = CreateClient(path, content, HttpStatusCode.OK);
-            var result = await client.GetLeaderboardIds(false);
+            var result = await client.GetLeaderboardIds();
             Assert.Equal(29328, result.First().id);
             Assert.Equal(148156, result.Last().id);
         }
@@ -47,7 +46,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             var path = $"{year}/leaderboard/private/view/148156.json";
             var content = File.ReadAllText("leaderboard-148156.json");
             var client = CreateClient(path, content, HttpStatusCode.OK);
-            var result = await client.GetLeaderBoardAsync(DateTime.Now.Year, 148156, false);
+            var result = await client.GetLeaderBoardAsync(DateTime.Now.Year, 148156);
             Assert.NotNull(result);
             Assert.Equal("user1", result!.Members[1].Name);
             Assert.Equal(1, result.Members[1].Id);
@@ -61,7 +60,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             var path = $"{year}/leaderboard/private/view/148156.json";
             var content = File.ReadAllText("leaderboard-148156.json");
             var client = CreateClient(path, content, HttpStatusCode.NotFound);
-            var result = await client.GetLeaderBoardAsync(DateTime.Now.Year, 148156, false);
+            var result = await client.GetLeaderBoardAsync(DateTime.Now.Year, 148156);
             Assert.Null(result);
         }
 
@@ -72,7 +71,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             var path = $"{year}/leaderboard/private/view/148156.json";
             var content = "<html>";
             var client = CreateClient(path, content, HttpStatusCode.OK);
-            var result = await client.GetLeaderBoardAsync(DateTime.Now.Year, 148156, false);
+            var result = await client.GetLeaderBoardAsync(DateTime.Now.Year, 148156);
             Assert.Null(result);
         }
 
@@ -91,13 +90,12 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         {
             var wrapper = Substitute.For<IHttpClientWrapper>();
             var logger = Substitute.For<ILogger<AoCClient>>();
-            var cache = Substitute.For<ICache>();
             var year = DateTime.Now.Year;
 
             wrapper.GetAsync($"/settings").Returns(Task.FromResult((HttpStatusCode.OK, File.ReadAllText("settings.html"))));
             wrapper.GetAsync($"{year}/leaderboard/private/view/148156.json").Returns(Task.FromResult((HttpStatusCode.OK, File.ReadAllText("leaderboard-148156.json"))));
 
-            var client = new AoCClient(wrapper, logger, cache);
+            var client = new AoCClient(wrapper, logger);
             var result = await client.GetMemberAsync(year, false);
 
             Assert.NotNull(result);
@@ -108,11 +106,10 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         {
             var wrapper = Substitute.For<IHttpClientWrapper>();
             var logger = Substitute.For<ILogger<AoCClient>>();
-            var cache = Substitute.For<ICache>();
 
             wrapper.PostAsync(Arg.Any<string>(), Arg.Any<FormUrlEncodedContent>()).Returns(Task.FromResult((HttpStatusCode.OK, "<article>CONTENT</article>")));
 
-            var client = new AoCClient(wrapper, logger, cache);
+            var client = new AoCClient(wrapper, logger);
             var result = await client.PostAnswerAsync(2017, 5, 1, "ANSWER");
 
             Assert.Equal(HttpStatusCode.OK, result.status);
@@ -125,7 +122,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             var path = $"2015/day/1";
             var content = File.ReadAllText("puzzle-answered-both-parts.html");
             var client = CreateClient(path, content, HttpStatusCode.OK);
-            var result = await client.GetPuzzleAsync(2015, 1, false);
+            var result = await client.GetPuzzleAsync(2015, 1);
             Assert.NotNull(result);
             Assert.Equal(2015, result.Year);
             Assert.Equal(1, result.Day);
@@ -140,7 +137,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             var path = $"2019/day/9";
             var content = File.ReadAllText("puzzle-unanswered.html");
             var client = CreateClient(path, content, HttpStatusCode.OK);
-            var result = await client.GetPuzzleAsync(2019, 9, false);
+            var result = await client.GetPuzzleAsync(2019, 9);
             Assert.NotNull(result);
             Assert.Equal(2019, result.Year);
             Assert.Equal(9, result.Day);
