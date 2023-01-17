@@ -189,9 +189,6 @@ class AoCClient : IDisposable, IAoCClient
             _ => throw new Exception($"expected 0, 1 or 2 answers, not {answers.Length}")
         };
 
-        var innerHtml = string.Join("", articles.Zip(answers.Select(a => a.ParentNode)).Select(n => n.First.InnerHtml + n.Second.InnerHtml));
-        var innerText = string.Join("", articles.Zip(answers.Select(a => a.ParentNode)).Select(n => n.First.InnerText + n.Second.InnerText));
-
         return Puzzle.Unlocked(year, day, input, answer);
     }
 

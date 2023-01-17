@@ -1,6 +1,8 @@
 ﻿
 using Net.Code.AdventOfCode.Toolkit.Core;
 
+using System.Diagnostics;
+
 namespace Net.Code.AdventOfCode.Toolkit.Logic;
 
 class ReportManager : IReportManager
@@ -14,11 +16,15 @@ class ReportManager : IReportManager
 
     public async IAsyncEnumerable<PuzzleReportEntry> GetPuzzleReport(ResultStatus? status, int? slowerthan, IEnumerable<(int, int)> puzzles)
     {
+        var item = manager.GetPuzzleResult(2018, 21);
+        
+        var results = (await manager.GetPuzzleResults(slowerthan)).ToDictionary(r => r.Key);
+
         foreach (var (year, day) in puzzles)
         {
             var puzzle = await manager.GetPuzzle(year, day);
-            var result = await manager.GetPuzzleResult(year, day);
-            var p = new PuzzleResultStatus(puzzle, result);
+            var p = new PuzzleResultStatus(puzzle, results.GetValueOrDefault(new(year,day), DayResult.NotImplemented(year,day)));
+
             var comparisonResult = p.puzzle.Compare(p.result);
 
             if (status.HasValue && (comparisonResult.part1 != status.Value || comparisonResult.part2 != status.Value)) continue;
