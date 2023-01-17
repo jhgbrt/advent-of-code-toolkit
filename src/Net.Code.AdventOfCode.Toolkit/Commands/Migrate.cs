@@ -1,7 +1,6 @@
 ﻿
 using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Data;
-using Net.Code.AdventOfCode.Toolkit.Migrations;
 
 using Spectre.Console.Cli;
 
@@ -14,16 +13,14 @@ class Migrate : AsyncCommand<Migrate.Settings>
     public class Settings : CommandSettings { }
     private readonly IAoCClient aocclient;
     private readonly ICache cache;
-    private readonly IPuzzleManager puzzleManager;
     private readonly AoCDbContext dbcontext;
     private readonly AoCLogic AoCLogic;
 
-    public Migrate(AoCDbContext dbcontext, IAoCClient client, AoCLogic aoCLogic, IPuzzleManager puzzleManager, ICache cache)
+    public Migrate(AoCDbContext dbcontext, IAoCClient client, AoCLogic aoCLogic, ICache cache)
     {
         this.dbcontext = dbcontext;
         this.aocclient = client;
         this.AoCLogic = aoCLogic;
-        this.puzzleManager = puzzleManager;
         this.cache = cache;
     }
     public async override Task<int> ExecuteAsync(CommandContext context, Settings settings)
@@ -32,16 +29,58 @@ class Migrate : AsyncCommand<Migrate.Settings>
         foreach (var (y, d) in AoCLogic.Puzzles())
         {
             Console.WriteLine((y,d));
-            var json = await cache.ReadFromCache(y, d, "result.json");
-            if (json != null)
-            {
-                var result = JsonSerializer.Deserialize<DayResult>(json)!;
-                Console.WriteLine((result.Year, result.Day));
-                dbcontext.Results.Add(result);
-            }
+
+            var key = new PuzzleKey(y, d);
+            var puzzle = await aocclient.GetPuzzleAsync(y, d);
+            if (puzzle != null)
+                await UpsertPuzzle(key, puzzle);
+
+            var result = await GetResult(y, d);
+            if (result  != null)
+                await UpsertResult(key, result);
+
         }
         await dbcontext.SaveChangesAsync();
 
         return 0;
+    }
+
+    private async Task<DayResultV1?> GetResult(int y, int d)
+    {
+        var json = await cache.ReadFromCache(y, d, "result.json");
+        if (json != null)
+        {
+            return JsonSerializer.Deserialize<DayResultV1>(json);
+        }
+        return null;
+    }
+
+    private async Task UpsertPuzzle(PuzzleKey key, Puzzle puzzle)
+    {
+        var existing = await dbcontext.Puzzles.FindAsync(key);
+        if (existing != null)
+        {
+            existing.Answer = puzzle.Answer;
+            existing.Status = puzzle.Status;
+        }
+        else
+        {
+            dbcontext.Puzzles.Add(puzzle);
+        }
+    }
+
+    private async Task UpsertResult(PuzzleKey key, DayResultV1 result)
+    {
+        var existing = await dbcontext.Results.FindAsync(key);
+        if (existing != null)
+        {
+            existing.Part1 = result.part1;
+            existing.Part2 = result.part2;
+        }
+        else
+        {
+            var newresult = new DayResult(key, result.part1, result.part2);
+            dbcontext.Results.Add(newresult);
+        }
     }
 }

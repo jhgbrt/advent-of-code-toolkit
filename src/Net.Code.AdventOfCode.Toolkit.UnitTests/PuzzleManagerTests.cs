@@ -1,4 +1,5 @@
 ﻿using Net.Code.AdventOfCode.Toolkit.Core;
+using Net.Code.AdventOfCode.Toolkit.Data;
 using Net.Code.AdventOfCode.Toolkit.Logic;
 
 using NSubstitute;
@@ -17,7 +18,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         public async Task GetPuzzle_Calls_GetPuzzleAsync()
         {
             var client = Substitute.For<IAoCClient>();
-            var cache = Substitute.For<ICache>();
+            var cache = Substitute.For<AoCDbContext>();
             var m = new PuzzleManager(client, cache);
 
             var puzzle = await m.GetPuzzle(2021, 1);
@@ -34,7 +35,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         public async Task PreparePost_WhenCalled(Status status, bool expectedResult, int expectedPart)
         {
             var client = Substitute.For<IAoCClient>();
-            var cache = Substitute.For<ICache>();
+            var cache = Substitute.For<AoCDbContext>();
             var m = new PuzzleManager(client, cache);
 
             var puzzle = new Puzzle(2021, 1, "input", Answer.Empty, status);
@@ -51,7 +52,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         public async Task Post_WhenCalled(HttpStatusCode statusCode, string content, bool expectedSuccess)
         {
             var client = Substitute.For<IAoCClient>();
-            var cache = Substitute.For<ICache>();
+            var cache = Substitute.For<AoCDbContext>();
             var m = new PuzzleManager(client, cache);
 
             client.PostAnswerAsync(2021, 1, 1, "answer").Returns(Task.FromResult((statusCode, content)));

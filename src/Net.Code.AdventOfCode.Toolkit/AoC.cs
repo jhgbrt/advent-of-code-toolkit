@@ -4,10 +4,11 @@
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 namespace Net.Code.AdventOfCode.Toolkit;
 
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Win32;
 
 using Net.Code.AdventOfCode.Toolkit.Commands;
 using Net.Code.AdventOfCode.Toolkit.Core;
@@ -18,13 +19,10 @@ using NodaTime;
 
 using Spectre.Console;
 using Spectre.Console.Cli;
-using Spectre.Console.Rendering;
 
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
-using System.Text;
-using System.Xml.Linq;
 
 public static class AoC
 {
@@ -128,7 +126,8 @@ public static class AoC
         var configuration = new Configuration(baseAddress, cookieValue);
         var services = new ServiceCollection();
         services.AddLogging(builder => builder
-            .AddInlineSpectreConsole(c => c.LogLevel = LogLevel.Trace).SetMinimumLevel(level));
+            .AddConsole()
+            .SetMinimumLevel(level));
         services.AddSingleton(configuration);
         services.AddTransient<IAoCClient, AoCClient>();
         services.AddTransient<IPuzzleManager, PuzzleManager>();
@@ -145,7 +144,18 @@ public static class AoC
         services.AddTransient<IEngine, Engine>();
         services.AddSingleton(clock);
         services.AddSingleton(io);
-        services.AddDbContext<AoCDbContext>();
+        services.AddDbContext<AoCDbContext>(
+            options =>
+            {
+                if (debug)
+                {
+                    options.EnableDetailedErrors();
+                    options.EnableSensitiveDataLogging();
+                }
+                options.UseSqlite(new SqliteConnectionStringBuilder() { DataSource = @".cache\aoc.db" }.ToString());
+                //options.LogTo(Console.WriteLine);
+            }
+            );
         foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(ICommand))))
         {
             services.AddTransient(type);

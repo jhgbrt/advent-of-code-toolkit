@@ -23,22 +23,32 @@ record Answer(string part1, string part2)
 {
     public static Answer Empty => new Answer(string.Empty, string.Empty);
 }
-class DayResult
+record DayResultV1(int year, int day, Result part1, Result part2);
+
+record struct PuzzleKey(int Year, int Day)
 {
-    [JsonPropertyName("year")]
+    public PuzzleKey(int id) : this(id / 100, id % 100) { }
+    public int Id => Year*100 + Day;
+}
+class DayResult : IHavePuzzleKey
+{
+    public PuzzleKey Key { get; init; }
     public int Year { get; init; }
-    [JsonPropertyName("day")]
     public int Day { get; init; }
-    [JsonPropertyName("part1")]
     public Result Part1 { get; set; }
-    [JsonPropertyName("part2")]
     public Result Part2 { get; set; }
-    public DayResult(int year, int day, Result part1, Result part2)
+    public DayResult(PuzzleKey key, Result part1, Result part2)
     {
-        Year = year;
-        Day = day;
+        Key = key;
+        Year = key.Year;
+        Day = key.Day;
         Part1 = part1;
         Part2 = part2;
+    }
+
+    public DayResult(int year, int day, Result part1, Result part2)
+        : this(new PuzzleKey(year, day), part1, part2)
+    {
     }
 
     private DayResult()
@@ -49,7 +59,12 @@ class DayResult
 
     public readonly static DayResult Empty = new DayResult(0, 0, Result.Empty, Result.Empty);
     public static DayResult NotImplemented(int year, int day) => new DayResult(year, day, Result.Empty, Result.Empty);
-    public TimeSpan Elapsed => Part1.Elapsed + Part2.Elapsed;
+    public TimeSpan Elapsed { get; init; }
+
+    public override string ToString()
+    {
+        return $"{Key} (year {Year}, day {Day}) - Elapsed = {Elapsed}; Part1 = {Part1}, Part2 = {Part2}";
+    }
 }
 
 record Result(ResultStatus Status, string Value, TimeSpan Elapsed)
@@ -63,26 +78,37 @@ record Result(ResultStatus Status, string Value, TimeSpan Elapsed)
         _ => this
     };
 }
-
-class Puzzle
+interface IHavePuzzleKey
 {
+    PuzzleKey Key { get; }
+    int Year { get; }
+    int Day { get; }
+}
+class Puzzle : IHavePuzzleKey
+{
+    public PuzzleKey Key { get; init; }
     public int Year { get; init; }
     public int Day { get; init; }
     public string Input { get; init; }
-    public Answer Answer { get; init; }
-    public Status Status { get;init; }
+    public Answer Answer { get; set; }
+    public Status Status { get; set; }
 
-    public Puzzle(int year, int day, string input, Answer answer, Status status)
+    public Puzzle(PuzzleKey key, string input, Answer answer, Status status)
     {
-        Year = year;
-        Day = day;
+        Key = key;
+        Year = key.Year;
+        Day = key.Day;
         Input = input;
         Answer = answer;
         Status = status;
     }
-    private Puzzle(string input)
+    public Puzzle(int year, int day, string input, Answer answer, Status status)
+        : this (new PuzzleKey(year, day), input, answer, status)
     {
-        Input = input;
+    }
+    private Puzzle()
+    {
+        Input = string.Empty;
         Answer = Answer.Empty;
     }
 

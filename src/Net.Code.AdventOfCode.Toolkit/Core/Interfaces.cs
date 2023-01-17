@@ -44,8 +44,9 @@ interface IPuzzleManager
 {
     Task<Puzzle> GetPuzzle(int y, int d);
     Task<DayResult> GetPuzzleResult(int y, int d);
+    Task<DayResult[]> GetPuzzleResults(int? slowerthan);
     Task SaveResult(DayResult result);
-    Task<(bool success, HttpStatusCode status, string content)> Post(int year, int day, int part, string value);
+    Task<(bool success, string content)> Post(int year, int day, int part, string value);
     Task<(bool status, string reason, int part)> PreparePost(int year, int day);
 }
 
