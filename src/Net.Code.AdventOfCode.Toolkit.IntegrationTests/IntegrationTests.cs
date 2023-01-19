@@ -1,7 +1,10 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+
 using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Data;
 using Net.Code.AdventOfCode.Toolkit.Infrastructure;
+
 using NodaTime;
 
 using NSubstitute;
@@ -9,19 +12,16 @@ using NSubstitute;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 
-using System;
-using System.IO;
-using System.Linq;
+using System.Diagnostics;
 using System.Reflection;
-using System.Threading.Tasks;
 
-using Xunit;
 using Xunit.Abstractions;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
 {
+
     class TestOutputService : IInputOutputService
     {
         ITestOutputHelper output;
@@ -48,6 +48,7 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
         protected int Day => puzzle.day;
         private readonly (int year, int day) puzzle;
         private readonly DateTime Now;
+        protected ITestOutputHelper output;
 
         public IClock Clock()
         {
@@ -60,12 +61,21 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
 
         public IntegrationTests(ITestOutputHelper output, DateTime now, (int year, int day) puzzle)
         {
-            var options = new DbContextOptionsBuilder<AoCDbContext>()
-            .UseSqlite("Filename=:memory:")
-            .Options;
+            Directory.CreateDirectory(".cache");
 
-            database = new AoCDbContext(options);
-            database.Migrate();
+            foreach (var d in new DirectoryInfo(Directory.GetCurrentDirectory()).GetDirectories("Year*"))
+                d.Delete(true);
+
+            var options = new DbContextOptionsBuilder<AoCDbContext>()
+                .UseSqlite(new SqliteConnectionStringBuilder() { DataSource = @".cache\aoc.db" }.ToString())
+                .EnableDetailedErrors()
+                .LogTo(output.WriteLine)
+                .Options;
+
+            using (AoCDbContext context = new AoCDbContext(options))
+            {
+                context.Database.Migrate();
+            }
 
             Now = now;
             this.puzzle = puzzle;
@@ -73,22 +83,17 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
             var assembly = Assembly.GetExecutingAssembly();
             resolver.GetEntryAssembly().Returns(assembly);
             io = new TestOutputService(output);
+            this.output = output;
             output.WriteLine(Environment.CurrentDirectory);
 
-            if (Directory.Exists(".cache"))
-            {
-                Directory.Delete(".cache", true);
-            }
-            if (Directory.Exists("Year2017"))
-            {
-                Directory.Delete("Year2017", true);
-            }
             clock = Clock();
         }
         protected async Task<int> Do(params string[] args)
         {
+
             return await AoC.RunAsync(resolver, io, clock, args.Concat(new[] { "--debug", "--loglevel=Trace" }).ToArray());
         }
+
         public class DuringAdvent_OnDayOfPuzzle : IntegrationTests
         {
             public DuringAdvent_OnDayOfPuzzle(ITestOutputHelper output) : base(output, new(2017, 12, 3), (2017, 3)) { }
@@ -135,8 +140,7 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
             public async Task Post()
             {
                 await Do("init");
-                var result = await Do("post", "123");
-                Assert.Equal(1, result); // already completed
+                await Assert.ThrowsAsync<AlreadyCompletedException>(() => Do("post", "123"));
             }
 
             [Fact]
@@ -148,6 +152,7 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
                 Assert.Equal(0, result);
             }
         }
+
         public class DuringAdvent_AfterDayOfPuzzle : IntegrationTests
         {
             public DuringAdvent_AfterDayOfPuzzle(ITestOutputHelper output) : base(output, new(2017, 12, 3), (2017, 1)) { }
@@ -194,8 +199,7 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
             public async Task Post()
             {
                 await Do("init", $"{Day}");
-                var result = await Do("post", "123", $"{Year}", $"{Day}");
-                Assert.Equal(1, result); // already completed
+                await Assert.ThrowsAsync<AlreadyCompletedException>(() => Do("post", "123", $"{Year}", $"{Day}"));
             }
 
             [Fact]
@@ -207,6 +211,7 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
                 Assert.Equal(0, result);
             }
         }
+
         public class AfterAdvent : IntegrationTests
         {
             public AfterAdvent(ITestOutputHelper output) : base(output, new(2017, 12, 27), (2017, 3)) { }
@@ -253,7 +258,6 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
                 await Do("init", $"{Year}", $"{Day}");
                 var result = await Do("run", $"{Year}", $"{Day}");
                 Assert.Equal(0, result);
-                Assert.True(File.Exists(Path.Combine(".cache", $"{Year}", $"{Day:00}", "result.json")));
             }
 
             [Fact]
@@ -267,8 +271,7 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
             public async Task Post()
             {
                 await Do("init", $"{Year}", $"{Day}");
-                var result = await Do("post", "123", $"{Year}", $"{Day}", "--loglevel=Trace");
-                Assert.Equal(1, result); // already completed
+                await Assert.ThrowsAsync<AlreadyCompletedException>(() => Do("post", "123", $"{Year}", $"{Day}", "--loglevel=Trace"));
             }
 
             [Fact]

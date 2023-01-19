@@ -35,19 +35,6 @@ public static class AoC
             SystemClock.Instance,
             args);
 
-    public static async Task<IEngine> GetEngine(
-        Assembly assembly,
-        Action<string> log
-        )
-    {
-        var services = await InitializeServicesAsync(
-            new FixedAssemblyResolver(assembly), 
-            new DelegatingIOService(log), 
-            SystemClock.Instance, LogLevel.Trace, false);
-        var engine = services.BuildServiceProvider().GetService<IEngine>() ?? throw new Exception("could not resolve Engine");
-        return engine;
-    }
-
     internal static async Task<int> RunAsync(
         IAssemblyResolver resolver,
         IInputOutputService io,
@@ -100,9 +87,10 @@ public static class AoC
 
 
         var returnValue = await app.RunAsync(args);
-        var db = registrar.ServiceProvider.GetService<IAoCDbContext>()!;
+        var db = registrar.ServiceProvider?.GetService<IAoCDbContext>()!;
 
-        await db.SaveChangesAsync();
+        if (db != null)
+            await db.SaveChangesAsync();
 
         return returnValue;
     }
@@ -193,7 +181,7 @@ public static class AoC
 
 sealed class TypeRegistrar : ITypeRegistrar
 {
-    public IServiceProvider ServiceProvider => serviceProvider ?? throw new NullReferenceException("service provider not available");
+    public IServiceProvider? ServiceProvider => serviceProvider;
     private readonly IServiceCollection _builder;
     private IServiceProvider? serviceProvider;
     public TypeRegistrar(IServiceCollection builder)
