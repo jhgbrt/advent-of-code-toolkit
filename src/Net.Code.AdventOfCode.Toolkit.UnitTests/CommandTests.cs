@@ -185,14 +185,14 @@ public class PuzzleTests
     public void CreateAnswer_WhenPuzzleIsLocked_Throws()
     {
         var puzzle = Puzzle.Locked(new(2015, 1));
-        Assert.Throws<Exception>(() => puzzle.CreateAnswer("any"));
+        Assert.Throws<PuzzleLockedException>(() => puzzle.CreateAnswer("any"));
     }
 
     [Fact]
     public void CreateAnswer_WhenPuzzleIsCompleted_Throws()
     {
         var puzzle = new Puzzle(new(2015, 1), "input", new Answer("a", "b"), Status.Completed);
-        Assert.Throws<Exception>(() => puzzle.CreateAnswer("any"));
+        Assert.Throws<AlreadyCompletedException>(() => puzzle.CreateAnswer("any"));
     }
 
     [Fact]
