@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 
 using Net.Code.AdventOfCode.Toolkit.Core;
+
 using Net.Code.AdventOfCode.Toolkit.Logic;
 
 using NSubstitute;

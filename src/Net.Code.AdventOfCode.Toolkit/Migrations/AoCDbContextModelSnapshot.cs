@@ -8,7 +8,7 @@ using Net.Code.AdventOfCode.Toolkit.Data;
 
 namespace Net.Code.AdventOfCode.Toolkit.Migrations
 {
-    [DbContext(typeof(IAoCDbContext))]
+    [DbContext(typeof(AoCDbContext))]
     partial class AoCDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

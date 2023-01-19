@@ -1,4 +1,5 @@
 ﻿namespace Net.Code.AdventOfCode.Toolkit.Core;
+
 using NodaTime;
 
 

@@ -4,7 +4,7 @@ using Spectre.Console.Cli;
 
 using System.ComponentModel;
 
-namespace Net.Code.AdventOfCode.Toolkit.Commands;
+namespace Net.Code.AdventOfCode.Toolkit.Infrastructure;
 
 public interface IAoCSettings
 {

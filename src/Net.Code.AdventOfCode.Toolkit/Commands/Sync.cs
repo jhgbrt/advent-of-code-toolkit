@@ -1,10 +1,8 @@
-﻿
+﻿namespace Net.Code.AdventOfCode.Toolkit.Commands;
+
 using Net.Code.AdventOfCode.Toolkit.Core;
-
+using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 using System.ComponentModel;
-
-namespace Net.Code.AdventOfCode.Toolkit.Commands;
-
 
 [Description("Sync the data (specifically the posted answers) for a puzzle. Requires AOC_SESSION set as an environment variable.")]
 class Sync : ManyPuzzlesCommand<AoCSettings>

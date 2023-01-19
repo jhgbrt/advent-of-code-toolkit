@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Net.Code.AdventOfCode.Toolkit.Commands;
 using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Data;
+using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 using Net.Code.AdventOfCode.Toolkit.Logic;
 
 using NodaTime;
@@ -24,7 +25,6 @@ using Spectre.Console.Cli;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
-using System.Transactions;
 
 public static class AoC
 {
@@ -33,7 +33,6 @@ public static class AoC
             AssemblyResolver.Instance,
             new InputOutputService(),
             SystemClock.Instance,
-            null,
             args);
 
     public static async Task<IEngine> GetEngine(
@@ -44,8 +43,7 @@ public static class AoC
         var services = await InitializeServicesAsync(
             new FixedAssemblyResolver(assembly), 
             new DelegatingIOService(log), 
-            SystemClock.Instance, 
-            null, LogLevel.Trace, false);
+            SystemClock.Instance, LogLevel.Trace, false);
         var engine = services.BuildServiceProvider().GetService<IEngine>() ?? throw new Exception("could not resolve Engine");
         return engine;
     }
@@ -54,7 +52,6 @@ public static class AoC
         IAssemblyResolver resolver,
         IInputOutputService io,
         IClock clock,
-        AoCDbContext? database,
         string[] args
         )
     {
@@ -72,7 +69,7 @@ public static class AoC
                 break;
             }
         }
-        var services = await InitializeServicesAsync(resolver, io, clock, database, string.IsNullOrEmpty(loglevel) ? LogLevel.Warning : Enum.Parse<LogLevel>(loglevel, true), args.Contains("--debug"));
+        var services = await InitializeServicesAsync(resolver, io, clock, string.IsNullOrEmpty(loglevel) ? LogLevel.Warning : Enum.Parse<LogLevel>(loglevel, true), args.Contains("--debug"));
 
         var registrar = new TypeRegistrar(services);
 
@@ -125,7 +122,6 @@ public static class AoC
         IAssemblyResolver resolver,
         IInputOutputService io,
         IClock clock,
-        AoCDbContext? context,
         LogLevel level,
         bool debug)
     {
@@ -149,9 +145,7 @@ public static class AoC
         services.AddTransient<IPuzzleManager, PuzzleManager>();
         services.AddTransient<IAoCRunner, AoCRunner>();
         services.AddTransient<ICodeManager, CodeManager>();
-        services.AddTransient<IReportManager, ReportManager>();
         services.AddTransient<ILeaderboardManager, LeaderboardManager>();
-        services.AddTransient<IMemberManager, MemberManager>();
         services.AddTransient<ICache, Cache>();
         services.AddTransient<IFileSystem, FileSystem>();
         services.AddSingleton<IAssemblyResolver>(resolver);
@@ -160,25 +154,20 @@ public static class AoC
         services.AddTransient<IEngine, Engine>();
         services.AddSingleton(clock);
         services.AddSingleton(io);
-        if (context is not null)
-        {
-            services.AddSingleton<IAoCDbContext>(context);
-        }
-        else
-        {
-            services.AddDbContext<IAoCDbContext, AoCDbContext>(
-                options =>
+        services.AddDbContext<IAoCDbContext, AoCDbContext>(
+            options =>
+            {
+                if (debug)
                 {
-                    if (debug)
-                    {
-                        options.EnableDetailedErrors();
-                        options.EnableSensitiveDataLogging();
-                    }
-                    options.UseSqlite(new SqliteConnectionStringBuilder() { DataSource = @".cache\aoc.db" }.ToString());
-                    //options.LogTo(Console.WriteLine);
-                }, contextLifetime: ServiceLifetime.Singleton
-                );
-        }
+                    options.EnableDetailedErrors();
+                    options.EnableSensitiveDataLogging();
+                }
+                options.UseSqlite(
+                    new SqliteConnectionStringBuilder() { DataSource = @".cache\aoc.db" }.ToString()
+                    );
+
+            }, contextLifetime: ServiceLifetime.Singleton
+            );
         foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(ICommand))))
         {
             services.AddTransient(type);

@@ -1,5 +1,4 @@
 ﻿using Net.Code.AdventOfCode.Toolkit.Core;
-using Net.Code.AdventOfCode.Toolkit.Data;
 
 using Spectre.Console.Cli;
 

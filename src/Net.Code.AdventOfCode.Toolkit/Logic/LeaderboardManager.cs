@@ -1,5 +1,6 @@
 ﻿
 using Net.Code.AdventOfCode.Toolkit.Core;
+using Net.Code.AdventOfCode.Toolkit.Core.Leaderboard;
 
 using NodaTime;
 
@@ -14,20 +15,20 @@ class LeaderboardManager : ILeaderboardManager
         this.client = client;
     }
 
-    public Task<IEnumerable<(int id, string description)>> GetLeaderboardIds(bool usecache)
+    public Task<IEnumerable<(int id, string description)>> GetLeaderboardIds()
           => client.GetLeaderboardIds();
 
     public async Task<IEnumerable<LeaderboardEntry>> GetLeaderboardsAsync(int id, IEnumerable<int> years)
     {
         var tasks = (
             from y in years
-            select GetLeaderboardAsync(y, id)
+            select GetLeaderboardAsync(id, y)
         ).ToArray();
         await Task.WhenAll(tasks);
         var entries = tasks.SelectMany(t => t.Result);
         return entries;
     }
-    public async Task<IEnumerable<LeaderboardEntry>> GetLeaderboardAsync(int year, int id)
+    public async Task<IEnumerable<LeaderboardEntry>> GetLeaderboardAsync(int id, int year)
     {
         var leaderboard = await client.GetLeaderBoardAsync(year, id);
 
@@ -45,6 +46,15 @@ class LeaderboardManager : ILeaderboardManager
                let dt = lastStar.Value.InUtc().ToDateTimeOffset().ToLocalTime()
                orderby score descending
                select new LeaderboardEntry(name, year, score, stars, dt);
+    }
+    public async IAsyncEnumerable<MemberStats> GetMemberStats(IEnumerable<int> years)
+    {
+        foreach (var y in years)
+        {
+            var m = await client.GetMemberAsync(y);
+            if (m == null) continue;
+            yield return new MemberStats(y, m.Name, m.TotalStars, m.LocalScore);
+        }
     }
 
 }

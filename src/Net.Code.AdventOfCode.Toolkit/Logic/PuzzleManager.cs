@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 
 using Net.Code.AdventOfCode.Toolkit.Core;
-using Net.Code.AdventOfCode.Toolkit.Data;
 
 using System.Text;
 
@@ -67,7 +66,7 @@ class PuzzleManager : IPuzzleManager
 
         return (from item in query
                 let puzzle = item.puzzle
-                let result = item.result ?? DayResult.NotImplemented(puzzle.Year, puzzle.Day)
+                let result = item.result ?? DayResult.NotImplemented(puzzle.Key)
                 select new PuzzleResultStatus(puzzle, result)).ToArray();
     }
     public async Task<DayResult[]> GetPuzzleResults(int? slowerthan)
