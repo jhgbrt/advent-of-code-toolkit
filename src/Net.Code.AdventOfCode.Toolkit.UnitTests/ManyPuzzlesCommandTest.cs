@@ -25,7 +25,7 @@ public class ManyPuzzlesCommandTest
     private async Task DoTest(ManyPuzzlesCommand<AoCSettings> sut, AoCSettings options)
     {
         var context = new CommandContext(Substitute.For<IRemainingArguments>(), "name", default);
-        await sut.Configure().ExecuteAsync(Arg.Any<int>(), Arg.Any<int>(), options);
+        await sut.Configure().ExecuteAsync(Arg.Any<PuzzleKey>(), options);
         await sut.ExecuteAsync(context, options);
     }
 
@@ -38,7 +38,7 @@ public class ManyPuzzlesCommandTest
         var options = new AoCSettings();
         await DoTest(sut, options);
 
-        await sut.Received(50).ExecuteAsync(Arg.Any<int>(), Arg.Any<int>(), options);
+        await sut.Received(50).ExecuteAsync(Arg.Any<PuzzleKey>(), options);
     }
 
 
@@ -51,7 +51,7 @@ public class ManyPuzzlesCommandTest
         var options = new AoCSettings();
         await DoTest(sut, options);
 
-        await sut.Received(25).ExecuteAsync(2016, Arg.Any<int>(), options);
+        await sut.Received(25).ExecuteAsync(Arg.Is<PuzzleKey>(k => k.Year == 2016), options);
     }
     [Fact]
     public async Task NoYearNoDay_DuringAdvent_RunsPuzzleForCurrentDay()
@@ -62,7 +62,7 @@ public class ManyPuzzlesCommandTest
         var options = new AoCSettings();
         await DoTest(sut, options);
 
-        await sut.Received(1).ExecuteAsync(2017, 20, options);
+        await sut.Received(1).ExecuteAsync(Arg.Is(new PuzzleKey(2017,20)), options);
     }
     [Fact]
     public async Task YearNoDay_OutsideAdvent()
@@ -73,7 +73,7 @@ public class ManyPuzzlesCommandTest
         var options = new AoCSettings { year = 2016 };
         await DoTest(sut, options);
 
-        await sut.Received(25).ExecuteAsync(2016, Arg.Any<int>(), options);
+        await sut.Received(25).ExecuteAsync(Arg.Is<PuzzleKey>(k => k.Year == 2016), options);
     }
     [Fact]
     public async Task YearNoDay_OutsideAdventInDecember_RunsAllPuzzlesForCurrentYear()
@@ -84,7 +84,7 @@ public class ManyPuzzlesCommandTest
         var options = new AoCSettings { year = 2016 };
         await DoTest(sut, options);
 
-        await sut.Received(25).ExecuteAsync(2016, Arg.Any<int>(), options);
+        await sut.Received(25).ExecuteAsync(Arg.Is<PuzzleKey>(k => k.Year == 2016), options);
     }
     [Fact]
     public async Task YearNoDay_DuringAdvent_ForPastYear_RunsAllPuzzlesForThatYear()
@@ -95,7 +95,7 @@ public class ManyPuzzlesCommandTest
         var options = new AoCSettings { year = 2016 };
         await DoTest(sut, options);
 
-        await sut.Received(25).ExecuteAsync(2016, Arg.Any<int>(), options);
+        await sut.Received(25).ExecuteAsync(Arg.Is<PuzzleKey>(k => k.Year == 2016), options);
     }
     [Fact]
     public async Task YearNoDay_DuringAdvent_ForCurrentYear_RunsAllPuzzlesForCurrentYear()
@@ -106,7 +106,7 @@ public class ManyPuzzlesCommandTest
         var options = new AoCSettings { year = 2017 };
         await DoTest(sut, options);
 
-        await sut.Received(20).ExecuteAsync(2017, Arg.Any<int>(), options);
+        await sut.Received(20).ExecuteAsync(Arg.Is<PuzzleKey>(k => k.Year == 2017), options);
     }
     [Fact]
     public async Task NoYearDay_DuringAdvent_RunsPuzzleForThatDayInCurrentYear()
@@ -117,7 +117,7 @@ public class ManyPuzzlesCommandTest
         var options = new AoCSettings { day = 15 };
         await DoTest(sut, options);
 
-        await sut.Received(1).ExecuteAsync(2017, Arg.Any<int>(), options);
+        await sut.Received(1).ExecuteAsync(Arg.Is<PuzzleKey>(k => k.Year == 2017), options);
     }
     [Fact]
     public async Task NoYearDay_OutsideAdvent_InDecember_Throws()
@@ -149,7 +149,7 @@ public class ManyPuzzlesCommandTest
         var options = new AoCSettings { year = 2016, day = 23 };
         await DoTest(sut, options);
 
-        await sut.Received(1).ExecuteAsync(2016, 23, options);
+        await sut.Received(1).ExecuteAsync(Arg.Is(new PuzzleKey(2016, 23)), options);
     }
     [Fact]
     public async Task YearDay_OutsideAdventInDecember_RunsSinglePuzzle()
@@ -160,7 +160,7 @@ public class ManyPuzzlesCommandTest
         var options = new AoCSettings { year = 2016, day = 23 };
         await DoTest(sut, options);
 
-        await sut.Received(1).ExecuteAsync(2016, 23, options);
+        await sut.Received(1).ExecuteAsync(Arg.Is(new PuzzleKey(2016, 23)), options);
     }
     [Fact]
     public async Task YearDay_DuringAdvent_RunsPuzzleForCurrentDay()
@@ -171,7 +171,7 @@ public class ManyPuzzlesCommandTest
         var options = new AoCSettings { year = 2017, day = 19 };
         await DoTest(sut, options);
 
-        await sut.Received(1).ExecuteAsync(2017, 19, options);
+        await sut.Received(1).ExecuteAsync(Arg.Is(new PuzzleKey(2017, 19)), options);
     }
     [Fact]
     public async Task YearDay_DuringAdvent_FuturePuzzle_Throws()
@@ -182,6 +182,6 @@ public class ManyPuzzlesCommandTest
         var options = new AoCSettings { year = 2017, day = 23 };
         await DoTest(sut, options);
 
-        await sut.DidNotReceive().ExecuteAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<AoCSettings>());
+        await sut.DidNotReceive().ExecuteAsync(Arg.Any<PuzzleKey>(), Arg.Any<AoCSettings>());
     }
 }

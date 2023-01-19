@@ -1,7 +1,6 @@
 ﻿namespace Net.Code.AdventOfCode.Toolkit.Core;
 
 using HtmlAgilityPack;
-using Net.Code.AdventOfCode.Toolkit.Commands;
 
 using NodaTime;
 
@@ -31,6 +30,7 @@ record struct PuzzleKey(int Year, int Day)
 {
     public PuzzleKey(int id) : this(id / 100, id % 100) { }
     public int Id => Year*100 + Day;
+    public override string ToString() => $"{Year}-{Day:00}";
 }
 class DayResult : IHavePuzzleKey
 {
@@ -59,8 +59,8 @@ class DayResult : IHavePuzzleKey
         Part2 = Result.Empty;
     }
 
-    public readonly static DayResult Empty = new DayResult(0, 0, Result.Empty, Result.Empty);
     public static DayResult NotImplemented(int year, int day) => new DayResult(year, day, Result.Empty, Result.Empty);
+    public static DayResult NotImplemented(PuzzleKey key) => new DayResult(key, Result.Empty, Result.Empty);
     public TimeSpan Elapsed { get; init; }
 
     public override string ToString()
@@ -115,29 +115,38 @@ class Puzzle : IHavePuzzleKey
     }
 
     public int Unanswered => Status switch { Status.Completed => 0, Status.AnsweredPart1 => 1, _ => 2 };
-    public static Puzzle Locked(int year, int day) => new(year, day, string.Empty, Answer.Empty, Status.Locked);
-    public static Puzzle Unlocked(int year, int day, string input, Answer answer) => new(year, day, input, answer, answer switch
+    public static Puzzle Locked(PuzzleKey key) => new(key, string.Empty, Answer.Empty, Status.Locked);
+    public static Puzzle Unlocked(PuzzleKey key, string input, Answer answer) => new(key, input, answer, answer switch
     {
-        { part1: "", part2: "" } => Status.Unlocked,
-        { part1: not "", part2: "" } => day < 25 ? Status.AnsweredPart1 : Status.Completed,
+    { part1: "", part2: "" } => Status.Unlocked,
+        { part1: not "", part2: "" } => key.Day < 25 ? Status.AnsweredPart1 : Status.Completed,
         { part1: not "", part2: not "" } => Status.Completed,
-        _ => throw new Exception($"inconsistent state for {year}/{day}/{answer}")
+        _ => throw new Exception($"inconsistent state for {key}/{answer}")
     });
 
-    public ComparisonResult Compare(DayResult result)
+    public AnswerToPost CreateAnswer(string answer) => Status switch
     {
-        if ((result.Year, result.Day) != (Year, Day)) throw new InvalidOperationException("Result is for another day");
+        Status.Locked => throw new Exception("Puzzle is locked. Did you initialize it?"),
+        Status.Completed => throw new Exception("Already completed"),
+        Status.Unlocked => new (1, answer),
+        Status.AnsweredPart1 => new (2, answer),
+        _ => throw new NotSupportedException()
+    };
 
-        return Day switch
+    public void SetAnswer(AnswerToPost answer)
+    {
+        Answer = answer.part switch
         {
-            25 => new ComparisonResult(result.Part1.Verify(Answer.part1).Status, ResultStatus.Ok),
-            _ => new ComparisonResult(result.Part1.Verify(Answer.part1).Status, result.Part2.Verify(Answer.part2).Status)
+            1 => Answer with { part1 = answer.value },
+            2 => Answer with { part2 = answer.value },
+            _ => throw new NotSupportedException()
         };
     }
-
 }
 
-record PuzzleHtml(int year, int day, string html, string input)
+record AnswerToPost(int part, string value);
+
+record PuzzleHtml(PuzzleKey key, string html, string input)
 {
     public Puzzle GetPuzzle()
     {
@@ -160,7 +169,7 @@ record PuzzleHtml(int year, int day, string html, string input)
             _ => throw new Exception($"expected 0, 1 or 2 answers, not {answers.Length}")
         };
 
-        return Puzzle.Unlocked(year, day, input, answer);
+        return Puzzle.Unlocked(key, input, answer);
     }
 }
 
@@ -183,7 +192,7 @@ record PuzzleResultStatus(Puzzle puzzle, DayResult result)
     public string ToReportLine()
     {
         var duration = result.Elapsed.ToString();
-        var comparisonResult = puzzle.Compare(result);
+        var comparisonResult = Comparison;
         var status1 = GetReportPart(comparisonResult.part1, puzzle.Answer.part1, result.Part1.Value, 1);
         var status2 = GetReportPart(comparisonResult.part2, puzzle.Answer.part2, result.Part2.Value, 2);
         return $"{result.Year}-{result.Day:00} {status1.status}/{status2.status} - {duration} - {status1.explanation} {status2.explanation}";
@@ -200,7 +209,7 @@ record PuzzleResultStatus(Puzzle puzzle, DayResult result)
             double value => ($"~ {(int)Math.Round(value / 1000)} s", ConsoleColor.Red)
         };
 
-        var comparisonResult = puzzle.Compare(result);
+        var comparisonResult = Comparison;
         var status1 = GetReportPart(comparisonResult.part1, puzzle.Answer.part1, result.Part1.Value, 1);
         var status2 = GetReportPart(comparisonResult.part2, puzzle.Answer.part2, result.Part2.Value, 2);
         return $"{result.Year}-{result.Day:00} [[[{status1.color}]{status1.status}[/]]]/[[[{status2.color}]{status2.status}[/]]] [{dcolor}]{duration}[/]{status1.explanation} {status2.explanation}";
@@ -214,6 +223,20 @@ record PuzzleResultStatus(Puzzle puzzle, DayResult result)
         ResultStatus.Ok => ("OK", ConsoleColor.Green, ""),
         _ => throw new NotImplementedException($"{status} is an unhandled result status")
     };
+
+    public ComparisonResult Comparison
+    {
+        get
+        {
+            if (result.Key != puzzle.Key) throw new InvalidOperationException("Result is for another day");
+
+            return puzzle.Day switch
+            {
+                25 => new ComparisonResult(result.Part1.Verify(puzzle.Answer.part1).Status, ResultStatus.Ok),
+                _ => new ComparisonResult(result.Part1.Verify(puzzle.Answer.part1).Status, result.Part2.Verify(puzzle.Answer.part2).Status)
+            };
+        }
+    }
 }
 
 

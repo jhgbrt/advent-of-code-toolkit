@@ -48,7 +48,7 @@ class AoCClient : IDisposable, IAoCClient
         return Deserialize(year, content);
     }
 
-    public async Task<Member?> GetMemberAsync(int year, bool usecache = true)
+    public async Task<Member?> GetMemberAsync(int year)
     {
         var id = await GetMemberId();
         var lb = await GetLeaderBoardAsync(year, id);
@@ -144,20 +144,20 @@ class AoCClient : IDisposable, IAoCClient
         return (status, content);
     }
 
-    public async Task<string> GetPuzzleInputAsync(int year, int day)
+    public async Task<string> GetPuzzleInputAsync(PuzzleKey key)
     {
-        (var statusCode, var input) = await GetAsync($"{year}/day/{day}/input");
+        (var statusCode, var input) = await GetAsync($"{key.Year}/day/{key.Day}/input");
         if (statusCode != HttpStatusCode.OK) return string.Empty;
         return input;
     }
 
-    public async Task<Puzzle> GetPuzzleAsync(int year, int day)
+    public async Task<Puzzle> GetPuzzleAsync(PuzzleKey key)
     {
         HttpStatusCode statusCode;
-        (statusCode, var html) = await GetAsync($"{year}/day/{day}");
-        if (statusCode != HttpStatusCode.OK) return Puzzle.Locked(year, day);
-        var input = await GetPuzzleInputAsync(year, day);
-        return new PuzzleHtml(year, day, html, input).GetPuzzle();
+        (statusCode, var html) = await GetAsync($"{key.Year}/day/{key.Day}");
+        if (statusCode != HttpStatusCode.OK) return Puzzle.Locked(key);
+        var input = await GetPuzzleInputAsync(key);
+        return new PuzzleHtml(key, html, input).GetPuzzle();
     }
 
     public async Task<IEnumerable<(int id, string description)>> GetLeaderboardIds()

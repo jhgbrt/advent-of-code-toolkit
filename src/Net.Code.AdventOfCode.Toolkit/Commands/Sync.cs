@@ -20,10 +20,10 @@ class Sync : ManyPuzzlesCommand<AoCSettings>
         this.io = io;
     }
 
-    public override async Task<int> ExecuteAsync(int year, int day, AoCSettings _)
+    public override async Task<int> ExecuteAsync(PuzzleKey key, AoCSettings _)
     {
-        io.WriteLine($"Synchronizing for puzzle {year}-{day:00}...");
-        var puzzle = await puzzleManager.GetPuzzle(year, day);
+        io.WriteLine($"Synchronizing for puzzle {key}...");
+        var puzzle = await puzzleManager.GetPuzzle(key);
         await codeManager.SyncPuzzleAsync(puzzle);
         return 0;
     }

@@ -15,11 +15,11 @@ class Show : SinglePuzzleCommand<AoCSettings>
         this.configuration = configuration;
     }
 
-    public override Task<int> ExecuteAsync(int year, int day, AoCSettings options)
+    public override Task<int> ExecuteAsync(PuzzleKey key, AoCSettings options)
     {
         ProcessStartInfo psi = new()
         {
-            FileName = $"{configuration.BaseAddress}/{year}/day/{day}",
+            FileName = $"{configuration.BaseAddress}/{key.Year}/day/{key.Day}",
             UseShellExecute = true
         };
         Process.Start(psi);

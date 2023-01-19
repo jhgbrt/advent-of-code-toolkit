@@ -12,10 +12,10 @@ class Migrate : AsyncCommand<Migrate.Settings>
     public class Settings : CommandSettings { }
     private readonly IAoCClient aocclient;
     private readonly ICache cache;
-    private readonly AoCDbContext dbcontext;
+    private readonly IAoCDbContext dbcontext;
     private readonly AoCLogic AoCLogic;
 
-    public Migrate(AoCDbContext dbcontext, IAoCClient client, AoCLogic aoCLogic, ICache cache)
+    public Migrate(IAoCDbContext dbcontext, IAoCClient client, AoCLogic aoCLogic, ICache cache)
     {
         this.dbcontext = dbcontext;
         this.aocclient = client;
@@ -25,32 +25,31 @@ class Migrate : AsyncCommand<Migrate.Settings>
     public async override Task<int> ExecuteAsync(CommandContext context, Settings settings)
     {
         dbcontext.Migrate();
-        foreach (var (y, d) in AoCLogic.Puzzles())
+        foreach (var key in AoCLogic.Puzzles())
         {
-            Console.WriteLine((y,d));
+            Console.WriteLine(key);
 
-            var key = new PuzzleKey(y, d);
-            var puzzle = await GetPuzzle(y, d);
+            var puzzle = await GetPuzzle(key);
             if (puzzle != null)
                 await UpsertPuzzle(key, puzzle);
 
-            var result = await GetResult(y, d);
+            var result = await GetResult(key);
             if (result  != null)
                 await UpsertResult(key, result);
 
         }
         return 0;
     }
-    private async Task<Puzzle> GetPuzzle(int year, int day)
+    private async Task<Puzzle> GetPuzzle(PuzzleKey key)
     {
-        var html = await cache.ReadFromCache(year, day, "puzzle.html");
-        var input = await cache.ReadFromCache(year, day, "input.txt");
-        return new PuzzleHtml(year, day, html, input).GetPuzzle();
+        var html = await cache.ReadFromCache(key.Year, key.Day, "puzzle.html");
+        var input = await cache.ReadFromCache(key.Year, key.Day, "input.txt");
+        return new PuzzleHtml(key, html, input).GetPuzzle();
     }
 
-    private async Task<DayResultV1?> GetResult(int y, int d)
+    private async Task<DayResultV1?> GetResult(PuzzleKey key)
     {
-        var json = await cache.ReadFromCache(y, d, "result.json");
+        var json = await cache.ReadFromCache(key.Year, key.Day, "result.json");
         if (json != null)
         {
             return JsonSerializer.Deserialize<DayResultV1>(json);
@@ -60,7 +59,7 @@ class Migrate : AsyncCommand<Migrate.Settings>
 
     private async Task UpsertPuzzle(PuzzleKey key, Puzzle puzzle)
     {
-        var existing = await dbcontext.Puzzles.FindAsync(key);
+        var existing = await dbcontext.GetPuzzle(key);
         if (existing != null)
         {
             existing.Answer = puzzle.Answer;
@@ -68,13 +67,13 @@ class Migrate : AsyncCommand<Migrate.Settings>
         }
         else
         {
-            dbcontext.Puzzles.Add(puzzle);
+            dbcontext.AddPuzzle(puzzle);
         }
     }
 
     private async Task UpsertResult(PuzzleKey key, DayResultV1 result)
     {
-        var existing = await dbcontext.Results.FindAsync(key);
+        var existing = await dbcontext.GetResult(key);
         if (existing != null)
         {
             existing.Part1 = result.part1;
@@ -83,7 +82,7 @@ class Migrate : AsyncCommand<Migrate.Settings>
         else
         {
             var newresult = new DayResult(key, result.part1, result.part2);
-            dbcontext.Results.Add(newresult);
+            dbcontext.AddResult(newresult);
         }
     }
 }

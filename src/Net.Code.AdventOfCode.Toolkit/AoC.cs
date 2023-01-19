@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Net.Code.AdventOfCode.Toolkit.UnitTests")]
+[assembly: InternalsVisibleTo("Net.Code.AdventOfCode.Toolkit.IntegrationTests")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 namespace Net.Code.AdventOfCode.Toolkit;
 
@@ -32,6 +33,7 @@ public static class AoC
             AssemblyResolver.Instance,
             new InputOutputService(),
             SystemClock.Instance,
+            null,
             args);
 
     public static async Task<IEngine> GetEngine(
@@ -39,15 +41,20 @@ public static class AoC
         Action<string> log
         )
     {
-        var services = await InitializeServicesAsync(new FixedAssemblyResolver(assembly), new DelegatingIOService(log), SystemClock.Instance, LogLevel.Trace, false);
+        var services = await InitializeServicesAsync(
+            new FixedAssemblyResolver(assembly), 
+            new DelegatingIOService(log), 
+            SystemClock.Instance, 
+            null, LogLevel.Trace, false);
         var engine = services.BuildServiceProvider().GetService<IEngine>() ?? throw new Exception("could not resolve Engine");
         return engine;
     }
 
-    public static async Task<int> RunAsync(
+    internal static async Task<int> RunAsync(
         IAssemblyResolver resolver,
         IInputOutputService io,
         IClock clock,
+        AoCDbContext? database,
         string[] args
         )
     {
@@ -65,7 +72,7 @@ public static class AoC
                 break;
             }
         }
-        var services = await InitializeServicesAsync(resolver, io, clock, string.IsNullOrEmpty(loglevel) ? LogLevel.Warning : Enum.Parse<LogLevel>(loglevel, true), args.Contains("--debug"));
+        var services = await InitializeServicesAsync(resolver, io, clock, database, string.IsNullOrEmpty(loglevel) ? LogLevel.Warning : Enum.Parse<LogLevel>(loglevel, true), args.Contains("--debug"));
 
         var registrar = new TypeRegistrar(services);
 
@@ -96,7 +103,7 @@ public static class AoC
 
 
         var returnValue = await app.RunAsync(args);
-        var db = registrar.ServiceProvider.GetService<AoCDbContext>()!;
+        var db = registrar.ServiceProvider.GetService<IAoCDbContext>()!;
 
         await db.SaveChangesAsync();
 
@@ -118,6 +125,7 @@ public static class AoC
         IAssemblyResolver resolver,
         IInputOutputService io,
         IClock clock,
+        AoCDbContext? context,
         LogLevel level,
         bool debug)
     {
@@ -152,18 +160,25 @@ public static class AoC
         services.AddTransient<IEngine, Engine>();
         services.AddSingleton(clock);
         services.AddSingleton(io);
-        services.AddDbContext<AoCDbContext>(
-            options =>
-            {
-                if (debug)
+        if (context is not null)
+        {
+            services.AddSingleton<IAoCDbContext>(context);
+        }
+        else
+        {
+            services.AddDbContext<IAoCDbContext, AoCDbContext>(
+                options =>
                 {
-                    options.EnableDetailedErrors();
-                    options.EnableSensitiveDataLogging();
-                }
-                options.UseSqlite(new SqliteConnectionStringBuilder() { DataSource = @".cache\aoc.db" }.ToString());
-                //options.LogTo(Console.WriteLine);
-            }, contextLifetime: ServiceLifetime.Singleton
-            );
+                    if (debug)
+                    {
+                        options.EnableDetailedErrors();
+                        options.EnableSensitiveDataLogging();
+                    }
+                    options.UseSqlite(new SqliteConnectionStringBuilder() { DataSource = @".cache\aoc.db" }.ToString());
+                    //options.LogTo(Console.WriteLine);
+                }, contextLifetime: ServiceLifetime.Singleton
+                );
+        }
         foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(ICommand))))
         {
             services.AddTransient(type);

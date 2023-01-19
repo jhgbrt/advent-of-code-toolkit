@@ -21,12 +21,26 @@ internal class AoCDbContextFactory : IDesignTimeDbContextFactory<AoCDbContext>
     public AoCDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<AoCDbContext>();
-        optionsBuilder.UseSqlite(@"Data Source=.\cache\aoc.db");
+        optionsBuilder.UseSqlite(@"Data Source=.cache\aoc.db");
 
         return new AoCDbContext(optionsBuilder.Options);
     }
 }
-internal class AoCDbContext : DbContext
+
+internal interface IAoCDbContext
+{
+    void AddPuzzle(Puzzle puzzle);
+    void AddResult(DayResult result);
+    ValueTask<Puzzle?> GetPuzzle(PuzzleKey key);
+    ValueTask<DayResult?> GetResult(PuzzleKey key);
+    void Migrate();
+    Task<int> SaveChangesAsync(CancellationToken token = default);
+
+    IQueryable<Puzzle> Puzzles { get; }
+    IQueryable<DayResult> Results { get; }
+}
+
+internal class AoCDbContext : DbContext, IAoCDbContext
 {
     public AoCDbContext(DbContextOptions<AoCDbContext> options) : base(options) { }
     public AoCDbContext() { }
@@ -64,17 +78,20 @@ internal class AoCDbContext : DbContext
         entity.HasIndex(nameof(IHavePuzzleKey.Year), nameof(IHavePuzzleKey.Day));
     }
 
-    internal void Migrate()
+    public void Migrate()
     {
         Database.Migrate();
     }
 
-    public void AddPuzzle(Puzzle puzzle)
-    {
-        Puzzles.Add(puzzle);
-    }
+    public void AddPuzzle(Puzzle puzzle) => Puzzles.Add(puzzle);
+    public void AddResult(DayResult result) => Results.Add(result);
+    public ValueTask<Puzzle?> GetPuzzle(PuzzleKey key) => Puzzles.FindAsync(key);
+    public ValueTask<DayResult?> GetResult(PuzzleKey key) => Results.FindAsync(key);
 
     public DbSet<Puzzle> Puzzles { get; set; }
     public DbSet<DayResult> Results { get; set; }
 
+    IQueryable<Puzzle> IAoCDbContext.Puzzles => this.Puzzles;
+
+    IQueryable<DayResult> IAoCDbContext.Results => this.Results;
 }

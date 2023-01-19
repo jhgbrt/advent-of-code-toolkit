@@ -96,7 +96,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             wrapper.GetAsync($"{year}/leaderboard/private/view/148156.json").Returns(Task.FromResult((HttpStatusCode.OK, File.ReadAllText("leaderboard-148156.json"))));
 
             var client = new AoCClient(wrapper, logger);
-            var result = await client.GetMemberAsync(year, false);
+            var result = await client.GetMemberAsync(year);
 
             Assert.NotNull(result);
         }
@@ -122,7 +122,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             var path = $"2015/day/1";
             var content = File.ReadAllText("puzzle-answered-both-parts.html");
             var client = CreateClient(path, content, HttpStatusCode.OK);
-            var result = await client.GetPuzzleAsync(2015, 1);
+            var result = await client.GetPuzzleAsync(new(2015, 1));
             Assert.NotNull(result);
             Assert.Equal(2015, result.Year);
             Assert.Equal(1, result.Day);
@@ -137,7 +137,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             var path = $"2019/day/9";
             var content = File.ReadAllText("puzzle-unanswered.html");
             var client = CreateClient(path, content, HttpStatusCode.OK);
-            var result = await client.GetPuzzleAsync(2019, 9);
+            var result = await client.GetPuzzleAsync(new(2019, 9));
             Assert.NotNull(result);
             Assert.Equal(2019, result.Year);
             Assert.Equal(9, result.Day);

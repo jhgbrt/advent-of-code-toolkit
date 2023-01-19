@@ -17,16 +17,12 @@ class Verify : ManyPuzzlesCommand<AoCSettings>
         this.io = io;
     }
 
-    public override async Task<int> ExecuteAsync(int year, int day, AoCSettings options)
+    public override async Task<int> ExecuteAsync(PuzzleKey key, AoCSettings options)
     {
-        var puzzle = await manager.GetPuzzle(year, day);
-        var result = await manager.GetPuzzleResult(year, day);
-        var resultStatus = new PuzzleResultStatus(puzzle, result);
+        var resultStatus = await manager.GetPuzzleResult(key);
         var reportLine = resultStatus.ToReportLineMarkup();
-        io.MarkupLine(reportLine.ToString());
-        if (!resultStatus.Ok)
-            return 1;
-        return 0;
+        io.MarkupLine(reportLine);
+        return resultStatus.Ok ? 0 : 1;
     }
 
 }

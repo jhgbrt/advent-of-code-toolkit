@@ -17,11 +17,11 @@ class ReportManager : IReportManager
     public async Task<IEnumerable<PuzzleReportEntry>> GetPuzzleReport(ResultStatus? status, int? slowerthan, int? year)
     {
 
-        return from item in await manager.GetPuzzlesWithResults(year, slowerthan.HasValue ? TimeSpan.FromSeconds(slowerthan.Value) : null)
+        return from item in await manager.GetPuzzleResults(year, slowerthan.HasValue ? TimeSpan.FromSeconds(slowerthan.Value) : null)
                let puzzle = item.puzzle
                let result = item.result
                orderby puzzle.Year, puzzle.Day
-               let comparisonResult = puzzle.Compare(result)
+               let comparisonResult = item.Comparison
                where !status.HasValue || (comparisonResult.part1 == status.Value && comparisonResult.part2 == status.Value)
                where !slowerthan.HasValue || result.Elapsed >= TimeSpan.FromSeconds(slowerthan.Value)
                select new PuzzleReportEntry(

@@ -29,11 +29,11 @@ partial class Export : SinglePuzzleCommand<Export.Settings>
         [CommandOption("--include-common")]
         public bool includecommon { get; set; }
     }
-    public override async Task<int> ExecuteAsync(int year, int day, Settings options)
+    public override async Task<int> ExecuteAsync(PuzzleKey key, Settings options)
     {
         var output = options.output;
         var includecommon = options.includecommon;
-        string code = await manager.GenerateCodeAsync(year, day);
+        string code = await manager.GenerateCodeAsync(key.Year, key.Day);
 
         if (string.IsNullOrEmpty(output))
         {
@@ -41,8 +41,8 @@ partial class Export : SinglePuzzleCommand<Export.Settings>
         }
         else
         {
-            this.output.WriteLine($"Exporting puzzle: {year}/{day} to {output}");
-            await manager.ExportCode(year, day, code, includecommon, output);
+            this.output.WriteLine($"Exporting puzzle: {key} to {output}");
+            await manager.ExportCode(key.Year, key.Day, code, includecommon, output);
         }
         return 0;
     }

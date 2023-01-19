@@ -11,17 +11,17 @@ namespace Net.Code.AdventOfCode.Toolkit.Logic;
 class PuzzleManager : IPuzzleManager
 {
     private readonly IAoCClient client;
-    private readonly AoCDbContext db;
+    private readonly IAoCDbContext db;
 
-    public PuzzleManager(IAoCClient client, AoCDbContext db)
+    public PuzzleManager(IAoCClient client, IAoCDbContext db)
     {
         this.client = client;
         this.db = db;
     }
 
-    public async Task<(bool status, string reason, int part)> PreparePost(int year, int day)
+    public async Task<(bool status, string reason, int part)> PreparePost(PuzzleKey key)
     {
-        var puzzle = await GetPuzzle(year, day);
+        var puzzle = await GetPuzzle(key);
        
         return puzzle.Status switch
         {
@@ -31,13 +31,13 @@ class PuzzleManager : IPuzzleManager
         };
     }
 
-    public async Task<Puzzle> GetPuzzle(int y, int d)
+    public async Task<Puzzle> GetPuzzle(PuzzleKey key)
     {
-        var puzzle = db.Puzzles.Find(new PuzzleKey(y,d));
+        var puzzle = await db.GetPuzzle(key);
 
         if (puzzle == null)
         {
-            puzzle = await client.GetPuzzleAsync(y, d);
+            puzzle = await client.GetPuzzleAsync(key);
             db.AddPuzzle(puzzle);
         }
 
@@ -47,7 +47,7 @@ class PuzzleManager : IPuzzleManager
     {
         return await db.Puzzles.ToArrayAsync();
     }
-    public async Task<(Puzzle, DayResult)[]> GetPuzzlesWithResults(int? year, TimeSpan? slowerthan)
+    public async Task<PuzzleResultStatus[]> GetPuzzleResults(int? year, TimeSpan? slowerthan)
     {
         var puzzles = db.Puzzles.AsNoTracking().AsQueryable();
         if (year.HasValue)
@@ -68,7 +68,7 @@ class PuzzleManager : IPuzzleManager
         return (from item in query
                 let puzzle = item.puzzle
                 let result = item.result ?? DayResult.NotImplemented(puzzle.Year, puzzle.Day)
-                select (puzzle, result)).ToArray();
+                select new PuzzleResultStatus(puzzle, result)).ToArray();
     }
     public async Task<DayResult[]> GetPuzzleResults(int? slowerthan)
     {
@@ -82,29 +82,28 @@ class PuzzleManager : IPuzzleManager
         return await queryable.ToArrayAsync();
     }
 
-    public async Task<DayResult> GetPuzzleResult(int y, int d)
+    public async Task<PuzzleResultStatus> GetPuzzleResult(PuzzleKey key)
     {
-        var key = new PuzzleKey(y, d);
-        return await db.Results.FindAsync(key)
-            ?? DayResult.NotImplemented(y, d);
+        var puzzle = await db.GetPuzzle(key);
+        if (puzzle is null)
+            throw new ArgumentException(nameof(key));
+        var result = await db.GetResult(key)
+            ?? DayResult.NotImplemented(key);
+        return new PuzzleResultStatus(puzzle, result);
     }
 
-    public async Task<(bool success, string content)> Post(int year, int day, int part, string value)
+    public async Task<(bool success, string content)> PostAnswer(PuzzleKey key, AnswerToPost answer)
     {
-        var (_, content) = await client.PostAnswerAsync(year, day, part, value);
+        var (_, content) = await client.PostAnswerAsync(key.Year, key.Day, answer.part, answer.value);
         var success = content.StartsWith("That's the right answer");
 
 
         if (success)
         {
-            // when a new result is posted successfully, we need to update the puzzle data
-            var updated = await client.GetPuzzleAsync(year, day);
+            var puzzle = await GetPuzzle(key);
+            puzzle.SetAnswer(answer);
 
-            var puzzle = await GetPuzzle(year, day);
-            puzzle.Answer = updated.Answer;
-            puzzle.Status = updated.Status;
-
-            var stats = await client.GetMemberAsync(year, false);
+            var stats = await client.GetMemberAsync(key.Year);
             content = new StringBuilder(content).AppendLine().AppendLine($"You now have {stats?.TotalStars} stars and a score of {stats?.LocalScore}").ToString();
         }
         return (success, content);
@@ -112,7 +111,7 @@ class PuzzleManager : IPuzzleManager
 
     public async Task SaveResult(DayResult result)
     {
-        var current = await db.Results.FirstOrDefaultAsync(r => r.Year == result.Year && r.Day == result.Day);
+        var current = await db.GetResult(result.Key);
         if (current != null)
         {
             current.Part1 = result.Part1;
@@ -120,7 +119,7 @@ class PuzzleManager : IPuzzleManager
         }
         else
         {
-            await db.Results.AddAsync(result);
+            db.AddResult(result);
         }
     }
 }

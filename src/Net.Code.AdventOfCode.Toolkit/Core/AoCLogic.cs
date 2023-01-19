@@ -15,8 +15,8 @@ class AoCLogic
     bool InAdvent => Now.Month == 12 && Now.Day <= 25;
     public int? Year => Now.Month == 12 ? Now.Year : null;
     public int? Day => Now.Month == 12 && Now.Day >= 1 && Now.Day <= 25 ? Now.Day : null;
-    public IEnumerable<(int year, int day)> Puzzles()
-        => from year in Years() from day in Days(year) select (year, day);
+    public IEnumerable<PuzzleKey> Puzzles()
+        => from year in Years() from day in Days(year) select new PuzzleKey(year, day);
     public IEnumerable<(int year, int day)> Puzzles(int? year, int? day, bool all = false)
     {
 
