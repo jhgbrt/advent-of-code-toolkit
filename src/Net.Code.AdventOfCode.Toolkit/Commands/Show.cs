@@ -1,7 +1,7 @@
 ﻿namespace Net.Code.AdventOfCode.Toolkit.Commands;
 
 using Net.Code.AdventOfCode.Toolkit.Core;
-
+using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 using System.ComponentModel;
 using System.Diagnostics;
 

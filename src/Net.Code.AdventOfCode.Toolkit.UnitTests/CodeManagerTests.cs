@@ -1,4 +1,5 @@
 ﻿using Net.Code.AdventOfCode.Toolkit.Core;
+
 using Net.Code.AdventOfCode.Toolkit.Logic;
 
 using NSubstitute;
@@ -23,7 +24,7 @@ public class CodeManagerTests
 
         codeFolder.Exists.Returns(codeFolderExists);
 
-        filesystem.GetCodeFolder(2021, 3).Returns(codeFolder);
+        filesystem.GetCodeFolder(new(2021, 3)).Returns(codeFolder);
         filesystem.GetTemplateFolder().Returns(templateFolder);
 
         var code = @"
@@ -60,7 +61,7 @@ class MyClass
     public async Task InitializeCode_WhenCodeFolderDoesNotExist_Succeeds()
     {
         CodeManager m = CreateCodeManager(false);
-        var puzzle = Puzzle.Unlocked(new(2021, 3), "input", Answer.Empty);
+        var puzzle = Puzzle.Create(new(2021, 3), "input", Answer.Empty);
         await m.InitializeCodeAsync(puzzle, false, s => { });
     }
 
@@ -69,7 +70,7 @@ class MyClass
     {
         CodeManager m = CreateCodeManager(true);
 
-        var puzzle = Puzzle.Unlocked(new(2021, 3), "input", Answer.Empty);
+        var puzzle = Puzzle.Create(new(2021, 3), "input", Answer.Empty);
         await m.InitializeCodeAsync(puzzle, true, s => { });
     }
 
@@ -77,7 +78,7 @@ class MyClass
     public async Task InitializeCode_WhenCodeFolderExists_Throws()
     {
         CodeManager m = CreateCodeManager(true);
-        var puzzle = Puzzle.Unlocked(new (2021, 3), "input", Answer.Empty);
+        var puzzle = Puzzle.Create(new (2021, 3), "input", Answer.Empty);
         await Assert.ThrowsAsync<Exception>(async () => await m.InitializeCodeAsync(puzzle, false, s => { }));
     }
 
@@ -86,7 +87,7 @@ class MyClass
     {
         var m = CreateCodeManager(true);
 
-        var code = await m.GenerateCodeAsync(2021, 3);
+        var code = await m.GenerateCodeAsync(new(2021, 3));
 
         Assert.Equal(@"var input = File.ReadAllLines(""input.txt"");
 var myvariable = input.Select(int.Parse).ToArray();

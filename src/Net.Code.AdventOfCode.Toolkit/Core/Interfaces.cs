@@ -1,6 +1,8 @@
 ﻿namespace Net.Code.AdventOfCode.Toolkit.Core;
 using System.Net;
 using System.Reflection;
+using Net.Code.AdventOfCode.Toolkit.Core.Leaderboard;
+
 record Configuration(string BaseAddress, string SessionCookie);
 
 interface IAoCClient : IDisposable
@@ -27,8 +29,8 @@ interface ICache
 
 interface ICodeManager
 {
-    Task ExportCode(int year, int day, string code, bool includecommon, string output);
-    Task<string> GenerateCodeAsync(int year, int day);
+    Task ExportCode(PuzzleKey key, string code, bool includecommon, string output);
+    Task<string> GenerateCodeAsync(PuzzleKey key);
     Task InitializeCodeAsync(Puzzle puzzle, bool force, Action<string> progress);
     Task SyncPuzzleAsync(Puzzle puzzle);
 }
@@ -46,23 +48,15 @@ interface IPuzzleManager
 interface ILeaderboardManager
 {
     Task<IEnumerable<LeaderboardEntry>> GetLeaderboardsAsync(int id, IEnumerable<int> years);
-    Task<IEnumerable<LeaderboardEntry>> GetLeaderboardAsync(int year, int id);
-    Task<IEnumerable<(int id, string description)>> GetLeaderboardIds(bool usecache);
+    Task<IEnumerable<LeaderboardEntry>> GetLeaderboardAsync(int id, int year);
+    Task<IEnumerable<(int id, string description)>> GetLeaderboardIds();
+    IAsyncEnumerable<MemberStats> GetMemberStats(IEnumerable<int> years);
 }
 
-interface IMemberManager
-{
-    IAsyncEnumerable<(int year, MemberStats stats)> GetMemberStats(IEnumerable<int> years);
-}
-
-interface IReportManager
-{
-    Task<IEnumerable<PuzzleReportEntry>> GetPuzzleReport(ResultStatus? status, int? slowerthan, int? year);
-}
 interface IFileSystem
 {
     string CurrentDirectory { get; }
-    ICodeFolder GetCodeFolder(int year, int day);
+    ICodeFolder GetCodeFolder(PuzzleKey key);
     IFolder GetFolder(string name);
     ITemplateFolder GetTemplateFolder();
     IOutputFolder GetOutputFolder(string output);
@@ -103,7 +97,7 @@ interface ITemplateFolder
     FileInfo Code { get; }
     FileInfo CsProj { get; }
     FileInfo Notebook { get; }
-    Task<string> ReadCode(int year, int day);
+    Task<string> ReadCode(PuzzleKey key);
 }
 interface IHttpClientWrapper : IDisposable
 {
@@ -114,4 +108,16 @@ interface IHttpClientWrapper : IDisposable
 public interface IAssemblyResolver
 {
     Assembly? GetEntryAssembly();
+}
+internal interface IAoCDbContext
+{
+    void AddPuzzle(Puzzle puzzle);
+    void AddResult(DayResult result);
+    ValueTask<Puzzle?> GetPuzzle(PuzzleKey key);
+    ValueTask<DayResult?> GetResult(PuzzleKey key);
+    void Migrate();
+    Task<int> SaveChangesAsync(CancellationToken token = default);
+
+    IQueryable<Puzzle> Puzzles { get; }
+    IQueryable<DayResult> Results { get; }
 }

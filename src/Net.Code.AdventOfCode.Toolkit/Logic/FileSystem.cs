@@ -3,8 +3,6 @@ using Microsoft.Extensions.Logging;
 
 using Net.Code.AdventOfCode.Toolkit.Core;
 
-using System.Diagnostics.Tracing;
-
 namespace Net.Code.AdventOfCode.Toolkit.Logic;
 
 class FileSystem : IFileSystem
@@ -16,7 +14,7 @@ class FileSystem : IFileSystem
         this.logger = logger;
     }
 
-    public ICodeFolder GetCodeFolder(int year, int day) => new CodeFolder(Path.Combine(CurrentDirectory, $"Year{year}", $"Day{day:00}"), logger);
+    public ICodeFolder GetCodeFolder(PuzzleKey key) => new CodeFolder(Path.Combine(CurrentDirectory, $"Year{key.Year}", $"Day{key.Day:00}"), logger);
     public IFolder GetFolder(string name) => new Folder(Path.Combine(CurrentDirectory, name), logger);
     public ITemplateFolder GetTemplateFolder() => new TemplateFolder(Path.Combine(CurrentDirectory, "Template"), logger);
     public IOutputFolder GetOutputFolder(string output) => new OutputFolder(output, logger);
@@ -135,10 +133,10 @@ class FileSystem : IFileSystem
         public FileInfo Code => new FileInfo(CODE);
         public FileInfo CsProj => new FileInfo(CSPROJ);
         public FileInfo Notebook => new FileInfo(NOTEBOOK);
-        public async Task<string> ReadCode(int year, int day)
+        public async Task<string> ReadCode(PuzzleKey key)
         {
             var template = await ReadFile(CODE);
-            return template.Replace("YYYY", year.ToString()).Replace("DD", day.ToString("00"));
+            return template.Replace("YYYY", key.Year.ToString()).Replace("DD", key.Day.ToString("00"));
         }
     }
 }

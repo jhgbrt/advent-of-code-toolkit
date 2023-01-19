@@ -1,6 +1,6 @@
 ﻿
 using Net.Code.AdventOfCode.Toolkit.Core;
-
+using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -33,7 +33,7 @@ partial class Export : SinglePuzzleCommand<Export.Settings>
     {
         var output = options.output;
         var includecommon = options.includecommon;
-        string code = await manager.GenerateCodeAsync(key.Year, key.Day);
+        string code = await manager.GenerateCodeAsync(key);
 
         if (string.IsNullOrEmpty(output))
         {
@@ -42,7 +42,7 @@ partial class Export : SinglePuzzleCommand<Export.Settings>
         else
         {
             this.output.WriteLine($"Exporting puzzle: {key} to {output}");
-            await manager.ExportCode(key.Year, key.Day, code, includecommon, output);
+            await manager.ExportCode(key, code, includecommon, output);
         }
         return 0;
     }

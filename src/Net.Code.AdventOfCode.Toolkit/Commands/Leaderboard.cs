@@ -1,12 +1,10 @@
 ﻿using Net.Code.AdventOfCode.Toolkit.Core;
-
-using NodaTime;
+using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 using System.ComponentModel;
-using System.Reflection.PortableExecutable;
 
 namespace Net.Code.AdventOfCode.Toolkit.Commands;
 
@@ -44,7 +42,7 @@ class Leaderboard : AsyncCommand<Leaderboard.Settings>
 
         var ids = options.id.HasValue
             ? Enumerable.Repeat((id: options.id.Value, description: ""), 1)
-            : await manager.GetLeaderboardIds(!options.force);
+            : await manager.GetLeaderboardIds();
 
         var id = ids.Count() switch
         {
@@ -55,7 +53,7 @@ class Leaderboard : AsyncCommand<Leaderboard.Settings>
 
         var entries = options.all
             ? await manager.GetLeaderboardsAsync(id, logic.Years())
-            : await manager.GetLeaderboardAsync(year, id);
+            : await manager.GetLeaderboardAsync(id, year);
             
         var q = from e in entries
                 group e by e.name into g

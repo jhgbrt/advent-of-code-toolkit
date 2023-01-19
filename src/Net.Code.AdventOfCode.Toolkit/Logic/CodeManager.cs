@@ -6,7 +6,6 @@ using Microsoft.CodeAnalysis.Formatting;
 
 using Net.Code.AdventOfCode.Toolkit.Core;
 
-
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Net.Code.AdventOfCode.Toolkit.Logic;
@@ -22,20 +21,19 @@ class CodeManager : ICodeManager
 
     public async Task InitializeCodeAsync(Puzzle puzzle, bool force, Action<string> progress)
     {
-        var (year, day) = (puzzle.Year, puzzle.Day);
-        var codeFolder = fileSystem.GetCodeFolder(year, day);
+        var codeFolder = fileSystem.GetCodeFolder(puzzle.Key);
         var templateDir = fileSystem.GetTemplateFolder();
 
         if (codeFolder.Exists && !force)
         {
-            throw new Exception($"Puzzle for {year}/{day} already initialized. Use --force to re-initialize.");
+            throw new Exception($"Puzzle for {puzzle.Key} already initialized. Use --force to re-initialize.");
         }
 
         var input = puzzle.Input;
 
         await codeFolder.CreateIfNotExists();
 
-        var code = await templateDir.ReadCode(year, day);
+        var code = await templateDir.ReadCode(puzzle.Key);
         await codeFolder.WriteCode(code);
         await codeFolder.WriteSample("");
         await codeFolder.WriteInput(input);
@@ -47,13 +45,13 @@ class CodeManager : ICodeManager
 
     public async Task SyncPuzzleAsync(Puzzle puzzle)
     {
-        var codeFolder = fileSystem.GetCodeFolder(puzzle.Year, puzzle.Day);
+        var codeFolder = fileSystem.GetCodeFolder(puzzle.Key);
         await codeFolder.WriteInput(puzzle.Input);
     }
 
-    public async Task<string> GenerateCodeAsync(int year, int day)
+    public async Task<string> GenerateCodeAsync(PuzzleKey key)
     {
-        var dir = fileSystem.GetCodeFolder(year, day);
+        var dir = fileSystem.GetCodeFolder(key);
         var aoc = await dir.ReadCode();
         var tree = CSharpSyntaxTree.ParseText(aoc);
 
@@ -366,9 +364,9 @@ class CodeManager : ICodeManager
     }
 
 
-    public async Task ExportCode(int year, int day, string code, bool includecommon, string output)
+    public async Task ExportCode(PuzzleKey key, string code, bool includecommon, string output)
     {
-        var codeDir = fileSystem.GetCodeFolder(year, day);
+        var codeDir = fileSystem.GetCodeFolder(key);
         var commonDir = fileSystem.GetFolder("Common");
         var outputDir = fileSystem.GetOutputFolder(output);
         var templateDir = fileSystem.GetTemplateFolder();

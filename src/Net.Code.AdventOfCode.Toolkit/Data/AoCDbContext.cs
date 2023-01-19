@@ -1,44 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 using Net.Code.AdventOfCode.Toolkit.Core;
 
 namespace Net.Code.AdventOfCode.Toolkit.Data;
-public class TimeSpanConverter : ValueConverter<TimeSpan, long>
-{
-    public TimeSpanConverter()
-        : base(
-            v => v.Ticks,
-            v => TimeSpan.FromTicks(v))
-    {
-    }
-}
-
-internal class AoCDbContextFactory : IDesignTimeDbContextFactory<AoCDbContext>
-{
-    public AoCDbContext CreateDbContext(string[] args)
-    {
-        var optionsBuilder = new DbContextOptionsBuilder<AoCDbContext>();
-        optionsBuilder.UseSqlite(@"Data Source=.cache\aoc.db");
-
-        return new AoCDbContext(optionsBuilder.Options);
-    }
-}
-
-internal interface IAoCDbContext
-{
-    void AddPuzzle(Puzzle puzzle);
-    void AddResult(DayResult result);
-    ValueTask<Puzzle?> GetPuzzle(PuzzleKey key);
-    ValueTask<DayResult?> GetResult(PuzzleKey key);
-    void Migrate();
-    Task<int> SaveChangesAsync(CancellationToken token = default);
-
-    IQueryable<Puzzle> Puzzles { get; }
-    IQueryable<DayResult> Results { get; }
-}
 
 internal class AoCDbContext : DbContext, IAoCDbContext
 {

@@ -5,17 +5,8 @@ using NSubstitute;
 
 namespace Net.Code.AdventOfCode.Toolkit.UnitTests;
 
-public class ReportManagerTests
+public class LeaderboardManagerTests
 {
-    [Fact]
-    public async Task GetPuzzleReportTest()
-    {
-        var manager = Substitute.For<IPuzzleManager>();
-        var rm = new ReportManager(manager);
-        var report = await rm.GetPuzzleReport(null, null, null);
-        await manager.Received().GetPuzzleResults(null, null);
-    }
-
     [Fact]
     public async Task GetMemberStatsTest()
     {
@@ -32,7 +23,7 @@ public class ReportManagerTests
             .Returns(task);
 
         var logic = new AoCLogic(clock);
-        var rm = new MemberManager(client);
+        var rm = new LeaderboardManager(client);
 
         var report = await rm.GetMemberStats(logic.Years()).ToListAsync();
 

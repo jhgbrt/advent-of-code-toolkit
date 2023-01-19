@@ -1,9 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-
-using Net.Code.AdventOfCode.Toolkit.Commands;
 using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Data;
-
+using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 using NodaTime;
 
 using NSubstitute;
@@ -89,7 +87,7 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
         }
         protected async Task<int> Do(params string[] args)
         {
-            return await AoC.RunAsync(resolver, io, clock, database, args.Concat(new[] { "--debug", "--loglevel=Trace" }).ToArray());
+            return await AoC.RunAsync(resolver, io, clock, args.Concat(new[] { "--debug", "--loglevel=Trace" }).ToArray());
         }
         public class DuringAdvent_OnDayOfPuzzle : IntegrationTests
         {

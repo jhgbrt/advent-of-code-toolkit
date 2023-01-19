@@ -1,9 +1,8 @@
-﻿
+﻿namespace Net.Code.AdventOfCode.Toolkit.Commands;
+
 using Net.Code.AdventOfCode.Toolkit.Core;
-
+using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 using System.ComponentModel;
-
-namespace Net.Code.AdventOfCode.Toolkit.Commands;
 
 [Description("Verify the results for the given puzzle(s). Does not run the puzzle code.")]
 class Verify : ManyPuzzlesCommand<AoCSettings>

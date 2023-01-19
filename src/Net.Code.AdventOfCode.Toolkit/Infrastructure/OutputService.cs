@@ -1,8 +1,7 @@
-﻿
-using Spectre.Console;
+﻿using Spectre.Console;
 using Spectre.Console.Rendering;
 
-namespace Net.Code.AdventOfCode.Toolkit.Commands;
+namespace Net.Code.AdventOfCode.Toolkit.Infrastructure;
 
 public interface IInputOutputService
 {
@@ -31,7 +30,7 @@ class DelegatingIOService : IInputOutputService
 
     public void MarkupLine(string markup) => Log(markup);
 
-    public T Prompt<T>(IPrompt<T> prompt) => default(T)!;
+    public T Prompt<T>(IPrompt<T> prompt) => default!;
 
     public void Write(IRenderable renderable) => Log(renderable?.ToString() ?? string.Empty);
 
