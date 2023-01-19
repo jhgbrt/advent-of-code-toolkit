@@ -30,7 +30,7 @@ public class CommandTests
         var manager = CreateCodeManager();
         var puzzleManager = CreatePuzzleManager();
         var sut = new Init(puzzleManager, manager, AoCLogic, Substitute.For<IInputOutputService>());
-        await sut.ExecuteAsync(2021, 1, new());
+        await sut.ExecuteAsync(new(2021,1), new());
         await manager.Received(1).InitializeCodeAsync(Arg.Is<Puzzle>(p => p.Year == 2021 && p.Day == 1), false, Arg.Any<Action<string>>());
     }
 
@@ -66,18 +66,18 @@ public class CommandTests
     {
         var manager = Substitute.For<IAoCRunner>();
         var puzzleManager = CreatePuzzleManager();
-        manager.Run(null, 2021, 1, Arg.Any<Action<int, Result>>()).Returns(DayResult.NotImplemented(2021, 1));
+        manager.Run(null, new(2021, 1), Arg.Any<Action<int, Result>>()).Returns(DayResult.NotImplemented(2021, 1));
         var run = new Run(manager, puzzleManager, AoCLogic, Substitute.For<IInputOutputService>());
-        await run.ExecuteAsync(2021, 1, new());
-        await manager.Received(1).Run(null, 2021, 1, Arg.Any<Action<int, Result>>());
+        await run.ExecuteAsync(new(2021,1), new());
+        await manager.Received(1).Run(null, new(2021, 1), Arg.Any<Action<int, Result>>());
     }
     [Fact]
     public async Task Verify()
     {
         IPuzzleManager manager = CreatePuzzleManager();
         var run = new Verify(manager, AoCLogic, Substitute.For<IInputOutputService>());
-        await run.ExecuteAsync(2021, 1, new());
-        await manager.Received(1).GetPuzzleResult(2021, 1);
+        await run.ExecuteAsync(new(2021, 1), new());
+        await manager.Received(1).GetPuzzleResult(new(2021, 1));
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class CommandTests
         var manager = CreateCodeManager();
         var puzzleManager = CreatePuzzleManager();
         var sut = new Sync(puzzleManager, manager, AoCLogic, Substitute.For<IInputOutputService>());
-        await sut.ExecuteAsync(2021, 1, new());
+        await sut.ExecuteAsync(new(2021, 1), new());
         await manager.Received(1).SyncPuzzleAsync(Arg.Is<Puzzle>(p => p.Year == 2021 && p.Day == 1));
     }
 
@@ -95,7 +95,7 @@ public class CommandTests
     {
         var manager = CreateCodeManager();
         var sut = new Export(manager, AoCLogic, Substitute.For<IInputOutputService>());
-        await sut.ExecuteAsync(2021, 1, new());
+        await sut.ExecuteAsync(new(2021, 1), new());
         await manager.Received(1).GenerateCodeAsync(2021, 1);
         await manager.DidNotReceive().ExportCode(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<string>());
     }
@@ -105,7 +105,7 @@ public class CommandTests
     {
         var manager = CreateCodeManager();
         var sut = new Export(manager, AoCLogic, Substitute.For<IInputOutputService>());
-        await sut.ExecuteAsync(2021, 1, new Export.Settings { output = "output.txt" });
+        await sut.ExecuteAsync(new(2021, 1), new Export.Settings { output = "output.txt" });
         await manager.Received(1).GenerateCodeAsync(2021, 1);
         await manager.Received(1).ExportCode(2021, 1, "public class AoC202101 {}", false, "output.txt");
     }
@@ -114,20 +114,10 @@ public class CommandTests
     public async Task Post_WhenPuzzleIsValid()
     {
         var manager = CreatePuzzleManager();
-        manager.PreparePost(Arg.Any<int>(), Arg.Any<int>()).Returns((true, "reason", 1));
+        manager.PreparePost(Arg.Any<PuzzleKey>()).Returns((true, "reason", 1));
         var sut = new Post(manager, AoCLogic, Substitute.For<IInputOutputService>());
-        await sut.ExecuteAsync(2021, 5, new Post.Settings { value = "SOLUTION" });
-        await manager.Received().Post(2021, 5, 1, "SOLUTION");
-    }
-
-    [Fact]
-    public async Task Post_WhenPuzzleIsInvalid()
-    {
-        var manager = CreatePuzzleManager();
-        manager.PreparePost(Arg.Any<int>(), Arg.Any<int>()).Returns((false, "reason", 0));
-        var sut = new Post(manager, AoCLogic, Substitute.For<IInputOutputService>());
-        await sut.ExecuteAsync(2021, 5, new Post.Settings { value = "SOLUTION" });
-        await manager.DidNotReceive().Post(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>());
+        await sut.ExecuteAsync(new(2021, 5), new Post.Settings { value = "SOLUTION" });
+        await manager.Received().PostAnswer(new(2021, 5), new(1, "SOLUTION"));
     }
 
     [Fact]
@@ -136,7 +126,7 @@ public class CommandTests
         var manager = CreateReportManager();
         var run = new Report(manager, Substitute.For<IInputOutputService>(), AoCLogic);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "report", default), new() );
-        await manager.Received().GetPuzzleReport(default, default, Arg.Any<int?>());
+        await manager.Received().GetPuzzleReport(Arg.Any<ResultStatus?>(), Arg.Any<int?>(), Arg.Any<int?>());
     }
 
     [Fact]
@@ -182,12 +172,49 @@ public class CommandTests
         foreach (var y in AoCLogic.Years())
             foreach (var d in Enumerable.Range(1, 25))
             {
-                var puzzle = Puzzle.Unlocked(y, d, "input", Answer.Empty);
-                manager.GetPuzzle(y, d).Returns(puzzle);
-                manager.GetPuzzleResult(y, d).Returns(DayResult.NotImplemented(y, d));
+                var key = new PuzzleKey(y, d);
+                var puzzle = Puzzle.Unlocked(key, "input", Answer.Empty);
+                var result = DayResult.NotImplemented(key);
+                var status = new PuzzleResultStatus(puzzle, result);
+                manager.GetPuzzle(key).Returns(puzzle);
+                manager.GetPuzzleResult(key).Returns(status);
             }
 
         return manager;
     }
 
+}
+
+
+public class PuzzleTests
+{
+    [Fact]
+    public void CreateAnswer_WhenPuzzleIsLocked_Throws()
+    {
+        var puzzle = Puzzle.Locked(new(2015, 1));
+        Assert.Throws<Exception>(() => puzzle.CreateAnswer("any"));
+    }
+
+    [Fact]
+    public void CreateAnswer_WhenPuzzleIsCompleted_Throws()
+    {
+        var puzzle = new Puzzle(new(2015, 1), "input", new Answer("a", "b"), Status.Completed);
+        Assert.Throws<Exception>(() => puzzle.CreateAnswer("any"));
+    }
+
+    [Fact]
+    public void CreateAnswer_WhenPuzzleIsUnlocked_ReturnsAnswerForPart1()
+    {
+        var puzzle = Puzzle.Unlocked(new(2015, 1), "input", Answer.Empty);
+        var answer = puzzle.CreateAnswer("answer");
+        Assert.Equal((1, "answer"), (answer.part, answer.value));
+    }
+
+    [Fact]
+    public void CreateAnswer_WhenPart1IsAnswered_ReturnsAnswerForPart2()
+    {
+        var puzzle = Puzzle.Unlocked(new(2015, 1), "input", new Answer("part1", string.Empty));
+        var answer = puzzle.CreateAnswer("answer");
+        Assert.Equal((2, "answer"), (answer.part, answer.value));
+    }
 }

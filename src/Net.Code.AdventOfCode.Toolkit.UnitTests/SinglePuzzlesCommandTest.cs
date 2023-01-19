@@ -25,7 +25,7 @@ public class SinglePuzzlesCommandTest
     private async Task DoTest(SinglePuzzleCommand<AoCSettings> sut, AoCSettings options)
     {
         var context = new CommandContext(Substitute.For<IRemainingArguments>(), "name", default);
-        await sut.Configure().ExecuteAsync(Arg.Any<int>(), Arg.Any<int>(), options);
+        await sut.Configure().ExecuteAsync(Arg.Any<PuzzleKey>(), options);
         await sut.ExecuteAsync(context, options);
     }
 
@@ -51,7 +51,7 @@ public class SinglePuzzlesCommandTest
         var sut = CreateSystemUnderTest(2017, 12, 20);
         var options = new AoCSettings();
         await DoTest(sut, options);
-        await sut.Received(1).ExecuteAsync(2017, 20, options);
+        await sut.Received(1).ExecuteAsync(Arg.Is(new PuzzleKey(2017, 20)), options);
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public class SinglePuzzlesCommandTest
         var sut = CreateSystemUnderTest(2017, 12, 20);
         var options = new AoCSettings { year = 2017 };
         await DoTest(sut, options);
-        await sut.Received(1).ExecuteAsync(2017, 20, options);
+        await sut.Received(1).ExecuteAsync(Arg.Is(new PuzzleKey(2017, 20)), options);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class SinglePuzzlesCommandTest
         var sut = CreateSystemUnderTest(2017, 1, 1);
         var options = new AoCSettings { year = 2016, day = 23 };
         await DoTest(sut, options);
-        await sut.Received(1).ExecuteAsync(2016, 23, options);
+        await sut.Received(1).ExecuteAsync(Arg.Is(new PuzzleKey(2016, 23)), options);
     }
 
     [Fact]

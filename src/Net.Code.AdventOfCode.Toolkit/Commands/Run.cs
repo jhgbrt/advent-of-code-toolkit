@@ -30,20 +30,25 @@ class Run : ManyPuzzlesCommand<Run.Settings>
         public string? typeName { get; set; }
     }
 
-    public override async Task<int> ExecuteAsync(int year, int day, Settings options)
+    public override async Task<int> ExecuteAsync(PuzzleKey key, Settings options)
     {
         var typeName = options.typeName;
 
-        var puzzle = await puzzleManager.GetPuzzle(year, day);
+        var puzzle = await puzzleManager.GetPuzzle(key);
 
-        var result = await manager.Run(typeName, year, day, (part, result) => io.MarkupLine($"part {part}: {result.Value} ({result.Elapsed})"));
+        var result = await manager.Run(typeName, key, (part, result) => io.MarkupLine($"part {part}: {result.Value} ({result.Elapsed})"));
 
-        await puzzleManager.SaveResult(result);
-
-        var resultStatus = new PuzzleResultStatus(puzzle, result);
-
-        var reportLine = resultStatus.ToReportLineMarkup();
-        io.MarkupLine(reportLine);
+        if (result is not null)
+        {
+            await puzzleManager.SaveResult(result);
+            var resultStatus = await puzzleManager.GetPuzzleResult(key);
+            var reportLine = resultStatus.ToReportLineMarkup();
+            io.MarkupLine(reportLine);
+        }
+        else
+        {
+            io.MarkupLine("not implemented");
+        }
 
         return 0;
     }

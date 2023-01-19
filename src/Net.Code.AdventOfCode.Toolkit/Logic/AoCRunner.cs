@@ -38,26 +38,27 @@ class AoCRunner : IAoCRunner
         }
     }
 
-    public async Task<DayResult> Run(string? typeName, int year, int day, Action<int, Result> progress)
+    public async Task<DayResult?> Run(string? typeName, PuzzleKey key, Action<int, Result> progress)
     {
+        var (year, day) = key;
         dynamic? aoc = GetAoC(typeName, year, day);
 
         if (aoc == null)
         {
-            return DayResult.NotImplemented(year, day);
+            return null;
         }
 
         var t1 = await Run(() => aoc.Part1());
-        logger.LogDebug($"{year}/{day}, Part 1: result = {t1.Value} - {t1.Elapsed}");
+        logger.LogDebug($"{key}, Part 1: result = {t1.Value} - {t1.Elapsed}");
         progress(1, t1);
 
         var t2 = day < 25
             ? await Run(() => aoc.Part2())
             : new Result(ResultStatus.Ok, "", TimeSpan.Zero);
-        logger.LogDebug($"{year}/{day}, Part 2: result = {t2.Value} - {t2.Elapsed}");
+        logger.LogDebug($"{key}, Part 2: result = {t2.Value} - {t2.Elapsed}");
         progress(2, t2);
 
-        var result = new DayResult(year, day, t1, t2);
+        var result = new DayResult(key, t1, t2);
 
         return result;
     }

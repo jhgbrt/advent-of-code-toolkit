@@ -34,8 +34,8 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             var assembly = Assembly.GetExecutingAssembly();
             resolver.GetEntryAssembly().Returns(assembly);
             var runner = new AoCRunner(logger, resolver);
-            var result = await runner.Run("AoCTest.Year{0}.Day{1:00}.AoC", 2017, 3, (i, s) => { });
-            Assert.Equal("1", result.Part1.Value);
+            var result = await runner.Run("AoCTest.Year{0}.Day{1:00}.AoC", new(2017, 3), (i, s) => { });
+            Assert.Equal("1", result!.Part1.Value);
             Assert.Equal("2", result.Part2.Value);
         }
         [Fact]
@@ -46,8 +46,8 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             var assembly = Assembly.GetExecutingAssembly();
             resolver.GetEntryAssembly().Returns(assembly);
             var runner = new AoCRunner(logger, resolver);
-            var result = await runner.Run(null, 2017, 3, (i, s) => { });
-            Assert.Equal("1", result.Part1.Value);
+            var result = await runner.Run(null, new(2017, 3), (i, s) => { });
+            Assert.Equal("1", result!.Part1.Value);
             Assert.Equal("2", result.Part2.Value);
 
         }

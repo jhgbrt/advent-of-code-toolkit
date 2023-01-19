@@ -25,11 +25,11 @@ class Init : SinglePuzzleCommand<Init.Settings>
         [CommandOption("-f|--force")]
         public bool? force { get; set; }
     }
-    public override async Task<int> ExecuteAsync(int year, int day, Settings options)
+    public override async Task<int> ExecuteAsync(PuzzleKey key, Settings options)
     {
         var force = options.force ?? false;
-        output.WriteLine($"The puzzle for {year}/{day} is unlocked; initializing code...");
-        var puzzle = await puzzleManager.GetPuzzle(year, day);
+        output.WriteLine($"The puzzle for {key} is unlocked; initializing code...");
+        var puzzle = await puzzleManager.GetPuzzle(key);
         await codeManager.InitializeCodeAsync(puzzle, force, output.WriteLine);
         return 0;
     }

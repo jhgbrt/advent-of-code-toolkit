@@ -7,16 +7,16 @@ interface IAoCClient : IDisposable
 {
     Task<LeaderBoard?> GetLeaderBoardAsync(int year, int id);
     Task<IEnumerable<(int id, string description)>> GetLeaderboardIds();
-    Task<Member?> GetMemberAsync(int year, bool usecache = true);
+    Task<Member?> GetMemberAsync(int year);
     Task<int> GetMemberId();
-    Task<Puzzle> GetPuzzleAsync(int year, int day);
-    Task<string> GetPuzzleInputAsync(int year, int day);
+    Task<Puzzle> GetPuzzleAsync(PuzzleKey key);
+    Task<string> GetPuzzleInputAsync(PuzzleKey key);
     Task<(HttpStatusCode status, string content)> PostAnswerAsync(int year, int day, int part, string value);
 }
 
 interface IAoCRunner
 {
-    Task<DayResult> Run(string? typeName, int year, int day, Action<int, Result> progress);
+    Task<DayResult?> Run(string? typeName, PuzzleKey key, Action<int, Result> progress);
 }
 interface ICache
 {
@@ -35,13 +35,12 @@ interface ICodeManager
 
 interface IPuzzleManager
 {
-    Task<Puzzle> GetPuzzle(int y, int d);
-    Task<(Puzzle puzzle, DayResult result)[]> GetPuzzlesWithResults(int? year, TimeSpan? slowerthan);
-    Task<DayResult> GetPuzzleResult(int y, int d);
-    Task<DayResult[]> GetPuzzleResults(int? slowerthan);
+    Task<Puzzle> GetPuzzle(PuzzleKey key);
+    Task<PuzzleResultStatus[]> GetPuzzleResults(int? year, TimeSpan? slowerthan);
+    Task<PuzzleResultStatus> GetPuzzleResult(PuzzleKey key);
     Task SaveResult(DayResult result);
-    Task<(bool success, string content)> Post(int year, int day, int part, string value);
-    Task<(bool status, string reason, int part)> PreparePost(int year, int day);
+    Task<(bool success, string content)> PostAnswer(PuzzleKey key, AnswerToPost answer);
+    Task<(bool status, string reason, int part)> PreparePost(PuzzleKey key);
 }
 
 interface ILeaderboardManager

@@ -3,13 +3,6 @@ using Net.Code.AdventOfCode.Toolkit.Logic;
 
 using NSubstitute;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-using Xunit;
-
 namespace Net.Code.AdventOfCode.Toolkit.UnitTests;
 
 public class ReportManagerTests
@@ -17,22 +10,10 @@ public class ReportManagerTests
     [Fact]
     public async Task GetPuzzleReportTest()
     {
-        var client = Substitute.For<IAoCClient>();
         var manager = Substitute.For<IPuzzleManager>();
-
-        manager.GetPuzzle(Arg.Any<int>(), Arg.Any<int>())
-            .Returns(callInfo => Puzzle.Unlocked(callInfo.ArgAt<int>(0), callInfo.ArgAt<int>(1), "input", Answer.Empty));
-
-        manager.GetPuzzleResult(Arg.Any<int>(), Arg.Any<int>())
-            .Returns(callInfo => DayResult.NotImplemented(callInfo.ArgAt<int>(0), callInfo.ArgAt<int>(1))
-            );
-
-        var logic = new AoCLogic(TestClock.Create(2017, 1, 1, 0, 0, 0));
         var rm = new ReportManager(manager);
-
         var report = await rm.GetPuzzleReport(null, null, null);
-
-        Assert.Equal(50, report.Count());
+        await manager.Received().GetPuzzleResults(null, null);
     }
 
     [Fact]
@@ -47,7 +28,7 @@ public class ReportManagerTests
             new Member(1, "", 0, 0, 0, clock.GetCurrentInstant(), new Dictionary<int, DailyStars>())
             );
 
-        client.GetMemberAsync(Arg.Any<int>(), true)
+        client.GetMemberAsync(Arg.Any<int>())
             .Returns(task);
 
         var logic = new AoCLogic(clock);

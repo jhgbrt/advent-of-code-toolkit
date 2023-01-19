@@ -1,5 +1,8 @@
+using Microsoft.EntityFrameworkCore;
+
 using Net.Code.AdventOfCode.Toolkit.Commands;
 using Net.Code.AdventOfCode.Toolkit.Core;
+using Net.Code.AdventOfCode.Toolkit.Data;
 
 using NodaTime;
 
@@ -42,6 +45,7 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
         private IAssemblyResolver resolver;
         private TestOutputService io;
         private IClock clock;
+        private AoCDbContext database;
         protected int Year => puzzle.year;
         protected int Day => puzzle.day;
         private readonly (int year, int day) puzzle;
@@ -58,6 +62,13 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
 
         public IntegrationTests(ITestOutputHelper output, DateTime now, (int year, int day) puzzle)
         {
+            var options = new DbContextOptionsBuilder<AoCDbContext>()
+            .UseSqlite("Filename=:memory:")
+            .Options;
+
+            database = new AoCDbContext(options);
+            database.Migrate();
+
             Now = now;
             this.puzzle = puzzle;
             resolver = Substitute.For<IAssemblyResolver>();
@@ -78,7 +89,7 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
         }
         protected async Task<int> Do(params string[] args)
         {
-            return await AoC.RunAsync(resolver, io, clock, args.Concat(new[] { "--debug", "--loglevel=Trace" }).ToArray());
+            return await AoC.RunAsync(resolver, io, clock, database, args.Concat(new[] { "--debug", "--loglevel=Trace" }).ToArray());
         }
         public class DuringAdvent_OnDayOfPuzzle : IntegrationTests
         {

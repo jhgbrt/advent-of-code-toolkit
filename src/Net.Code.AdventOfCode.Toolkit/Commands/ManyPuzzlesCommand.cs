@@ -20,14 +20,15 @@ abstract class ManyPuzzlesCommand<TSettings> : AsyncCommand<TSettings> where TSe
         int result = 0;
         foreach (var (y, d) in AoCLogic.Puzzles(year, day, all))
         {
-            var v = await ExecuteAsync(y, d, options);
+            var key = new PuzzleKey(y, d);
+            var v = await ExecuteAsync(key, options);
             if (v != 0)
                 result = v;
         }
         return result;
     }
 
-    public abstract Task<int> ExecuteAsync(int year, int day, TSettings options);
+    public abstract Task<int> ExecuteAsync(PuzzleKey key, TSettings options);
 
 }
 abstract class SinglePuzzleCommand<TSettings> : AsyncCommand<TSettings> where TSettings : CommandSettings, IAoCSettings
@@ -54,9 +55,9 @@ abstract class SinglePuzzleCommand<TSettings> : AsyncCommand<TSettings> where TS
         if (!AoCLogic.IsValidAndUnlocked(year.Value, day.Value))
             throw new Exception($"Not a valid puzzle, or puzzle not yet unlocked: {year}/{day}");
 
-        return await ExecuteAsync(year.Value, day.Value, options);
+        return await ExecuteAsync(new PuzzleKey(year.Value, day.Value), options);
     }
 
-    public abstract Task<int> ExecuteAsync(int year, int day, TSettings options);
+    public abstract Task<int> ExecuteAsync(PuzzleKey key, TSettings options);
 
 }

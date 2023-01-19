@@ -9,7 +9,7 @@ using Net.Code.AdventOfCode.Toolkit.Data;
 
 namespace Net.Code.AdventOfCode.Toolkit.Migrations
 {
-    [DbContext(typeof(AoCDbContext))]
+    [DbContext(typeof(IAoCDbContext))]
     [Migration("20230117125308_InitialCreate")]
     partial class InitialCreate
     {

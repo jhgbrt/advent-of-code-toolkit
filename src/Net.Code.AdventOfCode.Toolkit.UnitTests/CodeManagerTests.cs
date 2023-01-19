@@ -60,7 +60,7 @@ class MyClass
     public async Task InitializeCode_WhenCodeFolderDoesNotExist_Succeeds()
     {
         CodeManager m = CreateCodeManager(false);
-        var puzzle = Puzzle.Unlocked(2021, 3, "input", Answer.Empty);
+        var puzzle = Puzzle.Unlocked(new(2021, 3), "input", Answer.Empty);
         await m.InitializeCodeAsync(puzzle, false, s => { });
     }
 
@@ -69,7 +69,7 @@ class MyClass
     {
         CodeManager m = CreateCodeManager(true);
 
-        var puzzle = Puzzle.Unlocked(2021, 3, "input", Answer.Empty);
+        var puzzle = Puzzle.Unlocked(new(2021, 3), "input", Answer.Empty);
         await m.InitializeCodeAsync(puzzle, true, s => { });
     }
 
@@ -77,7 +77,7 @@ class MyClass
     public async Task InitializeCode_WhenCodeFolderExists_Throws()
     {
         CodeManager m = CreateCodeManager(true);
-        var puzzle = Puzzle.Unlocked(2021, 3, "input", Answer.Empty);
+        var puzzle = Puzzle.Unlocked(new (2021, 3), "input", Answer.Empty);
         await Assert.ThrowsAsync<Exception>(async () => await m.InitializeCodeAsync(puzzle, false, s => { }));
     }
 
