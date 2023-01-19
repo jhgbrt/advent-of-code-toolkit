@@ -35,8 +35,8 @@ class Puzzle : IHavePuzzleKey
 
     public AnswerToPost CreateAnswer(string answer) => Status switch
     {
-        Status.Locked => throw new Exception("Puzzle is locked. Did you initialize it?"),
-        Status.Completed => throw new Exception("Already completed"),
+        Status.Locked => throw new PuzzleLockedException("Puzzle is locked. Did you initialize it?"),
+        Status.Completed => throw new AlreadyCompletedException("Already completed"),
         Status.Unlocked => new(1, answer),
         Status.AnsweredPart1 => new(2, answer),
         _ => throw new NotSupportedException()
@@ -50,5 +50,35 @@ class Puzzle : IHavePuzzleKey
             2 => Answer with { part2 = answer.value },
             _ => throw new NotSupportedException()
         };
+    }
+}
+
+internal class PuzzleLockedException : Exception 
+{
+    public PuzzleLockedException() : base()
+    {
+    }
+
+    public PuzzleLockedException(string? message) : base(message)
+    {
+    }
+
+    public PuzzleLockedException(string? message, Exception? innerException) : base(message, innerException)
+    {
+    }
+}
+
+internal class AlreadyCompletedException : Exception 
+{
+    public AlreadyCompletedException() : base()
+    {
+    }
+
+    public AlreadyCompletedException(string? message) : base(message)
+    {
+    }
+
+    public AlreadyCompletedException(string? message, Exception? innerException) : base(message, innerException)
+    {
     }
 }
