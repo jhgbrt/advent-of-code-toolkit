@@ -40,7 +40,7 @@ class Run : ManyPuzzlesCommand<Run.Settings>
 
         if (result is not null)
         {
-            await puzzleManager.SaveResult(result);
+            await puzzleManager.AddResult(result);
             var resultStatus = await puzzleManager.GetPuzzleResult(key);
             var reportLine = resultStatus.ToReportLineMarkup();
             io.MarkupLine(reportLine);

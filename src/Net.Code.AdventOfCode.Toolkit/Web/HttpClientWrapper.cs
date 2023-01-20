@@ -1,11 +1,11 @@
-﻿namespace Net.Code.AdventOfCode.Toolkit.Logic;
+﻿namespace Net.Code.AdventOfCode.Toolkit.Web;
 using System.Net;
 
 using Microsoft.Extensions.Logging;
 
 using Net.Code.AdventOfCode.Toolkit.Core;
 
-class NotAuthenticatedException: Exception 
+class NotAuthenticatedException : Exception
 {
     public NotAuthenticatedException() : base()
     {
@@ -24,7 +24,7 @@ class NotAuthenticatedException: Exception
     }
 }
 
-class HttpClientWrapper: IHttpClientWrapper
+class HttpClientWrapper : IHttpClientWrapper
 {
     readonly HttpClientHandler handler;
     readonly HttpClient client;

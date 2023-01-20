@@ -16,7 +16,7 @@ using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Data;
 using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 using Net.Code.AdventOfCode.Toolkit.Logic;
-
+using Net.Code.AdventOfCode.Toolkit.Web;
 using NodaTime;
 
 using Spectre.Console;

@@ -1,3 +1,3 @@
 ﻿namespace Net.Code.AdventOfCode.Toolkit.Core;
 
-record LeaderBoard(int OwnerId, int Year, IReadOnlyDictionary<int, Member> Members);
+record LeaderBoard(int OwnerId, int Year, IReadOnlyDictionary<int, PersonalStats> Members);

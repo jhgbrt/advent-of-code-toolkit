@@ -4,7 +4,7 @@ using HtmlAgilityPack;
 
 using System.Text.RegularExpressions;
 
-record SettingsHtml(string html)
+partial record SettingsHtml(string html)
 {
     public int GetMemberId()
     {
@@ -15,6 +15,9 @@ record SettingsHtml(string html)
                     where node.InnerText.Contains("anonymous user #")
                     select node.InnerText).Single();
 
-        return int.Parse(Regex.Match(text, @"#(?<id>\d+)\)").Groups["id"].Value);
+        return int.Parse(IdRegex().Match(text).Groups["id"].Value);
     }
+
+    [GeneratedRegex("#(?<id>\\d+)\\)")]
+    private static partial Regex IdRegex();
 }

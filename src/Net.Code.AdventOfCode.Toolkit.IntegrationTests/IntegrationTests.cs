@@ -43,7 +43,6 @@ namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
         private IAssemblyResolver resolver;
         private TestOutputService io;
         private IClock clock;
-        private AoCDbContext database;
         protected int Year => puzzle.year;
         protected int Day => puzzle.day;
         private readonly (int year, int day) puzzle;

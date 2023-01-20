@@ -1,4 +1,4 @@
-﻿namespace Net.Code.AdventOfCode.Toolkit.Logic;
+﻿namespace Net.Code.AdventOfCode.Toolkit.Web;
 
 using System.Net;
 using Microsoft.Extensions.Logging;
@@ -40,7 +40,7 @@ class AoCClient : IDisposable, IAoCClient
         return new LeaderboardJson(year, content).GetLeaderBoard();
     }
 
-    public async Task<Member?> GetMemberAsync(int year)
+    public async Task<PersonalStats?> GetPersonalStatsAsync(int year)
     {
         var id = await GetMemberId();
         var lb = await GetLeaderBoardAsync(year, id);
@@ -57,10 +57,8 @@ class AoCClient : IDisposable, IAoCClient
     }
     private async Task<(HttpStatusCode StatusCode, string Content)> GetAsync(string path)
     {
-        string content;
         await VerifyAuthorized();
-        (var status, content) = await client.GetAsync(path);
-        return (status, content);
+        return await client.GetAsync(path);
     }
 
     public async Task<string> GetPuzzleInputAsync(PuzzleKey key)
@@ -74,7 +72,8 @@ class AoCClient : IDisposable, IAoCClient
     {
         HttpStatusCode statusCode;
         (statusCode, var html) = await GetAsync($"{key.Year}/day/{key.Day}");
-        if (statusCode != HttpStatusCode.OK) return Puzzle.Locked(key);
+        if (statusCode != HttpStatusCode.OK) 
+            return Puzzle.Locked(key);
         var input = await GetPuzzleInputAsync(key);
         return new PuzzleHtml(key, html, input).GetPuzzle();
     }
