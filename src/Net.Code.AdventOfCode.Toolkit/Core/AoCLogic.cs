@@ -2,7 +2,7 @@
 
 using NodaTime;
 
-
+using System.Runtime.Serialization;
 
 class AoCLogic
 {
@@ -75,5 +75,33 @@ class AoCLogic
         if (y != Now.Year) return false;
         if (d != Now.Day) return false;
         return IsValidAndUnlocked(y, d);
+    }
+
+    internal void EnsureValid(PuzzleKey key)
+    {
+        if (!IsValidAndUnlocked(key.Year, key.Day))
+            throw new InvalidPuzzleException(key);
+    }
+}
+
+class InvalidPuzzleException : Exception
+{
+    public InvalidPuzzleException(PuzzleKey key) : this($"Puzzle for {key} is invalid or not yet unlocked.")
+    {
+    }
+    public InvalidPuzzleException()
+    {
+    }
+
+    public InvalidPuzzleException(string? message) : base(message)
+    {
+    }
+
+    public InvalidPuzzleException(string? message, Exception? innerException) : base(message, innerException)
+    {
+    }
+
+    protected InvalidPuzzleException(SerializationInfo info, StreamingContext context) : base(info, context)
+    {
     }
 }

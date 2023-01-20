@@ -65,9 +65,9 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
 
             client.PostAnswerAsync(2021, 1, 1, "answer").Returns(Task.FromResult((statusCode, content)));
 #pragma warning disable CS8620
-            client.GetMemberAsync(2021).Returns(
+            client.GetPersonalStatsAsync(2021).Returns(
                 Task.FromResult(
-                    new Member(1, "", 50, 123, 123, NodaTime.SystemClock.Instance.GetCurrentInstant(), new Dictionary<int, DailyStars>())
+                    new PersonalStats(1, "", 50, 123, 123, NodaTime.SystemClock.Instance.GetCurrentInstant(), new Dictionary<int, DailyStars>())
                 ));
 
             var result = await m.PostAnswer(new(2021, 1), new(1, "answer"));

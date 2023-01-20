@@ -15,11 +15,11 @@ public class LeaderboardManagerTests
         var manager = Substitute.For<IPuzzleManager>();
 
 #pragma warning disable CS8619
-        Task<Member?> task = Task.FromResult(
-            new Member(1, "", 0, 0, 0, clock.GetCurrentInstant(), new Dictionary<int, DailyStars>())
+        Task<PersonalStats?> task = Task.FromResult(
+            new PersonalStats(1, "", 0, 0, 0, clock.GetCurrentInstant(), new Dictionary<int, DailyStars>())
             );
 
-        client.GetMemberAsync(Arg.Any<int>())
+        client.GetPersonalStatsAsync(Arg.Any<int>())
             .Returns(task);
 
         var logic = new AoCLogic(clock);

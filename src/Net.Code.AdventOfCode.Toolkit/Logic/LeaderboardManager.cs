@@ -51,7 +51,7 @@ class LeaderboardManager : ILeaderboardManager
     {
         foreach (var y in years)
         {
-            var m = await client.GetMemberAsync(y);
+            var m = await client.GetPersonalStatsAsync(y);
             if (m == null) continue;
             yield return new MemberStats(y, m.Name, m.TotalStars, m.LocalScore);
         }

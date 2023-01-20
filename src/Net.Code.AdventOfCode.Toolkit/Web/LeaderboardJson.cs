@@ -1,4 +1,6 @@
-﻿namespace Net.Code.AdventOfCode.Toolkit.Core;
+﻿using Net.Code.AdventOfCode.Toolkit.Core;
+
+namespace Net.Code.AdventOfCode.Toolkit.Web;
 
 using NodaTime;
 
@@ -12,7 +14,7 @@ record LeaderboardJson(int year, string content)
 
         var (ownerid, members) = jobject.EnumerateObject()
             .Aggregate(
-                (ownerid: -1, members: Enumerable.Empty<Member>()),
+                (ownerid: -1, members: Enumerable.Empty<PersonalStats>()),
                 (m, p) => p.Name switch
                 {
                     "owner_id" => (GetInt32(p.Value), m.members),
@@ -33,12 +35,12 @@ record LeaderboardJson(int year, string content)
             };
         }
 
-        IEnumerable<Member> GetMembers(JsonElement element)
+        IEnumerable<PersonalStats> GetMembers(JsonElement element)
         {
             foreach (var item in element.EnumerateObject())
             {
                 var member = item.Value;
-                var result = new Member(0, string.Empty, 0, 0, 0, null, new Dictionary<int, DailyStars>());
+                var result = new PersonalStats(0, string.Empty, 0, 0, 0, null, new Dictionary<int, DailyStars>());
                 foreach (var property in member.EnumerateObject())
                 {
                     result = property.Name switch

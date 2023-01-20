@@ -11,15 +11,19 @@ class PuzzleManager : IPuzzleManager
 {
     private readonly IAoCClient client;
     private readonly IAoCDbContext db;
+    private readonly AoCLogic logic;
 
-    public PuzzleManager(IAoCClient client, IAoCDbContext db)
+    public PuzzleManager(IAoCClient client, IAoCDbContext db, AoCLogic logic)
     {
         this.client = client;
         this.db = db;
+        this.logic = logic;
     }
 
     public async Task<(bool status, string reason, int part)> PreparePost(PuzzleKey key)
     {
+        logic.EnsureValid(key);
+
         var puzzle = await GetPuzzle(key);
        
         return puzzle.Status switch
@@ -32,6 +36,8 @@ class PuzzleManager : IPuzzleManager
 
     public async Task<Puzzle> GetPuzzle(PuzzleKey key)
     {
+        logic.EnsureValid(key);
+
         var puzzle = await db.GetPuzzle(key);
 
         if (puzzle == null)
@@ -83,16 +89,23 @@ class PuzzleManager : IPuzzleManager
 
     public async Task<PuzzleResultStatus> GetPuzzleResult(PuzzleKey key)
     {
+        logic.EnsureValid(key);
+
         var puzzle = await db.GetPuzzle(key);
+
         if (puzzle is null)
             throw new ArgumentException(nameof(key));
+
         var result = await db.GetResult(key)
             ?? DayResult.NotImplemented(key);
+
         return new PuzzleResultStatus(puzzle, result);
     }
 
     public async Task<(bool success, string content)> PostAnswer(PuzzleKey key, AnswerToPost answer)
     {
+        logic.EnsureValid(key);
+
         var (_, content) = await client.PostAnswerAsync(key.Year, key.Day, answer.part, answer.value);
         var success = content.StartsWith("That's the right answer");
 
@@ -102,14 +115,16 @@ class PuzzleManager : IPuzzleManager
             var puzzle = await GetPuzzle(key);
             puzzle.SetAnswer(answer);
 
-            var stats = await client.GetMemberAsync(key.Year);
+            var stats = await client.GetPersonalStatsAsync(key.Year);
             content = new StringBuilder(content).AppendLine().AppendLine($"You now have {stats?.TotalStars} stars and a score of {stats?.LocalScore}").ToString();
         }
         return (success, content);
     }
 
-    public async Task SaveResult(DayResult result)
+    public async Task AddResult(DayResult result)
     {
+        logic.EnsureValid(result.Key);
+
         var current = await db.GetResult(result.Key);
         if (current != null)
         {
