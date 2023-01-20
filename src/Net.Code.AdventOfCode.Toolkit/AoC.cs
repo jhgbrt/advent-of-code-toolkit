@@ -139,7 +139,6 @@ public static class AoC
         services.AddSingleton<IAssemblyResolver>(resolver);
         services.AddTransient<IHttpClientWrapper, HttpClientWrapper>();
         services.AddTransient<AoCLogic>();
-        services.AddTransient<IEngine, Engine>();
         services.AddSingleton(clock);
         services.AddSingleton(io);
         services.AddDbContext<IAoCDbContext, AoCDbContext>(
