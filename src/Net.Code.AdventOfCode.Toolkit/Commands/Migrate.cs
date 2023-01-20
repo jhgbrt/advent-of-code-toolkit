@@ -10,15 +10,13 @@ namespace Net.Code.AdventOfCode.Toolkit.Commands;
 class Migrate : AsyncCommand<Migrate.Settings>
 {
     public class Settings : CommandSettings { }
-    private readonly IAoCClient aocclient;
     private readonly ICache cache;
     private readonly IAoCDbContext dbcontext;
     private readonly AoCLogic AoCLogic;
 
-    public Migrate(IAoCDbContext dbcontext, IAoCClient client, AoCLogic aoCLogic, ICache cache)
+    public Migrate(IAoCDbContext dbcontext, AoCLogic aoCLogic, ICache cache)
     {
         this.dbcontext = dbcontext;
-        this.aocclient = client;
         this.AoCLogic = aoCLogic;
         this.cache = cache;
     }
