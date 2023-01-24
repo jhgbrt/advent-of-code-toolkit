@@ -7,19 +7,7 @@ using Net.Code.AdventOfCode.Toolkit.Logic;
 using NSubstitute;
 
 using System.Reflection;
-using System.Threading.Tasks;
 
-using Xunit;
-
-namespace AoCTest.Year2017.Day03
-{
-    public class AoC
-    {
-        public long Part1() => 1;
-        public long Part2() => 2;
-
-    }
-}
 
 namespace Net.Code.AdventOfCode.Toolkit.UnitTests
 {
@@ -34,9 +22,9 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             var assembly = Assembly.GetExecutingAssembly();
             resolver.GetEntryAssembly().Returns(assembly);
             var runner = new AoCRunner(logger, resolver);
-            var result = await runner.Run("AoCTest.Year{0}.Day{1:00}.AoC", new(2017, 3), (i, s) => { });
-            Assert.Equal("1", result!.Part1.Value);
-            Assert.Equal("2", result.Part2.Value);
+            var result = await runner.Run("AoCTest.Year{0}.Day{1:00}.AoC{0}{1:00}", new(2017, 3), (i, s) => { });
+            Assert.Equal("answer1", result!.Part1.Value);
+            Assert.Equal("answer2", result.Part2.Value);
         }
         [Fact]
         public async Task Run_WithoutTypeName_Test()
@@ -47,8 +35,8 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             resolver.GetEntryAssembly().Returns(assembly);
             var runner = new AoCRunner(logger, resolver);
             var result = await runner.Run(null, new(2017, 3), (i, s) => { });
-            Assert.Equal("1", result!.Part1.Value);
-            Assert.Equal("2", result.Part2.Value);
+            Assert.Equal("answer1", result!.Part1.Value);
+            Assert.Equal("answer2", result.Part2.Value);
 
         }
     }

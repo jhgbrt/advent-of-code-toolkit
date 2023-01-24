@@ -3,32 +3,26 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Net.Code.AdventOfCode.Toolkit", "Net.Code.AdventOfCode.Toolkit\Net.Code.AdventOfCode.Toolkit.csproj", "{7E63FD3F-A38D-4C4B-9ACD-6DCFC4B4D317}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Net.Code.AdventOfCode.Toolkit", "Net.Code.AdventOfCode.Toolkit\Net.Code.AdventOfCode.Toolkit.csproj", "{7E63FD3F-A38D-4C4B-9ACD-6DCFC4B4D317}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Net.Code.AdventOfCode.Toolkit.IntegrationTests", "Net.Code.AdventOfCode.Toolkit.IntegrationTests\Net.Code.AdventOfCode.Toolkit.IntegrationTests.csproj", "{0EF7DB1C-2DAB-47E7-AE48-D138B29E3E26}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Net.Code.AdventOfCode.Toolkit.UnitTests", "Net.Code.AdventOfCode.Toolkit.UnitTests\Net.Code.AdventOfCode.Toolkit.UnitTests.csproj", "{B1A9046E-36AD-447A-8C34-F4A4461B770A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Net.Code.AdventOfCode.Toolkit.UnitTests", "Net.Code.AdventOfCode.Toolkit.UnitTests\Net.Code.AdventOfCode.Toolkit.UnitTests.csproj", "{B1A9046E-36AD-447A-8C34-F4A4461B770A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{7E63FD3F-A38D-4C4B-9ACD-6DCFC4B4D317}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7E63FD3F-A38D-4C4B-9ACD-6DCFC4B4D317}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E63FD3F-A38D-4C4B-9ACD-6DCFC4B4D317}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7E63FD3F-A38D-4C4B-9ACD-6DCFC4B4D317}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0EF7DB1C-2DAB-47E7-AE48-D138B29E3E26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0EF7DB1C-2DAB-47E7-AE48-D138B29E3E26}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0EF7DB1C-2DAB-47E7-AE48-D138B29E3E26}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0EF7DB1C-2DAB-47E7-AE48-D138B29E3E26}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B1A9046E-36AD-447A-8C34-F4A4461B770A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B1A9046E-36AD-447A-8C34-F4A4461B770A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1A9046E-36AD-447A-8C34-F4A4461B770A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1A9046E-36AD-447A-8C34-F4A4461B770A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal
