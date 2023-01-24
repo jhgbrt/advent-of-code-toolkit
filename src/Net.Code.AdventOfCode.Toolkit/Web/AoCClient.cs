@@ -88,7 +88,7 @@ class AoCClient : IDisposable, IAoCClient
 
     public async Task<int> GetMemberId()
     {
-        (var statusCode, var html) = await GetAsync("/settings");
+        (var statusCode, var html) = await GetAsync("settings");
         if (statusCode != HttpStatusCode.OK) return 0;
         return new SettingsHtml(html).GetMemberId();
     }

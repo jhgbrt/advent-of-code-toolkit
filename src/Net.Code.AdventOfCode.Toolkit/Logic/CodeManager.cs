@@ -12,9 +12,9 @@ namespace Net.Code.AdventOfCode.Toolkit.Logic;
 
 class CodeManager : ICodeManager
 {
-    private readonly IFileSystem fileSystem;
+    private readonly IFileSystemFactory fileSystem;
 
-    public CodeManager(IFileSystem fileSystem)
+    public CodeManager(IFileSystemFactory fileSystem)
     {
         this.fileSystem = fileSystem;
     }

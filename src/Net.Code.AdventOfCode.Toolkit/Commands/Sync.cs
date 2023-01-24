@@ -21,7 +21,7 @@ class Sync : ManyPuzzlesCommand<AoCSettings>
     public override async Task<int> ExecuteAsync(PuzzleKey key, AoCSettings _)
     {
         io.WriteLine($"Synchronizing for puzzle {key}...");
-        var puzzle = await puzzleManager.GetPuzzle(key);
+        var puzzle = await puzzleManager.SyncPuzzle(key);
         await codeManager.SyncPuzzleAsync(puzzle);
         return 0;
     }

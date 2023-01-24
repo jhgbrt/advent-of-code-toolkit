@@ -22,6 +22,7 @@ using NodaTime;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
@@ -29,16 +30,15 @@ using System.Reflection;
 public static class AoC
 {
     public static Task<int> RunAsync(string[] args)
-        => RunAsync(
-            AssemblyResolver.Instance,
-            new InputOutputService(),
-            SystemClock.Instance,
-            args);
+        => RunAsync(null, null, null, null, null, null, args);
 
     internal static async Task<int> RunAsync(
-        IAssemblyResolver resolver,
-        IInputOutputService io,
-        IClock clock,
+        IAssemblyResolver? resolver,
+        IInputOutputService? io,
+        IClock? clock,
+        IAoCDbContext? aocDbContext,
+        IHttpClientWrapper? httpclient,
+        IFileSystem? filesystem,
         string[] args
         )
     {
@@ -56,7 +56,16 @@ public static class AoC
                 break;
             }
         }
-        var services = await InitializeServicesAsync(resolver, io, clock, string.IsNullOrEmpty(loglevel) ? LogLevel.Warning : Enum.Parse<LogLevel>(loglevel, true), args.Contains("--debug"));
+        var services = await InitializeServicesAsync(
+            resolver, 
+            io, 
+            clock, 
+            aocDbContext,
+            httpclient,
+            filesystem,
+            string.IsNullOrEmpty(loglevel) ? LogLevel.Warning : Enum.Parse<LogLevel>(loglevel, true), 
+            args.Contains("--debug")
+            );
 
         var registrar = new TypeRegistrar(services);
 
@@ -88,10 +97,15 @@ public static class AoC
 
 
         var returnValue = await app.RunAsync(args);
-        var db = registrar.ServiceProvider?.GetService<IAoCDbContext>()!;
+        if (registrar.Scope is not null)
+        {
+            using (var db = registrar.ServiceProvider?.GetService<IAoCDbContext>()!)
+            {
+                await db.SaveChangesAsync();
+            }
 
-        if (db != null)
-            await db.SaveChangesAsync();
+            registrar.Scope.Dispose();
+        }
 
         return returnValue;
     }
@@ -108,12 +122,16 @@ public static class AoC
     }
 
     static Task<ServiceCollection> InitializeServicesAsync(
-        IAssemblyResolver resolver,
-        IInputOutputService io,
-        IClock clock,
+        IAssemblyResolver? resolver,
+        IInputOutputService? io,
+        IClock? clock,
+        IAoCDbContext? aocDbContext,
+        IHttpClientWrapper? httpclient,
+        IFileSystem? filesystem,
         LogLevel level,
         bool debug)
     {
+        resolver = resolver ?? AssemblyResolver.Instance;
         var assembly = resolver.GetEntryAssembly() ?? throw new NullReferenceException("GetEntryAssembly returned null"); 
 
         var config = new ConfigurationBuilder()
@@ -131,31 +149,55 @@ public static class AoC
             .SetMinimumLevel(level));
         services.AddSingleton(configuration);
         services.AddTransient<IAoCClient, AoCClient>();
+        services.AddTransient<IFileSystemFactory, FileSystemFactory>();
         services.AddTransient<IPuzzleManager, PuzzleManager>();
         services.AddTransient<IAoCRunner, AoCRunner>();
         services.AddTransient<ICodeManager, CodeManager>();
         services.AddTransient<ILeaderboardManager, LeaderboardManager>();
         services.AddTransient<ICache, Cache>();
-        services.AddTransient<IFileSystem, FileSystem>();
+        if (filesystem is not null)
+        {
+            services.AddSingleton(filesystem);
+        }
+        else
+        {
+            services.AddTransient<IFileSystem, FileSystem>();
+        }
         services.AddSingleton<IAssemblyResolver>(resolver);
-        services.AddTransient<IHttpClientWrapper, HttpClientWrapper>();
+        if (httpclient is not null)
+        {
+            services.AddSingleton(httpclient);
+        }
+        else
+        {
+            services.AddTransient<IHttpClientWrapper, HttpClientWrapper>();
+        }
         services.AddTransient<AoCLogic>();
-        services.AddSingleton(clock);
-        services.AddSingleton(io);
-        services.AddDbContext<IAoCDbContext, AoCDbContext>(
-            options =>
-            {
-                if (debug)
-                {
-                    options.EnableDetailedErrors();
-                    options.EnableSensitiveDataLogging();
-                }
-                options.UseSqlite(
-                    new SqliteConnectionStringBuilder() { DataSource = @".cache\aoc.db" }.ToString()
-                    );
+        services.AddSingleton(clock ?? SystemClock.Instance);
+        services.AddSingleton(io ?? new InputOutputService());
 
-            }, contextLifetime: ServiceLifetime.Singleton
-            );
+        if (aocDbContext is not null)
+        {
+            services.AddSingleton(aocDbContext);
+        }
+        else
+        {
+
+            services.AddDbContext<IAoCDbContext, AoCDbContext>(
+                options =>
+                {
+                    if (debug)
+                    {
+                        options.EnableDetailedErrors();
+                        options.EnableSensitiveDataLogging();
+                    }
+                    options.UseSqlite(
+                        new SqliteConnectionStringBuilder() { DataSource = @".cache\aoc.db" }.ToString()
+                        );
+
+                }, contextLifetime: ServiceLifetime.Scoped
+                );
+        }
         foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(ICommand))))
         {
             services.AddTransient(type);
@@ -184,6 +226,11 @@ sealed class TypeRegistrar : ITypeRegistrar
     public IServiceProvider? ServiceProvider => serviceProvider;
     private readonly IServiceCollection _builder;
     private IServiceProvider? serviceProvider;
+
+    // ugly hack, but currently no other way to create a scope.
+    // see also https://github.com/spectreconsole/spectre.console/issues/1093
+    public IServiceScope? Scope { get; set; }
+
     public TypeRegistrar(IServiceCollection builder)
     {
         _builder = builder;
@@ -192,6 +239,8 @@ sealed class TypeRegistrar : ITypeRegistrar
     public ITypeResolver Build()
     {
         serviceProvider = _builder.BuildServiceProvider();
+        if (Scope is not null) throw new Exception("expected scope to be null");
+        Scope = serviceProvider.CreateScope();
         return new TypeResolver(serviceProvider);
     }
 

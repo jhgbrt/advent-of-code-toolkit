@@ -29,7 +29,7 @@ class Init : SinglePuzzleCommand<Init.Settings>
     {
         var force = options.force ?? false;
         output.WriteLine($"The puzzle for {key} is unlocked; initializing code...");
-        var puzzle = await puzzleManager.GetPuzzle(key);
+        var puzzle = await puzzleManager.SyncPuzzle(key);
         await codeManager.InitializeCodeAsync(puzzle, force, output.WriteLine);
         return 0;
     }

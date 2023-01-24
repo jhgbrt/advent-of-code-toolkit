@@ -118,11 +118,10 @@ public class CommandTests
     public async Task Post_WhenPuzzleIsValid()
     {
         var manager = CreatePuzzleManager();
-        manager.PreparePost(Arg.Any<PuzzleKey>()).Returns((true, "reason", 1));
         var sut = new Post(manager, AoCLogic, Substitute.For<IInputOutputService>());
         PuzzleKey key = new(2021, 5);
         await sut.ExecuteAsync(key, new Post.Settings { value = "SOLUTION" });
-        await manager.Received().PostAnswer(key, new(1, "SOLUTION"));
+        await manager.Received().PostAnswer(key, "SOLUTION");
     }
 
     [Fact]
@@ -170,6 +169,7 @@ public class CommandTests
             var result = DayResult.NotImplemented(key);
             var status = new PuzzleResultStatus(puzzle, result);
             manager.GetPuzzle(key).Returns(puzzle);
+            manager.SyncPuzzle(key).Returns(puzzle);
             manager.GetPuzzleResult(key).Returns(status);
         }
 
