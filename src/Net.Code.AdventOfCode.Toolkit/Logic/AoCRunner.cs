@@ -21,8 +21,9 @@ class AoCRunner : IAoCRunner
         this.logger = logger;
         this.resolver = resolver;
     }
-    public async Task Test(string? typeName, int year, int day, Action<int, Result> progress)
+    public async Task Test(string? typeName, PuzzleKey key, Action<int, Result> progress)
     {
+        var (year, day) = key;
         dynamic? aoc = GetAoC(typeName, year, day);
 
         if (aoc == null)

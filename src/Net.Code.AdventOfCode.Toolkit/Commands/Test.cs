@@ -1,5 +1,6 @@
 ﻿
 using Net.Code.AdventOfCode.Toolkit.Core;
+using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 
 using Spectre.Console.Cli;
 
@@ -30,18 +31,22 @@ class Test : ManyPuzzlesCommand<Test.Settings>
         public string? typeName { get; set; }
     }
 
-    public override async Task<int> ExecuteAsync(int year, int day, Settings options)
+    public override async Task<int> ExecuteAsync(PuzzleKey key, Settings options)
     {
         var typeName = options.typeName;
 
-        var puzzle = await puzzleManager.GetPuzzle(year, day);
+        var puzzle = await puzzleManager.GetPuzzle(key);
 
-        await manager.Test(typeName, year, day, (test, result) => io.MarkupLine($"test {test}: {result.Value} ({result.Elapsed})"));
+        await manager.Test(typeName, key, (test, result) => io.MarkupLine($"test {test}: {result.Value} ({result.Elapsed})"));
 
-        var result = await manager.Run(typeName, year, day, (part, result) => io.MarkupLine($"part {part}: {result.Value} ({result.Elapsed})"));
-        var resultStatus = new PuzzleResultStatus(puzzle, result);
-        var reportLine = resultStatus.ToReportLineMarkup();
-        io.MarkupLine(reportLine);
+
+        var result = await manager.Run(typeName, key, (part, result) => io.MarkupLine($"part {part}: {result.Value} ({result.Elapsed})"));
+        if (result is not null)
+        {
+            var resultStatus = new PuzzleResultStatus(puzzle, result);
+            var reportLine = resultStatus.ToReportLineMarkup();
+            io.MarkupLine(reportLine);
+        }
 
         return 0;
     }

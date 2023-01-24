@@ -1,6 +1,7 @@
 ﻿namespace Net.Code.AdventOfCode.Toolkit.Core;
 using System.Net;
 using System.Reflection;
+
 using Net.Code.AdventOfCode.Toolkit.Core.Leaderboard;
 
 record Configuration(string BaseAddress, string SessionCookie);
@@ -18,6 +19,7 @@ interface IAoCClient : IDisposable
 
 interface IAoCRunner
 {
+    Task Test(string? typeName, PuzzleKey key, Action<int, Result> progress);
     Task<DayResult?> Run(string? typeName, PuzzleKey key, Action<int, Result> progress);
 }
 
@@ -109,7 +111,7 @@ public interface IAssemblyResolver
 {
     Assembly? GetEntryAssembly();
 }
-internal interface IAoCDbContext: IDisposable
+internal interface IAoCDbContext : IDisposable
 {
     void AddPuzzle(Puzzle puzzle);
     void AddResult(DayResult result);
