@@ -2,7 +2,7 @@
 
 using System.Reflection;
 
-namespace Net.Code.AdventOfCode.Toolkit.Logic;
+namespace Net.Code.AdventOfCode.Toolkit.Infrastructure;
 
 public class AssemblyResolver : IAssemblyResolver
 {
