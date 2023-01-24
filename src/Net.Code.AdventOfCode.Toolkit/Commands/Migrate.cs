@@ -14,7 +14,7 @@ class Migrate : AsyncCommand<Migrate.Settings>
     {
         this.dbcontext = dbcontext;
     }
-    public async override Task<int> ExecuteAsync(CommandContext context, Settings settings)
+    public override Task<int> ExecuteAsync(CommandContext context, Settings settings)
     {
         dbcontext.Migrate();
         return Task.FromResult(0);
