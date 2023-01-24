@@ -19,7 +19,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
 
         (string path, string content)[] items = new[]
         {
-            (path: "/settings", content: settings),
+            (path: "settings", content: settings),
             (path: $"2015/leaderboard/private/view/148156.json", content: leaderboardjson),
             (path: $"2015/day/1", content: puzzle),
             (path: $"2015/day/1/input", content: "input"),
@@ -74,7 +74,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         public async Task GetMemberId()
         {
             await client.GetMemberId();
-            await Verify("/settings");
+            await Verify("settings");
         }
 
         [Fact]
@@ -82,7 +82,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         {
             var year = 2015;
             await client.GetPersonalStatsAsync(year);
-            await Verify("/settings", "2015/leaderboard/private/view/148156.json");
+            await Verify("settings", "2015/leaderboard/private/view/148156.json");
         }
 
         [Fact]

@@ -20,20 +20,6 @@ class PuzzleManager : IPuzzleManager
         this.logic = logic;
     }
 
-    public async Task<(bool status, string reason, int part)> PreparePost(PuzzleKey key)
-    {
-        logic.EnsureValid(key);
-
-        var puzzle = await GetPuzzle(key);
-       
-        return puzzle.Status switch
-        {
-            Status.Locked => (false, "Puzzle is locked. Did you initialize it?", 0),
-            Status.Completed => (false, "Already completed", 0),
-            _ => (true, string.Empty, puzzle.Status == Status.Unlocked ? 1 : 2)
-        };
-    }
-
     public async Task<Puzzle> GetPuzzle(PuzzleKey key)
     {
         logic.EnsureValid(key);
@@ -42,12 +28,30 @@ class PuzzleManager : IPuzzleManager
 
         if (puzzle == null)
         {
-            puzzle = await client.GetPuzzleAsync(key);
-            db.AddPuzzle(puzzle);
+            throw new Exception($"Puzzle {key} not initialized?");
         }
 
         return puzzle;
     }
+
+    public async Task<Puzzle> SyncPuzzle(PuzzleKey key)
+    {
+        logic.EnsureValid(key);
+        var puzzle = await db.GetPuzzle(key);
+        var remote = await client.GetPuzzleAsync(key);
+
+        if (puzzle == null)
+        {
+            puzzle = remote;
+            db.AddPuzzle(puzzle);
+        }
+        else
+        {
+            puzzle.UpdateFrom(remote);
+        }
+        return puzzle;
+    }
+
     public async Task<Puzzle[]> GetPuzzles()
     {
         return await db.Puzzles.ToArrayAsync();
@@ -55,14 +59,16 @@ class PuzzleManager : IPuzzleManager
     public async Task<PuzzleResultStatus[]> GetPuzzleResults(int? year, TimeSpan? slowerthan)
     {
         var puzzles = db.Puzzles.AsNoTracking().AsQueryable();
+        var results = db.Results.AsNoTracking().AsQueryable();
         if (year.HasValue)
         {
             puzzles = puzzles.Where(p => p.Year == year.Value);
+            results = results.Where(r => r.Year == year.Value);
         }
-        var results = db.Results.AsNoTracking().AsQueryable();
         if (slowerthan.HasValue)
+        {
             results = results.Where(r => r.Elapsed > slowerthan.Value);
-
+        }
 
         var query = await (from puzzle in puzzles
                      join result in results on puzzle.Key equals result.Key into g
@@ -102,17 +108,20 @@ class PuzzleManager : IPuzzleManager
         return new PuzzleResultStatus(puzzle, result);
     }
 
-    public async Task<(bool success, string content)> PostAnswer(PuzzleKey key, AnswerToPost answer)
+    public async Task<(bool success, string content)> PostAnswer(PuzzleKey key, string value)
     {
         logic.EnsureValid(key);
 
-        var (_, content) = await client.PostAnswerAsync(key.Year, key.Day, answer.part, answer.value);
-        var success = content.StartsWith("That's the right answer");
+        var puzzle = await GetPuzzle(key);
 
+        var answer = puzzle.CreateAnswer(value);
+
+        var (_, content) = await client.PostAnswerAsync(key.Year, key.Day, answer.part, answer.value);
+
+        var success = content.StartsWith("That's the right answer");
 
         if (success)
         {
-            var puzzle = await GetPuzzle(key);
             puzzle.SetAnswer(answer);
 
             var stats = await client.GetPersonalStatsAsync(key.Year);

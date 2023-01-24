@@ -55,7 +55,7 @@ class HttpClientWrapper : IHttpClientWrapper
     {
         EnsureAuthenticated();
         var response = await client.PostAsync(path, body);
-        logger.LogTrace($"GET: {path} - {response.StatusCode}");
+        logger.LogTrace($"POST: {path} - {response.StatusCode}");
         var content = await response.Content.ReadAsStringAsync();
         return (response.StatusCode, content);
     }

@@ -36,11 +36,7 @@ class Post : SinglePuzzleCommand<Post.Settings>
     }
     public override async Task<int> ExecuteAsync(PuzzleKey key, Settings options)
     {
-        var puzzle = await manager.GetPuzzle(key);
-
-        var answer = puzzle.CreateAnswer(options.value);
-
-        var (success, content) = await manager.PostAnswer(key, answer);
+        var (success, content) = await manager.PostAnswer(key, options.value);
 
         var color = success ? Color.Green : Color.Red;
         io.MarkupLine($"[{color}]{content.EscapeMarkup()}[/]");

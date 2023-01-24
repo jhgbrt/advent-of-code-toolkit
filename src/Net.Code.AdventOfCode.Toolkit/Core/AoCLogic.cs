@@ -29,6 +29,7 @@ class AoCLogic
             { year: null, day: null } when !InAdvent => (null, null),
             { year: null, day: not null } when InAdvent => (Now.Year, day.Value),
             { year: null, day: not null } when !InAdvent => throw new ArgumentException("Outside the advent, it's meaningless to only specify a day"),
+            { year: not null, day: not null } when !IsValidAndUnlocked(year.Value, day.Value) => throw new InvalidPuzzleException(new PuzzleKey(year.Value, day.Value)),
             _ => (year, day)
         };
 

@@ -8,8 +8,12 @@ namespace Net.Code.AdventOfCode.Toolkit.Data;
 
 internal class AoCDbContext : DbContext, IAoCDbContext
 {
-    public AoCDbContext(DbContextOptions<AoCDbContext> options) : base(options) { }
-    public AoCDbContext() { }
+    public AoCDbContext(DbContextOptions<AoCDbContext> options) : base(options) 
+    {
+    }
+    public AoCDbContext() 
+    {
+    }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -60,4 +64,5 @@ internal class AoCDbContext : DbContext, IAoCDbContext
     IQueryable<Puzzle> IAoCDbContext.Puzzles => this.Puzzles;
 
     IQueryable<DayResult> IAoCDbContext.Results => this.Results;
+
 }

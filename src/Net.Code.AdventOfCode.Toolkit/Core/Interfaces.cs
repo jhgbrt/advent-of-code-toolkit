@@ -37,12 +37,12 @@ interface ICodeManager
 
 interface IPuzzleManager
 {
+    Task<Puzzle> SyncPuzzle(PuzzleKey key);
     Task<Puzzle> GetPuzzle(PuzzleKey key);
     Task<PuzzleResultStatus[]> GetPuzzleResults(int? year, TimeSpan? slowerthan);
     Task<PuzzleResultStatus> GetPuzzleResult(PuzzleKey key);
     Task AddResult(DayResult result);
-    Task<(bool success, string content)> PostAnswer(PuzzleKey key, AnswerToPost answer);
-    Task<(bool status, string reason, int part)> PreparePost(PuzzleKey key);
+    Task<(bool success, string content)> PostAnswer(PuzzleKey key, string answer);
 }
 
 interface ILeaderboardManager
@@ -53,18 +53,24 @@ interface ILeaderboardManager
     IAsyncEnumerable<MemberStats> GetMemberStats(IEnumerable<int> years);
 }
 
-interface IFileSystem
+interface IFileSystemFactory
 {
-    string CurrentDirectory { get; }
     ICodeFolder GetCodeFolder(PuzzleKey key);
     IFolder GetFolder(string name);
     ITemplateFolder GetTemplateFolder();
     IOutputFolder GetOutputFolder(string output);
+
+}
+
+interface IFileSystem
+{
+    string CurrentDirectory { get; }
     void CreateDirectoryIfNotExists(string path, FileAttributes? attributes = default);
     Task<string> ReadAllTextAsync(string path);
     Task WriteAllTextAsync(string path, string content);
     bool FileExists(string path);
     bool DirectoryExists(string path);
+    void DeleteFile(string path);
 }
 interface IOutputFolder
 {
@@ -109,7 +115,7 @@ public interface IAssemblyResolver
 {
     Assembly? GetEntryAssembly();
 }
-internal interface IAoCDbContext
+internal interface IAoCDbContext: IDisposable
 {
     void AddPuzzle(Puzzle puzzle);
     void AddResult(DayResult result);

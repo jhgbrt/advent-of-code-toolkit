@@ -44,12 +44,18 @@ class Puzzle : IHavePuzzleKey
 
     public void SetAnswer(AnswerToPost answer)
     {
-        Answer = answer.part switch
+        (Status, Answer) = answer.part switch
         {
-            1 => Answer with { part1 = answer.value },
-            2 => Answer with { part2 = answer.value },
+            1 => (Status.AnsweredPart1, Answer with { part1 = answer.value }),
+            2 => (Status.Completed, Answer with { part2 = answer.value }),
             _ => throw new NotSupportedException()
         };
+    }
+
+    internal void UpdateFrom(Puzzle remote)
+    {
+        Answer = remote.Answer;
+        Status = remote.Status;
     }
 }
 

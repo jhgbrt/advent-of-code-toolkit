@@ -15,7 +15,7 @@ public class CodeManagerTests
 {
     private static CodeManager CreateCodeManager(bool codeFolderExists)
     {
-        var filesystem = Substitute.For<IFileSystem>();
+        var filesystem = Substitute.For<IFileSystemFactory>();
         var m = new CodeManager(filesystem);
 
         var codeFolder = Substitute.For<ICodeFolder>();

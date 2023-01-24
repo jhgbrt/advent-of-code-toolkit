@@ -179,8 +179,8 @@ public class ManyPuzzlesCommandTest
         var sut = CreateSystemUnderTest(year, month, day);
 
         var options = new AoCSettings { year = 2017, day = 23 };
-        await DoTest(sut, options);
 
-        await sut.DidNotReceive().ExecuteAsync(Arg.Any<PuzzleKey>(), Arg.Any<AoCSettings>());
+        
+        await Assert.ThrowsAsync<InvalidPuzzleException>(async () => await DoTest(sut, options));
     }
 }
