@@ -153,7 +153,6 @@ public static class AoC
         services.AddTransient<IAoCRunner, AoCRunner>();
         services.AddTransient<ICodeManager, CodeManager>();
         services.AddTransient<ILeaderboardManager, LeaderboardManager>();
-        services.AddTransient<ICache, Cache>();
         if (filesystem is not null)
         {
             services.AddSingleton(filesystem);
