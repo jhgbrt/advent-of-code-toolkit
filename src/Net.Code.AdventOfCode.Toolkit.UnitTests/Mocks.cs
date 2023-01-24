@@ -14,7 +14,7 @@ using System.Text.RegularExpressions;
 
 using Xunit.Abstractions;
 
-namespace Net.Code.AdventOfCode.Toolkit.IntegrationTests
+namespace Net.Code.AdventOfCode.Toolkit.UnitTests
 {
     static class Mocks
     {
