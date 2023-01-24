@@ -20,12 +20,6 @@ interface IAoCRunner
 {
     Task<DayResult?> Run(string? typeName, PuzzleKey key, Action<int, Result> progress);
 }
-interface ICache
-{
-    bool Exists(int? year, int? day, string name);
-    Task<string> ReadFromCache(int? year, int? day, string name);
-    Task WriteToCache(int? year, int? day, string name, string content);
-}
 
 interface ICodeManager
 {
