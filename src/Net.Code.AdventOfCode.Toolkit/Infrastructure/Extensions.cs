@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
-namespace Net.Code.AdventOfCode.Toolkit.Core;
+namespace Net.Code.AdventOfCode.Toolkit.Infrastructure;
 
 public static class Extensions
 {
