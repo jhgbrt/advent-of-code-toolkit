@@ -33,13 +33,14 @@ class CodeManager : ICodeManager
 
         await codeFolder.CreateIfNotExists();
 
-        var code = await templateDir.ReadCode(puzzle.Key);
+        var code = await templateDir.ReadTemplate(puzzle.Key, "aoc.cs");
         await codeFolder.WriteCode(code);
         await codeFolder.WriteSample("");
         await codeFolder.WriteInput(input);
         if (templateDir.Notebook.Exists)
         {
-            codeFolder.CopyFile(templateDir.Notebook);
+            var notebook = await templateDir.ReadTemplate(puzzle.Key, "aoc.ipynb");
+            await codeFolder.WriteNotebook(notebook);
         }
     }
 

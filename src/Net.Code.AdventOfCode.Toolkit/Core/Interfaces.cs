@@ -83,6 +83,8 @@ interface IFolder
 }
 interface ICodeFolder
 {
+    public string CODE { get; }
+    public string NOTEBOOK { get; }
     void CopyFile(FileInfo source);
     FileInfo Input { get; }
     FileInfo Sample { get; }
@@ -92,6 +94,7 @@ interface ICodeFolder
     Task WriteCode(string content);
     Task WriteInput(string content);
     Task WriteSample(string content);
+    Task WriteNotebook(string content);
     bool Exists { get; }
 }
 interface ITemplateFolder
@@ -99,7 +102,7 @@ interface ITemplateFolder
     FileInfo Code { get; }
     FileInfo CsProj { get; }
     FileInfo Notebook { get; }
-    Task<string> ReadCode(PuzzleKey key);
+    Task<string> ReadTemplate(PuzzleKey key, string name);
 }
 interface IHttpClientWrapper : IDisposable
 {

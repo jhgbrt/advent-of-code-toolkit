@@ -26,4 +26,8 @@
     <Compile Remove="**\*" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="templates\aoc\Template\aoc.ipynb" />
+  </ItemGroup>
+
 </Project>

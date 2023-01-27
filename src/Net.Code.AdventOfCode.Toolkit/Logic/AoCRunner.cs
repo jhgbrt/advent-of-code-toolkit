@@ -24,7 +24,7 @@ class AoCRunner : IAoCRunner
     public async Task Test(string? typeName, PuzzleKey key, Action<int, Result> progress)
     {
         var (year, day) = key;
-        dynamic? aoc = GetAoC(typeName, year, day);
+        object? aoc = GetAoC(typeName, year, day);
 
         if (aoc == null)
         {
@@ -32,9 +32,9 @@ class AoCRunner : IAoCRunner
         }
 
         int i = 1;
-        foreach (Func<object> test in aoc.GetTests())
+        foreach (var test in aoc.GetType().GetMethods().Where(m => m.Name.StartsWith("Test")))
         {
-            var t = await Run(() => test());
+            var t = await Run(() => test.Invoke(aoc, Array.Empty<object>()) ?? "");
             progress(i++, t);
         }
     }
@@ -120,50 +120,44 @@ class AoCRunner : IAoCRunner
             return null;
         }
 
-        var tests = type.GetMethods().Where(m => m.Name.StartsWith("Test")).ToArray();
-
         logger.LogInformation($"Using implementation type: {type}");
 
         if (type.IsAbstract)
-            return new Runner(part1, part2, tests);
+            return new StaticRunner(part1, part2);
         else
             return Activator.CreateInstance(type);
     }
-    class Runner : DynamicObject
+
+    class InstanceRunner
+    {
+        readonly Func<object, object> part1;
+        readonly Func<object, object> part2;
+        readonly Dictionary<string, Func<object, object>> tests;
+
+        private readonly object target;
+
+        public InstanceRunner(object target, MethodInfo part1, MethodInfo part2, MethodInfo[] tests)
+        {
+            this.target = target;
+            this.part1 = part1.CreateDelegate<Func<object,object>>();
+            this.part2 = part2.CreateDelegate<Func<object, object>>();
+            this.tests = tests.ToDictionary(m => m.Name, m => m.CreateDelegate<Func<object, object>>());
+        }
+    }
+
+    class StaticRunner : DynamicObject
     {
         readonly Func<object> part1;
         readonly Func<object> part2;
-        readonly Dictionary<string, Func<object>> tests;
-        public Runner(MethodInfo part1, MethodInfo part2, MethodInfo[] tests)
+        public StaticRunner(MethodInfo part1, MethodInfo part2)
         {
             this.part1 = part1.CreateDelegate<Func<object>>();
             this.part2 = part2.CreateDelegate<Func<object>>();
-            this.tests = tests.ToDictionary(m => m.Name, m => m.CreateDelegate<Func<object>>());
         }
         public object Part1() => part1();
         public object Part2() => part2();
-
-        public Func<object>[] GetTests() => tests.Values.ToArray();
-
-        public override bool TryInvokeMember(InvokeMemberBinder binder, object?[]? args, out object? result)
-        {
-            if (tests.ContainsKey(binder.Name))
-            {
-                result = tests[binder.Name]();
-                return true;
-            }
-            return base.TryInvokeMember(binder, args, out result);
-        }
     }
 
-    class Tester
-    {
-        public Tester(MethodInfo[] tests)
-        {
-
-        }
-    }
-   
     static async Task<Result> Run(Func<object> f)
     {
         var sw = Stopwatch.StartNew();

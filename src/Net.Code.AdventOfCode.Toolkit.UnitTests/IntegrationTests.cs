@@ -71,6 +71,16 @@ public class IntegrationTests
         }
 
         [Fact]
+        public async Task Init()
+        {
+            var result = await Do("init", $"{Year}", $"{Day}");
+            Assert.Equal(0, result);
+            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "aoc.cs")));
+            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "sample.txt")));
+            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "input.txt")));
+        }
+
+        [Fact]
         public async Task Sync()
         {
             await Do("init");
@@ -122,6 +132,15 @@ public class IntegrationTests
         {
             var result = await Do("--help");
             Assert.Equal(0, result);
+        }
+        [Fact]
+        public async Task Init()
+        {
+            var result = await Do("init", $"{Year}", $"{Day}");
+            Assert.Equal(0, result);
+            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "aoc.cs")));
+            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "sample.txt")));
+            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "input.txt")));
         }
 
         [Fact]

@@ -121,6 +121,7 @@ internal class CodeFolder : Folder, ICodeFolder
     }
 
     public string CODE => GetFileName("aoc.cs");
+    public string NOTEBOOK => GetFileName("aoc.ipynb");
     public string INPUT => GetFileName("input.txt");
     public string SAMPLE => GetFileName("sample.txt");
     public FileInfo Input => new FileInfo(INPUT);
@@ -129,6 +130,7 @@ internal class CodeFolder : Folder, ICodeFolder
     public Task WriteCode(string content) => WriteFile(CODE, content);
     public Task WriteInput(string content) => WriteFile(INPUT, content);
     public Task WriteSample(string content) => WriteFile(SAMPLE, content);
+    public Task WriteNotebook(string content) => WriteFile(NOTEBOOK, content);
 
     public IEnumerable<FileInfo> GetCodeFiles() => GetFiles("*.cs").Where(f => !f.FullName.Equals(CODE, StringComparison.OrdinalIgnoreCase));
 }
@@ -144,9 +146,10 @@ internal class TemplateFolder : Folder, ITemplateFolder
     public FileInfo Code => new FileInfo(CODE);
     public FileInfo CsProj => new FileInfo(CSPROJ);
     public FileInfo Notebook => new FileInfo(NOTEBOOK);
-    public async Task<string> ReadCode(PuzzleKey key)
+
+    public async Task<string> ReadTemplate(PuzzleKey key, string name)
     {
-        var template = await ReadFile(CODE);
+        var template = await ReadFile(GetFileName(name));
         return template.Replace("YYYY", key.Year.ToString()).Replace("DD", key.Day.ToString("00"));
     }
 }
