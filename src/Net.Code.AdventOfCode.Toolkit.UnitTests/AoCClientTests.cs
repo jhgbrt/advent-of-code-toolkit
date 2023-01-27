@@ -12,10 +12,10 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
 
     public class AoCClientGetTests
     {
-        readonly static string settings = File.ReadAllText("settings.html");
-        readonly static string leaderboardjson = File.ReadAllText("leaderboard-148156.json");
-        readonly static string leaderboard = File.ReadAllText("leaderboard.html");
-        readonly static string puzzle = File.ReadAllText("puzzle-answered-both-parts.html");
+        readonly static string settings = System.IO.File.ReadAllText("settings.html");
+        readonly static string leaderboardjson = System.IO.File.ReadAllText("leaderboard-148156.json");
+        readonly static string leaderboard = System.IO.File.ReadAllText("leaderboard.html");
+        readonly static string puzzle = System.IO.File.ReadAllText("puzzle-answered-both-parts.html");
 
         (string path, string content)[] items = new[]
         {

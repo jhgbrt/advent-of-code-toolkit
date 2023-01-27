@@ -75,9 +75,9 @@ public class IntegrationTests
         {
             var result = await Do("init", $"{Year}", $"{Day}");
             Assert.Equal(0, result);
-            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "aoc.cs")));
-            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "sample.txt")));
-            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "input.txt")));
+            Assert.True(fileSystem.Exists((FileInfo)new(new(@$"c:\aoc\Year{Year}\Day{Day:00}"), new("aoc.cs"))));
+            Assert.True(fileSystem.Exists((FileInfo)new(new(@$"c:\aoc\Year{Year}\Day{Day:00}"), new("sample.txt"))));
+            Assert.True(fileSystem.Exists((FileInfo)new(new(@$"c:\aoc\Year{Year}\Day{Day:00}"), new("input.txt"))));
         }
 
         [Fact]
@@ -138,9 +138,9 @@ public class IntegrationTests
         {
             var result = await Do("init", $"{Year}", $"{Day}");
             Assert.Equal(0, result);
-            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "aoc.cs")));
-            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "sample.txt")));
-            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "input.txt")));
+            Assert.True(fileSystem.Exists((FileInfo)new(new(@$"c:\aoc\Year{Year}\Day{Day:00}"), new("aoc.cs"))));
+            Assert.True(fileSystem.Exists((FileInfo)new(new(@$"c:\aoc\Year{Year}\Day{Day:00}"), new("sample.txt"))));
+            Assert.True(fileSystem.Exists((FileInfo)new(new(@$"c:\aoc\Year{Year}\Day{Day:00}"), new("input.txt"))));
         }
 
         [Fact]
@@ -210,9 +210,9 @@ public class IntegrationTests
         {
             var result = await Do("init", $"{Year}", $"{Day}");
             Assert.Equal(0, result);
-            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "aoc.cs")));
-            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "sample.txt")));
-            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "input.txt")));
+            Assert.True(fileSystem.Exists((FileInfo)new(new(@$"c:\aoc\Year{Year}\Day{Day:00}"), new("aoc.cs"))));
+            Assert.True(fileSystem.Exists((FileInfo)new(new(@$"c:\aoc\Year{Year}\Day{Day:00}"), new("sample.txt"))));
+            Assert.True(fileSystem.Exists((FileInfo)new(new(@$"c:\aoc\Year{Year}\Day{Day:00}"), new("input.txt"))));
         }
 
         [Fact]
@@ -220,9 +220,9 @@ public class IntegrationTests
         {
             await Do("init", $"{Year}", $"{Day}");
             var result = await Do("init", $"{Year}", $"{Day}", "--force");
-            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "aoc.cs")));
-            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "sample.txt")));
-            Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "input.txt")));
+            Assert.True(fileSystem.Exists((FileInfo)new(new(@$"c:\aoc\Year{Year}\Day{Day:00}"), new("aoc.cs"))));
+            Assert.True(fileSystem.Exists((FileInfo)new(new(@$"c:\aoc\Year{Year}\Day{Day:00}"), new("sample.txt"))));
+            Assert.True(fileSystem.Exists((FileInfo)new(new(@$"c:\aoc\Year{Year}\Day{Day:00}"), new("input.txt"))));
             Assert.Equal(0, result);
         }
 

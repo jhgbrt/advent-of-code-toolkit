@@ -12,48 +12,56 @@ namespace Net.Code.AdventOfCode.Toolkit.Logic;
 
 class CodeManager : ICodeManager
 {
-    private readonly IFileSystemFactory fileSystem;
+    private readonly IFileSystem filesystem;
 
-    public CodeManager(IFileSystemFactory fileSystem)
+    public CodeManager(IFileSystem filesystem)
     {
-        this.fileSystem = fileSystem;
+        this.filesystem = filesystem;
     }
 
     public async Task InitializeCodeAsync(Puzzle puzzle, bool force, Action<string> progress)
     {
-        var codeFolder = fileSystem.GetCodeFolder(puzzle.Key);
-        var templateDir = fileSystem.GetTemplateFolder();
+        var codeFolder = filesystem.GetCodeFolder(puzzle.Key);
+        var templateDir = filesystem.GetTemplateFolder();
 
-        if (codeFolder.Exists && !force)
+        if (filesystem.Exists(codeFolder) && !force)
         {
             throw new Exception($"Puzzle for {puzzle.Key} already initialized. Use --force to re-initialize.");
         }
 
         var input = puzzle.Input;
 
-        await codeFolder.CreateIfNotExists();
+        filesystem.Create(codeFolder);
 
-        var code = await templateDir.ReadTemplate(puzzle.Key, "aoc.cs");
-        await codeFolder.WriteCode(code);
-        await codeFolder.WriteSample("");
-        await codeFolder.WriteInput(input);
-        if (templateDir.Notebook.Exists)
+        var code = TransformContent(puzzle.Key, 
+            await filesystem.Read(templateDir.GetCodeFile())
+            );
+        await filesystem.Write(codeFolder.GetCodeFile(), code);
+        await filesystem.Write(codeFolder.GetSampleFile(), "");
+        await filesystem.Write(codeFolder.GetInputFile(), input);
+        if (filesystem.Exists(templateDir.GetNotebookFile()))
         {
-            var notebook = await templateDir.ReadTemplate(puzzle.Key, "aoc.ipynb");
-            await codeFolder.WriteNotebook(notebook);
+            var notebook = TransformContent(puzzle.Key, await filesystem.Read(templateDir.GetNotebookFile()));
+            await filesystem.Write(codeFolder.GetNotebookFile(), notebook);
         }
     }
 
+    public string TransformContent(PuzzleKey key, string template)
+    {
+        return template.Replace("YYYY", key.Year.ToString()).Replace("DD", key.Day.ToString("00"));
+    }
+
+
     public async Task SyncPuzzleAsync(Puzzle puzzle)
     {
-        var codeFolder = fileSystem.GetCodeFolder(puzzle.Key);
-        await codeFolder.WriteInput(puzzle.Input);
+        var codeFolder = filesystem.GetCodeFolder(puzzle.Key);
+        await filesystem.Write(codeFolder.GetInputFile(), puzzle.Input);
     }
 
     public async Task<string> GenerateCodeAsync(PuzzleKey key)
     {
-        var dir = fileSystem.GetCodeFolder(key);
-        var aoc = await dir.ReadCode();
+        var dir = filesystem.GetCodeFolder(key);
+        var aoc = await filesystem.Read(dir.GetCodeFile());
         var tree = CSharpSyntaxTree.ParseText(aoc);
 
         tree = tree.WithRootAndOptions(ExtractRegexGenerators(tree.GetRoot()), tree.Options);
@@ -367,21 +375,24 @@ class CodeManager : ICodeManager
 
     public async Task ExportCode(PuzzleKey key, string code, bool includecommon, string output)
     {
-        var codeDir = fileSystem.GetCodeFolder(key);
-        var commonDir = fileSystem.GetFolder("Common");
-        var outputDir = fileSystem.GetOutputFolder(output);
-        var templateDir = fileSystem.GetTemplateFolder();
-        await outputDir.CreateIfNotExists();
-        await outputDir.WriteCode(code);
-        outputDir.CopyFiles(
-            codeDir.GetCodeFiles().Where(f => !f.Name.EndsWith("Tests.cs"))
+        var codeDir = filesystem.GetCodeFolder(key);
+        var commonDir = filesystem.CurrentDirectory.GetDirectory("Common");
+        var outputDir = new DirectoryInfo(output);
+        var templateDir = filesystem.GetTemplateFolder();
+
+        filesystem.Create(outputDir);
+        await filesystem.Write(outputDir.GetCodeFile(), code);
+
+        filesystem.Copy(
+            filesystem.GetFiles(codeDir, "*.cs").Where(f => !f.Name.Name.EndsWith("Tests.cs")),
+            outputDir
             );
-        if (codeDir.Input.Exists)
-            outputDir.CopyFile(codeDir.Input);
-        if (codeDir.Sample.Exists)
-            outputDir.CopyFile(codeDir.Sample);
-        outputDir.CopyFile(templateDir.CsProj);
-        if (includecommon && commonDir.Exists)
-            outputDir.CopyFiles(commonDir.GetFiles("*.cs"));
+        if (filesystem.Exists(codeDir.GetInputFile()))
+            filesystem.Copy(codeDir.GetInputFile(), outputDir);
+        if (filesystem.Exists(codeDir.GetSampleFile()))
+            filesystem.Copy(codeDir.GetSampleFile(), outputDir);
+        filesystem.Copy(templateDir.GetCsprojFile(), outputDir);
+        if (includecommon && filesystem.Exists(commonDir))
+            filesystem.Copy(filesystem.GetFiles(commonDir, "*.cs"), outputDir);
     }
 }

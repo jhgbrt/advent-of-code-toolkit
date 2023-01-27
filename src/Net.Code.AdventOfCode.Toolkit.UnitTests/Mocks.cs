@@ -1,5 +1,8 @@
-﻿using Net.Code.AdventOfCode.Toolkit.Core;
+﻿using Castle.Core.Logging;
+
+using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Infrastructure;
+using Net.Code.AdventOfCode.Toolkit.Logic;
 
 using NodaTime;
 
@@ -257,12 +260,12 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         class TestFileSystem : IFileSystem
         {
 
-            public string CurrentDirectory => @"C:\aoc";
+            public DirectoryInfo CurrentDirectory => new(@"c:\aoc");
             public TestFileSystem()
             {
-                var template = Path.Combine(CurrentDirectory, "Template");
+                var template = CurrentDirectory.GetDirectory("Template");
                 data[template] = new();
-                data[template]["aoc.cs"] = """
+                data[template][new("aoc.cs")] = """
                 namespace AdventOfCode.Year_YYYY_.Day_DD_;
                 public class AoC_YYYY__DD_
                 {
@@ -271,7 +274,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
                     public object Part2() => "";
                 }
                 """;
-                data[template]["aoc.csproj"] = """
+                data[template][new("aoc.csproj")] = """
                 <?xml version="1.0" encoding="utf-8"?>
                 <Project Sdk="Microsoft.NET.Sdk">
                   <PropertyGroup>
@@ -298,57 +301,80 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
                 """;
             }
 
-            Dictionary<string, Dictionary<string, string>> data = new();
+            Dictionary<DirectoryInfo, Dictionary<FileName, string>> data = new();
 
             private string FullyQualifiedPath(string path)
             {
-                if (Path.IsPathFullyQualified(path)) return path;
-                return Path.Combine(CurrentDirectory, path);
+                if (System.IO.Path.IsPathFullyQualified(path)) return path;
+                return System.IO.Path.Combine(CurrentDirectory.FullName, path);
             }
 
-            public void CreateDirectoryIfNotExists(string path, FileAttributes? attributes)
+            public void Create(DirectoryInfo path)
             {
-                path = FullyQualifiedPath(path);
                 if (data.ContainsKey(path)) return;
                 data[path] = new();
             }
 
-            public Task<string> ReadAllTextAsync(string path)
+            public Task<string> Read(FileInfo path)
             {
-                path = FullyQualifiedPath(path);
-                var dir = Path.GetDirectoryName(path)!;
-                var file = Path.GetFileName(path)!;
+                var dir = path.Directory;
+                var file = path.Name;
                 var content = data[dir][file];
                 return Task.FromResult(content);
             }
-            public Task WriteAllTextAsync(string path, string content)
+            public Task Write(FileInfo path, string content)
             {
-                path = FullyQualifiedPath(path);
-                var dir = Path.GetDirectoryName(path)!;
-                var file = Path.GetFileName(path)!;
-                data[dir][file] = content;
+                var dir = path.Directory;
+                var file = path;
+                data[dir][file.Name] = content;
                 return Task.FromResult(0);
             }
-            public bool FileExists(string path)
+            public bool Exists(FileInfo path)
             {
-                path = FullyQualifiedPath(path);
-                var dir = Path.GetDirectoryName(path)!;
-                var file = Path.GetFileName(path)!;
+                var dir = path.Directory;
+                var file = path.Name;
                 return data.TryGetValue(dir, out var d) && d.ContainsKey(file);
             }
-            public bool DirectoryExists(string path)
+            public bool Exists(DirectoryInfo dir)
             {
-                path = FullyQualifiedPath(path);
-                var dir = Path.GetDirectoryName(path)!;
-                return data.TryGetValue(dir, out var d);
+                return data.TryGetValue(dir, out var _);
             }
 
-            public void DeleteFile(string path)
+            public void Delete(FileInfo path)
             {
-                path = FullyQualifiedPath(path);
-                var dir = Path.GetDirectoryName(path)!;
-                var file = Path.GetFileName(path)!;
+                var dir = path.Directory;
+                var file = path.Name;
                 data[dir].Remove(file);
+            }
+
+            public void Delete(DirectoryInfo path)
+            {
+                data.Remove(path);
+            }
+
+            public IEnumerable<FileInfo> GetFiles(DirectoryInfo dir, string pattern)
+            {
+                return data[dir].Select(n => new FileInfo(dir,n.Key));
+            }
+
+            public void Copy(FileInfo source, FileInfo destination)
+            {
+                if (!data.TryGetValue(destination.Directory, out var d))
+                {
+                    d = new();
+                    data[destination.Directory] = d;
+                }
+                d[destination.Name] = data[source.Directory][source.Name];
+            }
+
+            public void Copy(IEnumerable<FileInfo> sources, DirectoryInfo destination)
+            {
+                foreach (var source in sources) Copy(source, destination);
+            }
+
+            public void Copy(FileInfo source, DirectoryInfo destination)
+            {
+                Copy(source, new FileInfo(destination, source.Name));
             }
         }
 

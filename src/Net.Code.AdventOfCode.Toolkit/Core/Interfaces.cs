@@ -48,62 +48,39 @@ interface ILeaderboardManager
     Task<IEnumerable<(int id, string description)>> GetLeaderboardIds();
     IAsyncEnumerable<MemberStats> GetMemberStats(IEnumerable<int> years);
 }
-
-interface IFileSystemFactory
+readonly record struct FileName(string Name)
 {
-    ICodeFolder GetCodeFolder(PuzzleKey key);
-    IFolder GetFolder(string name);
-    ITemplateFolder GetTemplateFolder();
-    IOutputFolder GetOutputFolder(string output);
-
+    public override string ToString() => Name;
+}
+readonly record struct FileInfo(DirectoryInfo Directory, FileName Name)
+{
+    public string FullName => System.IO.Path.Combine(Directory.FullName, Name.Name);
+    public override string ToString() => FullName;
 }
 
+readonly record struct DirectoryInfo(string FullName)
+{
+    public override string ToString() => FullName;
+    public DirectoryInfo GetDirectory(string name) => new(System.IO.Path.Combine(FullName, name));
+
+    internal FileInfo GetFile(FileName name) => new FileInfo(this, name);
+}
 interface IFileSystem
 {
-    string CurrentDirectory { get; }
-    void CreateDirectoryIfNotExists(string path, FileAttributes? attributes = default);
-    Task<string> ReadAllTextAsync(string path);
-    Task WriteAllTextAsync(string path, string content);
-    bool FileExists(string path);
-    bool DirectoryExists(string path);
-    void DeleteFile(string path);
+    DirectoryInfo CurrentDirectory { get; }
+    void Create(DirectoryInfo dir);
+    Task<string> Read(FileInfo file);
+    Task Write(FileInfo file, string content);
+    bool Exists(FileInfo file);
+    bool Exists(DirectoryInfo dir);
+    void Delete(DirectoryInfo dir);
+    void Delete(FileInfo filie);
+    IEnumerable<FileInfo> GetFiles(DirectoryInfo dir, string pattern);
+    void Copy(IEnumerable<FileInfo> sources, DirectoryInfo destination);
+    void Copy(FileInfo source, DirectoryInfo destination);
+    void Copy(FileInfo source, FileInfo destination);
 }
-interface IOutputFolder
-{
-    void CopyFile(FileInfo source);
-    void CopyFiles(IEnumerable<FileInfo> sources);
-    Task CreateIfNotExists();
-    Task WriteCode(string code);
-}
-interface IFolder
-{
-    bool Exists { get; }
-    Task<string> ReadFile(string name);
-    IEnumerable<FileInfo> GetFiles(string pattern);
-}
-interface ICodeFolder
-{
-    public string CODE { get; }
-    public string NOTEBOOK { get; }
-    void CopyFile(FileInfo source);
-    FileInfo Input { get; }
-    FileInfo Sample { get; }
-    Task CreateIfNotExists();
-    IEnumerable<FileInfo> GetCodeFiles();
-    Task<string> ReadCode();
-    Task WriteCode(string content);
-    Task WriteInput(string content);
-    Task WriteSample(string content);
-    Task WriteNotebook(string content);
-    bool Exists { get; }
-}
-interface ITemplateFolder
-{
-    FileInfo Code { get; }
-    FileInfo CsProj { get; }
-    FileInfo Notebook { get; }
-    Task<string> ReadTemplate(PuzzleKey key, string name);
-}
+
 interface IHttpClientWrapper : IDisposable
 {
     Task<(HttpStatusCode status, string content)> PostAsync(string path, HttpContent body);

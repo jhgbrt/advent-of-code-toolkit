@@ -149,7 +149,6 @@ public static class AoC
             .SetMinimumLevel(level));
         services.AddSingleton(configuration);
         services.AddTransient<IAoCClient, AoCClient>();
-        services.AddTransient<IFileSystemFactory, FileSystemFactory>();
         services.AddTransient<IPuzzleManager, PuzzleManager>();
         services.AddTransient<IAoCRunner, AoCRunner>();
         services.AddTransient<ICodeManager, CodeManager>();
