@@ -45,13 +45,14 @@ class AoCRunner : IAoCRunner
 
         return result;
     }
-    bool IsCompilerGenerated(Type type) => type.GetCustomAttribute<CompilerGeneratedAttribute>() != null;
+    bool IsCompilerGenerated(Type type) 
+    => type.FullName.Contains('<') || type.GetCustomAttribute<CompilerGeneratedAttribute>() != null;
     private dynamic? GetAoC(string? typeName, int year, int day)
     {
         var assembly = resolver.GetEntryAssembly();
         if (assembly == null) throw new Exception("no entry assembly?");
 
-        var regex = new Regex(@$"[^\\d]{year}.*[^\\d]*{day:00}", RegexOptions.Compiled);
+        string yearday = $"{year}{day:00}";
 
         Type? type = null;
         MethodInfo? part1 = null;
@@ -67,7 +68,7 @@ class AoCRunner : IAoCRunner
 
                 logger.LogDebug($"considered {t.FullName}");
 
-                if (!regex.IsMatch(t.FullName ?? t.Name))
+                if (!(t?.FullName ?? string.Empty).EndsWith(yearday))
                 {
                     continue;
                 }
