@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PackageVersion>2.0.0-pre.1</PackageVersion>
@@ -19,28 +19,28 @@
         <UserSecretsId>4c3718ba-0840-4ad0-8560-59d33c161f26</UserSecretsId>
     </PropertyGroup>
     <ItemGroup>
-        <Using Include="System"/>
-        <Using Include="System.Linq"/>
-        <Using Include="System.Net.Http"/>
-        <Using Include="System.Threading"/>
-        <Using Include="System.Threading.Tasks"/>
-        <Using Include="System.Collections.Generic"/>
-        <PackageReference Include="Basic.Reference.Assemblies.Net70" Version="1.4.1" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.2" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.2">
+        <Using Include="System" />
+        <Using Include="System.Linq" />
+        <Using Include="System.Net.Http" />
+        <Using Include="System.Threading" />
+        <Using Include="System.Threading.Tasks" />
+        <Using Include="System.Collections.Generic" />
+        <PackageReference Include="Basic.Reference.Assemblies.Net70" Version="1.4.5" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="7.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="7.0.0" />
-        <PackageReference Include="HtmlAgilityPack" Version="1.11.46" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
-        <PackageReference Include="Spectre.Console" Version="0.46.0" />
-        <PackageReference Include="Spectre.Console.Cli" Version="0.46.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="8.0.0" />
+        <PackageReference Include="HtmlAgilityPack" Version="1.11.54" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+        <PackageReference Include="Spectre.Console" Version="0.48.0" />
+        <PackageReference Include="Spectre.Console.Cli" Version="0.48.0" />
         <PackageReference Include="Spectre.Console.Extensions.Logging" Version="0.3.0-alpha0011" />
-        <PackageReference Include="NodaTime" Version="3.1.6" />
+        <PackageReference Include="NodaTime" Version="3.1.9" />
         <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     </ItemGroup>
 
