@@ -55,15 +55,7 @@ class CodeManager : ICodeManager
         var aoc = await dir.ReadCode();
         var tree = CSharpSyntaxTree.ParseText(aoc);
 
-        tree = tree.WithRootAndOptions(ExtractRegexGenerators(tree.GetRoot()), tree.Options);
-
-        // TODO could be used to selectively add methods from Common
-        // var common = fileSystem.GetFolder("Common");
-        // var additionalTrees = (
-        //    from f in common.GetFiles("*.cs")
-        //    let text = common.ReadFile(f.FullName).Result
-        //    select CSharpSyntaxTree.ParseText(text)).ToArray();
-
+        tree = tree.WithRootAndOptions(tree.GetRoot(), tree.Options);
 
         // find a class with 2 methods without arguments called Part1() and Part2()
         // the members of this class will be converted to top level statements
@@ -188,92 +180,6 @@ class CodeManager : ICodeManager
                             );
     }
 
-    private SyntaxNode ExtractRegexGenerators(SyntaxNode root)
-    {
-        var regexgenerators = from m in root.DescendantNodes().OfType<MethodDeclarationSyntax>()
-                              where m.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword))
-                              where (from al in m.AttributeLists
-                                     from a in al.Attributes
-                                     where a.Name.ToString() is "GeneratedRegex"
-                                     select m).Any()
-                              select m;
-
-
-        var regexAsCall = (
-            from m in root.DescendantNodes().OfType<InvocationExpressionSyntax>()
-            where m.Expression is MemberAccessExpressionSyntax
-            let exp = (MemberAccessExpressionSyntax)m.Expression
-            where exp.Name is GenericNameSyntax
-            let name = (GenericNameSyntax)exp.Name
-            where name.Identifier.ValueText is "As"
-            && name.TypeArgumentList.Arguments.Count == 1
-            select m
-            ).Any();
-
-        if (regexgenerators.Any() || regexAsCall)
-        {
-            var regexinvocations = from m in root.DescendantNodes().OfType<InvocationExpressionSyntax>()
-                                   where m.Expression is IdentifierNameSyntax
-                                   let x = (IdentifierNameSyntax)m.Expression
-                                   join rex in regexgenerators on x.Identifier.Value equals rex.Identifier.Value
-                                   select (m, x);
-
-            foreach (var (node, identifier) in regexinvocations)
-            {
-                root = root.ReplaceNode(node, InvocationExpression(
-                         MemberAccessExpression(
-                         SyntaxKind.SimpleMemberAccessExpression,
-                         IdentifierName("AoCRegex"),
-                         IdentifierName(identifier.Identifier.ValueText)
-                         ))
-                     );
-            }
-
-            var c = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Last();
-            root = root.InsertNodesAfter(c, List(
-                        new[]
-                        {
-                            ClassDeclaration("AoCRegex")
-                            .WithModifiers(TokenList(
-                                Token(SyntaxKind.StaticKeyword),
-                                Token(SyntaxKind.PartialKeyword)
-                                ))
-                            .WithMembers(
-                                List(regexgenerators.Select(m => m.WithModifiers(TokenList(
-                                    Token(SyntaxKind.PublicKeyword),
-                                    Token(SyntaxKind.StaticKeyword),
-                                    Token(SyntaxKind.PartialKeyword)
-                                    )) as MemberDeclarationSyntax)
-                                .Concat(new[]{
-                                ParseMemberDeclaration(
-                                """
-                                    public static T As<T>(this Regex regex, string s, IFormatProvider? provider = null) where T: struct
-                                    {
-                                        var match = regex.Match(s);
-                                        if (!match.Success) throw new InvalidOperationException($"input '{s}' does not match regex '{regex}'");
-
-                                        var constructor = typeof(T).GetConstructors().Single();
-        
-                                        var j = from p in constructor.GetParameters()
-                                                join m in match.Groups.OfType<Group>() on p.Name equals m.Name
-                                                select Convert.ChangeType(m.Value, p.ParameterType, provider ?? CultureInfo.InvariantCulture);
-
-                                        return (T)constructor.Invoke(j.ToArray());
-
-                                    }
-                                """)!, ParseMemberDeclaration(
-                                """
-                                    public static int GetInt32(this Match m, string name) => int.Parse(m.Groups[name].Value);
-                                """)!
-                            })
-                            ))
-                        }));
-
-        }
-
-
-        return root;
-    }
 
     private ClassDeclarationSyntax AdjustInputReading(ClassDeclarationSyntax aocclass)
     {
@@ -381,6 +287,9 @@ class CodeManager : ICodeManager
             outputDir.CopyFile(codeDir.Sample);
         outputDir.CopyFile(templateDir.CsProj);
         if (includecommon && commonDir.Exists)
-            outputDir.CopyFiles(commonDir.GetFiles("*.cs"));
+        {
+            outputDir.CreateIfNotExists("Common");
+            outputDir.CopyFiles(commonDir.GetFiles("*.cs"), "Common");
+        }
     }
 }

@@ -2,6 +2,7 @@
 using System.Net;
 using System.Reflection;
 using Net.Code.AdventOfCode.Toolkit.Core.Leaderboard;
+using Net.Code.AdventOfCode.Toolkit.Logic;
 
 record Configuration(string BaseAddress, string SessionCookie);
 
@@ -68,9 +69,9 @@ interface IFileSystem
 }
 interface IOutputFolder
 {
-    void CopyFile(FileInfo source);
-    void CopyFiles(IEnumerable<FileInfo> sources);
-    Task CreateIfNotExists();
+    void CopyFile(FileInfo source, string? subfolder = null);
+    void CopyFiles(IEnumerable<FileInfo> sources, string? subfolder = null);
+    Task CreateIfNotExists(string? subfolder = null);
     Task WriteCode(string code);
 }
 interface IFolder
@@ -81,10 +82,10 @@ interface IFolder
 }
 interface ICodeFolder
 {
-    void CopyFile(FileInfo source);
+    void CopyFile(FileInfo source, string? subfolder = null);
     FileInfo Input { get; }
     FileInfo Sample { get; }
-    Task CreateIfNotExists();
+    Task CreateIfNotExists(string? subfolder = null);
     IEnumerable<FileInfo> GetCodeFiles();
     Task<string> ReadCode();
     Task WriteCode(string content);

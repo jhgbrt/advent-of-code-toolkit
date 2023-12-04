@@ -51,11 +51,16 @@ internal class Folder : IFolder
     protected readonly ILogger logger;
     public Folder(string path, IFileSystem filesystem, ILogger logger) { dir = new DirectoryInfo(path); this.logger = logger; this.filesystem = filesystem; }
     public DirectoryInfo Directory => dir;
-    public string GetFileName(string file) => Path.Combine(dir.FullName, file);
+    public string GetFileName(string file, string? subfolder = null) 
+        => subfolder is not null ? Path.Combine(dir.FullName, subfolder, file) : Path.Combine(dir.FullName, file);
     public bool Exists => filesystem.DirectoryExists(dir.FullName);
-    public Task CreateIfNotExists()
+    public Task CreateIfNotExists(string? subfolder)
     {
         filesystem.CreateDirectoryIfNotExists(dir.FullName);
+        if (subfolder is not null)
+        {
+            filesystem.CreateDirectoryIfNotExists(Path.Combine(dir.FullName, subfolder));
+        }
         return Task.CompletedTask;
     }
     protected Task Delete()
@@ -85,9 +90,9 @@ internal class Folder : IFolder
         }
         return Task.CompletedTask;
     }
-    public void CopyFile(FileInfo source)
+    public void CopyFile(FileInfo source, string? subfolder = null)
     {
-        var n = GetFileName(source.Name);
+        var n = GetFileName(source.Name, subfolder);
         logger.LogTrace($"COPY: {source} -> {n}");
         source.CopyTo(n, true);
     }
@@ -106,11 +111,11 @@ internal class OutputFolder : Folder, IOutputFolder
     public FileInfo CsProj => new FileInfo(CSPROJ);
     public async Task WriteCode(string code) => await WriteFile(CODE, code);
 
-    public new Task CreateIfNotExists() => base.CreateIfNotExists();
+    public new Task CreateIfNotExists(string? subfolder = null) => base.CreateIfNotExists(subfolder);
 
-    public void CopyFiles(IEnumerable<FileInfo> sources)
+    public void CopyFiles(IEnumerable<FileInfo> sources, string? subfolder = null)
     {
-        foreach (var source in sources) CopyFile(source);
+        foreach (var source in sources) CopyFile(source, subfolder);
     }
 }
 internal class CodeFolder : Folder, ICodeFolder
