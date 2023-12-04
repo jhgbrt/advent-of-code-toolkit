@@ -26,8 +26,8 @@ partial class Export : SinglePuzzleCommand<Export.Settings>
         [CommandOption("-o|--output")]
         public string? output { get; set; }
         [Description("Include common code. If true, all code files included in 'common' are also exported.")]
-        [CommandOption("--include-common")]
-        public bool includecommon { get; set; }
+        [CommandOption("-c|--include-common")]
+        public string[]? includecommon { get; set; }
     }
     public override async Task<int> ExecuteAsync(PuzzleKey key, Settings options)
     {

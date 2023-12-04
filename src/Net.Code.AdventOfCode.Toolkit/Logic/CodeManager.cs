@@ -270,7 +270,7 @@ class CodeManager : ICodeManager
     }
 
 
-    public async Task ExportCode(PuzzleKey key, string code, bool includecommon, string output)
+    public async Task ExportCode(PuzzleKey key, string code, string[]? includecommon, string output)
     {
         var codeDir = fileSystem.GetCodeFolder(key);
         var commonDir = fileSystem.GetFolder("Common");
@@ -283,13 +283,22 @@ class CodeManager : ICodeManager
             );
         if (codeDir.Input.Exists)
             outputDir.CopyFile(codeDir.Input);
+
         if (codeDir.Sample.Exists)
             outputDir.CopyFile(codeDir.Sample);
+
         outputDir.CopyFile(templateDir.CsProj);
-        if (includecommon && commonDir.Exists)
+
+        if (includecommon is { Length: >0 } && commonDir.Exists)
         {
-            outputDir.CreateIfNotExists("Common");
-            outputDir.CopyFiles(commonDir.GetFiles("*.cs"), "Common");
+            await outputDir.CreateIfNotExists("Common");
+            foreach (var name in includecommon)
+            {
+                foreach (var file in commonDir.GetFiles(Path.ChangeExtension(name, "cs")))
+                {
+                    outputDir.CopyFile(file, "Common");
+                }
+            }
         }
     }
 }

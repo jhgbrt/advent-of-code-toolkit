@@ -24,7 +24,7 @@ interface IAoCRunner
 
 interface ICodeManager
 {
-    Task ExportCode(PuzzleKey key, string code, bool includecommon, string output);
+    Task ExportCode(PuzzleKey key, string code, string[]? includecommon, string output);
     Task<string> GenerateCodeAsync(PuzzleKey key);
     Task InitializeCodeAsync(Puzzle puzzle, bool force, Action<string> progress);
     Task SyncPuzzleAsync(Puzzle puzzle);

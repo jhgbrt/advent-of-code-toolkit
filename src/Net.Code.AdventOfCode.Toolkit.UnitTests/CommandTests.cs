@@ -9,12 +9,6 @@ using NSubstitute;
 
 using Spectre.Console.Cli;
 
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-
-using Xunit;
-
 namespace Net.Code.AdventOfCode.Toolkit.UnitTests;
 
 public class CommandTests
@@ -100,7 +94,7 @@ public class CommandTests
         var sut = new Export(manager, AoCLogic, Substitute.For<IInputOutputService>());
         await sut.ExecuteAsync(new(2021, 1), new());
         await manager.Received(1).GenerateCodeAsync(new(2021, 1));
-        await manager.DidNotReceive().ExportCode(Arg.Any<PuzzleKey>(), Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<string>());
+        await manager.DidNotReceive().ExportCode(Arg.Any<PuzzleKey>(), Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string>());
     }
 
     [Fact]
@@ -111,7 +105,18 @@ public class CommandTests
         PuzzleKey key = new(2021, 1);
         await sut.ExecuteAsync(key, new Export.Settings { output = "output.txt" });
         await manager.Received(1).GenerateCodeAsync(key);
-        await manager.Received(1).ExportCode(key, "public class AoC202101 {}", false, "output.txt");
+        await manager.Received(1).ExportCode(key, "public class AoC202101 {}", null, "output.txt");
+    }
+    [Fact]
+    public async Task Export_Output_WithCommon()
+    {
+        var manager = CreateCodeManager();
+        var sut = new Export(manager, AoCLogic, Substitute.For<IInputOutputService>());
+        PuzzleKey key = new(2021, 1);
+        var common = new[] { "file1", "file2" };
+        await sut.ExecuteAsync(key, new Export.Settings { output = "output", includecommon = common });
+        await manager.Received(1).GenerateCodeAsync(key);
+        await manager.Received(1).ExportCode(key, "public class AoC202101 {}", common, "output");
     }
 
     [Fact]
