@@ -46,7 +46,8 @@ class AoCRunner : IAoCRunner
         return result;
     }
     bool IsCompilerGenerated(Type type) 
-    => type.FullName.Contains('<') || type.GetCustomAttribute<CompilerGeneratedAttribute>() != null;
+    => (type?.FullName??string.Empty).Contains('<') 
+    || type?.GetCustomAttribute<CompilerGeneratedAttribute>() != null;
     private dynamic? GetAoC(string? typeName, int year, int day)
     {
         var assembly = resolver.GetEntryAssembly();
@@ -73,7 +74,7 @@ class AoCRunner : IAoCRunner
                     continue;
                 }
 
-                var methods = t.GetMethods();
+                var methods = t?.GetMethods() ?? Array.Empty<MethodInfo>();
                 var method1 = methods.FirstOrDefault(m => m.Name is "Part1" && m.GetParameters().Length is 0);
                 var method2 = methods.FirstOrDefault(m => m.Name is "Part2" && m.GetParameters().Length is 0);
 
