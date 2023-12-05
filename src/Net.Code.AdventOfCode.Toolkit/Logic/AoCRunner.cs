@@ -80,7 +80,7 @@ class AoCRunner : IAoCRunner
 
                 if (method1 is null || method2 is null)
                 {
-                    logger.LogDebug($"{t.Name} does not have two parameterless methods Part1() and Part2()");
+                    logger.LogDebug($"{t?.Name} does not have two parameterless methods Part1() and Part2()");
                     continue;
                 }
 

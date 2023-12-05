@@ -101,8 +101,4 @@ class InvalidPuzzleException : Exception
     public InvalidPuzzleException(string? message, Exception? innerException) : base(message, innerException)
     {
     }
-
-    protected InvalidPuzzleException(SerializationInfo info, StreamingContext context) : base(info, context)
-    {
-    }
 }
