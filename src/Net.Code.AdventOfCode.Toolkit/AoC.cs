@@ -17,6 +17,7 @@ using Net.Code.AdventOfCode.Toolkit.Data;
 using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 using Net.Code.AdventOfCode.Toolkit.Logic;
 using Net.Code.AdventOfCode.Toolkit.Web;
+
 using NodaTime;
 
 using Spectre.Console;
@@ -57,13 +58,13 @@ public static class AoC
             }
         }
         var services = await InitializeServicesAsync(
-            resolver, 
-            io, 
-            clock, 
+            resolver,
+            io,
+            clock,
             aocDbContext,
             httpclient,
             filesystem,
-            string.IsNullOrEmpty(loglevel) ? LogLevel.Warning : Enum.Parse<LogLevel>(loglevel, true), 
+            string.IsNullOrEmpty(loglevel) ? LogLevel.Warning : Enum.Parse<LogLevel>(loglevel, true),
             args.Contains("--debug")
             );
 
@@ -74,7 +75,6 @@ public static class AoC
         app.Configure(config =>
         {
             AddCommand<Run>(config);
-            AddCommand<Test>(config);
             AddCommand<Verify>(config);
             AddCommand<Migrate>(config);
             AddCommand<Init>(config);
@@ -85,9 +85,9 @@ public static class AoC
             AddCommand<Report>(config);
             AddCommand<Leaderboard>(config);
             AddCommand<Stats>(config);
+            config.PropagateExceptions();
             if (args.Contains("--debug"))
             {
-                config.PropagateExceptions();
                 config.ValidateExamples();
             };
             config.SetInterceptor(new TraceInterceptor());
@@ -96,18 +96,27 @@ public static class AoC
         app.SetDefaultCommand<Run>();
 
 
-        var returnValue = await app.RunAsync(args);
-        if (registrar.Scope is not null)
+        try
         {
-            using (var db = registrar.ServiceProvider?.GetService<IAoCDbContext>()!)
+
+            var returnValue = await app.RunAsync(args);
+            if (registrar.Scope is not null)
             {
-                await db.SaveChangesAsync();
+                using (var db = registrar.ServiceProvider?.GetService<IAoCDbContext>()!)
+                {
+                    await db.SaveChangesAsync();
+                }
+
+                registrar.Scope.Dispose();
             }
 
-            registrar.Scope.Dispose();
+            return returnValue;
         }
-
-        return returnValue;
+        catch (Exception e)
+        {
+            AnsiConsole.WriteException(e, ExceptionFormats.ShortenEverything);
+            return 99;
+        }
     }
 
     class TraceInterceptor : ICommandInterceptor
@@ -132,7 +141,7 @@ public static class AoC
         bool debug)
     {
         resolver = resolver ?? AssemblyResolver.Instance;
-        var assembly = resolver.GetEntryAssembly() ?? throw new NullReferenceException("GetEntryAssembly returned null"); 
+        var assembly = resolver.GetEntryAssembly() ?? throw new NullReferenceException("GetEntryAssembly returned null");
 
         var config = new ConfigurationBuilder()
             .AddEnvironmentVariables()
@@ -140,7 +149,7 @@ public static class AoC
             .Build();
 
         var cookieValue = config["AOC_SESSION"] ?? throw new NullReferenceException("The AOC_SESSION variable is not set. Go to https://adventofcode.com, log in and copy the value of the session cookie. You need to set this value as a user secret or environment variable called AOC_SESSION.");
-        
+
         const string baseAddress = "https://adventofcode.com";
         var configuration = new Configuration(baseAddress, cookieValue);
         var services = new ServiceCollection();
@@ -149,6 +158,7 @@ public static class AoC
             .SetMinimumLevel(level));
         services.AddSingleton(configuration);
         services.AddTransient<IAoCClient, AoCClient>();
+        services.AddTransient<IFileSystemFactory, FileSystemFactory>();
         services.AddTransient<IPuzzleManager, PuzzleManager>();
         services.AddTransient<IAoCRunner, AoCRunner>();
         services.AddTransient<ICodeManager, CodeManager>();

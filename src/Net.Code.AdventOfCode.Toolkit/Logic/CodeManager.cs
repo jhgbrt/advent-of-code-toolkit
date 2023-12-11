@@ -12,67 +12,50 @@ namespace Net.Code.AdventOfCode.Toolkit.Logic;
 
 class CodeManager : ICodeManager
 {
-    private readonly IFileSystem filesystem;
+    private readonly IFileSystemFactory fileSystem;
 
-    public CodeManager(IFileSystem filesystem)
+    public CodeManager(IFileSystemFactory fileSystem)
     {
-        this.filesystem = filesystem;
+        this.fileSystem = fileSystem;
     }
 
     public async Task InitializeCodeAsync(Puzzle puzzle, bool force, Action<string> progress)
     {
-        var codeFolder = filesystem.GetCodeFolder(puzzle.Key);
-        var templateDir = filesystem.GetTemplateFolder();
+        var codeFolder = fileSystem.GetCodeFolder(puzzle.Key);
+        var templateDir = fileSystem.GetTemplateFolder();
 
-        if (filesystem.Exists(codeFolder) && !force)
+        if (codeFolder.Exists && !force)
         {
             throw new Exception($"Puzzle for {puzzle.Key} already initialized. Use --force to re-initialize.");
         }
 
         var input = puzzle.Input;
 
-        filesystem.Create(codeFolder);
+        await codeFolder.CreateIfNotExists();
 
-        var code = TransformContent(puzzle.Key, 
-            await filesystem.Read(templateDir.GetCodeFile())
-            );
-        await filesystem.Write(codeFolder.GetCodeFile(), code);
-        await filesystem.Write(codeFolder.GetSampleFile(), "");
-        await filesystem.Write(codeFolder.GetInputFile(), input);
-        if (filesystem.Exists(templateDir.GetNotebookFile()))
+        var code = await templateDir.ReadCode(puzzle.Key);
+        await codeFolder.WriteCode(code);
+        await codeFolder.WriteSample("");
+        await codeFolder.WriteInput(input);
+        if (templateDir.Notebook.Exists)
         {
-            var notebook = TransformContent(puzzle.Key, await filesystem.Read(templateDir.GetNotebookFile()));
-            await filesystem.Write(codeFolder.GetNotebookFile(), notebook);
+            codeFolder.CopyFile(templateDir.Notebook);
         }
     }
 
-    public string TransformContent(PuzzleKey key, string template)
-    {
-        return template.Replace("YYYY", key.Year.ToString()).Replace("DD", key.Day.ToString("00"));
-    }
-
-
     public async Task SyncPuzzleAsync(Puzzle puzzle)
     {
-        var codeFolder = filesystem.GetCodeFolder(puzzle.Key);
-        await filesystem.Write(codeFolder.GetInputFile(), puzzle.Input);
+        var codeFolder = fileSystem.GetCodeFolder(puzzle.Key);
+        await codeFolder.WriteInput(puzzle.Input);
     }
 
     public async Task<string> GenerateCodeAsync(PuzzleKey key)
     {
-        var dir = filesystem.GetCodeFolder(key);
-        var aoc = await filesystem.Read(dir.GetCodeFile());
+        var dir = fileSystem.GetCodeFolder(key);
+        var aoc = await dir.ReadCode();
         var tree = CSharpSyntaxTree.ParseText(aoc);
 
-        tree = tree.WithRootAndOptions(ExtractRegexGenerators(tree.GetRoot()), tree.Options);
-
-        // TODO could be used to selectively add methods from Common
-        // var common = fileSystem.GetFolder("Common");
-        // var additionalTrees = (
-        //    from f in common.GetFiles("*.cs")
-        //    let text = common.ReadFile(f.FullName).Result
-        //    select CSharpSyntaxTree.ParseText(text)).ToArray();
-
+        tree = tree.WithRootAndOptions(tree.GetRoot(), tree.Options);
 
         // find a class with 2 methods without arguments called Part1() and Part2()
         // the members of this class will be converted to top level statements
@@ -197,92 +180,6 @@ class CodeManager : ICodeManager
                             );
     }
 
-    private SyntaxNode ExtractRegexGenerators(SyntaxNode root)
-    {
-        var regexgenerators = from m in root.DescendantNodes().OfType<MethodDeclarationSyntax>()
-                              where m.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword))
-                              where (from al in m.AttributeLists
-                                     from a in al.Attributes
-                                     where a.Name.ToString() is "GeneratedRegex"
-                                     select m).Any()
-                              select m;
-
-
-        var regexAsCall = (
-            from m in root.DescendantNodes().OfType<InvocationExpressionSyntax>()
-            where m.Expression is MemberAccessExpressionSyntax
-            let exp = (MemberAccessExpressionSyntax)m.Expression
-            where exp.Name is GenericNameSyntax
-            let name = (GenericNameSyntax)exp.Name
-            where name.Identifier.ValueText is "As"
-            && name.TypeArgumentList.Arguments.Count == 1
-            select m
-            ).Any();
-
-        if (regexgenerators.Any() || regexAsCall)
-        {
-            var regexinvocations = from m in root.DescendantNodes().OfType<InvocationExpressionSyntax>()
-                                   where m.Expression is IdentifierNameSyntax
-                                   let x = (IdentifierNameSyntax)m.Expression
-                                   join rex in regexgenerators on x.Identifier.Value equals rex.Identifier.Value
-                                   select (m, x);
-
-            foreach (var (node, identifier) in regexinvocations)
-            {
-                root = root.ReplaceNode(node, InvocationExpression(
-                         MemberAccessExpression(
-                         SyntaxKind.SimpleMemberAccessExpression,
-                         IdentifierName("AoCRegex"),
-                         IdentifierName(identifier.Identifier.ValueText)
-                         ))
-                     );
-            }
-
-            var c = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Last();
-            root = root.InsertNodesAfter(c, List(
-                        new[]
-                        {
-                            ClassDeclaration("AoCRegex")
-                            .WithModifiers(TokenList(
-                                Token(SyntaxKind.StaticKeyword),
-                                Token(SyntaxKind.PartialKeyword)
-                                ))
-                            .WithMembers(
-                                List(regexgenerators.Select(m => m.WithModifiers(TokenList(
-                                    Token(SyntaxKind.PublicKeyword),
-                                    Token(SyntaxKind.StaticKeyword),
-                                    Token(SyntaxKind.PartialKeyword)
-                                    )) as MemberDeclarationSyntax)
-                                .Concat(new[]{
-                                ParseMemberDeclaration(
-                                """
-                                    public static T As<T>(this Regex regex, string s, IFormatProvider? provider = null) where T: struct
-                                    {
-                                        var match = regex.Match(s);
-                                        if (!match.Success) throw new InvalidOperationException($"input '{s}' does not match regex '{regex}'");
-
-                                        var constructor = typeof(T).GetConstructors().Single();
-        
-                                        var j = from p in constructor.GetParameters()
-                                                join m in match.Groups.OfType<Group>() on p.Name equals m.Name
-                                                select Convert.ChangeType(m.Value, p.ParameterType, provider ?? CultureInfo.InvariantCulture);
-
-                                        return (T)constructor.Invoke(j.ToArray());
-
-                                    }
-                                """)!, ParseMemberDeclaration(
-                                """
-                                    public static int GetInt32(this Match m, string name) => int.Parse(m.Groups[name].Value);
-                                """)!
-                            })
-                            ))
-                        }));
-
-        }
-
-
-        return root;
-    }
 
     private ClassDeclarationSyntax AdjustInputReading(ClassDeclarationSyntax aocclass)
     {
@@ -373,26 +270,35 @@ class CodeManager : ICodeManager
     }
 
 
-    public async Task ExportCode(PuzzleKey key, string code, bool includecommon, string output)
+    public async Task ExportCode(PuzzleKey key, string code, string[]? includecommon, string output)
     {
-        var codeDir = filesystem.GetCodeFolder(key);
-        var commonDir = filesystem.CurrentDirectory.GetDirectory("Common");
-        var outputDir = new DirectoryInfo(output);
-        var templateDir = filesystem.GetTemplateFolder();
-
-        filesystem.Create(outputDir);
-        await filesystem.Write(outputDir.GetCodeFile(), code);
-
-        filesystem.Copy(
-            filesystem.GetFiles(codeDir, "*.cs").Where(f => !f.Name.Name.EndsWith("Tests.cs")),
-            outputDir
+        var codeDir = fileSystem.GetCodeFolder(key);
+        var commonDir = fileSystem.GetFolder("Common");
+        var outputDir = fileSystem.GetOutputFolder(output);
+        var templateDir = fileSystem.GetTemplateFolder();
+        await outputDir.CreateIfNotExists();
+        await outputDir.WriteCode(code);
+        outputDir.CopyFiles(
+            codeDir.GetCodeFiles().Where(f => !f.Name.EndsWith("Tests.cs"))
             );
-        if (filesystem.Exists(codeDir.GetInputFile()))
-            filesystem.Copy(codeDir.GetInputFile(), outputDir);
-        if (filesystem.Exists(codeDir.GetSampleFile()))
-            filesystem.Copy(codeDir.GetSampleFile(), outputDir);
-        filesystem.Copy(templateDir.GetCsprojFile(), outputDir);
-        if (includecommon && filesystem.Exists(commonDir))
-            filesystem.Copy(filesystem.GetFiles(commonDir, "*.cs"), outputDir);
+        if (codeDir.Input.Exists)
+            outputDir.CopyFile(codeDir.Input);
+
+        if (codeDir.Sample.Exists)
+            outputDir.CopyFile(codeDir.Sample);
+
+        outputDir.CopyFile(templateDir.CsProj);
+
+        if (includecommon is { Length: >0 } && commonDir.Exists)
+        {
+            await outputDir.CreateIfNotExists("Common");
+            foreach (var name in includecommon)
+            {
+                foreach (var file in commonDir.GetFiles(Path.ChangeExtension(name, "cs")))
+                {
+                    outputDir.CopyFile(file, "Common");
+                }
+            }
+        }
     }
 }

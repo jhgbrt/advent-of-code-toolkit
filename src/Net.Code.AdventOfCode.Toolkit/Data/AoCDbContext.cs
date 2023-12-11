@@ -25,13 +25,13 @@ internal class AoCDbContext : DbContext, IAoCDbContext
     {
         var results = modelBuilder.Entity<DayResult>();
         ConfigureKey(results);
-        results.OwnsOne(p => p.Part1);
-        results.OwnsOne(p => p.Part2);
+        results.ComplexProperty(p => p.Part1);
+        results.ComplexProperty(p => p.Part2);
         results.Property(p => p.Elapsed).HasComputedColumnSql("Part1_Elapsed + Part2_Elapsed");
 
         var puzzles = modelBuilder.Entity<Puzzle>();
         ConfigureKey(puzzles);
-        puzzles.OwnsOne(p => p.Answer);
+        puzzles.ComplexProperty(p => p.Answer);
 
         base.OnModelCreating(modelBuilder);
     }

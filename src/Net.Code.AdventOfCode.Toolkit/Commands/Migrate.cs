@@ -1,5 +1,4 @@
-
-using Net.Code.AdventOfCode.Toolkit.Core;
+﻿using Net.Code.AdventOfCode.Toolkit.Core;
 
 using Spectre.Console.Cli;
 
@@ -9,6 +8,7 @@ class Migrate : AsyncCommand<Migrate.Settings>
 {
     public class Settings : CommandSettings { }
     private readonly IAoCDbContext dbcontext;
+
     public Migrate(IAoCDbContext dbcontext)
     {
         this.dbcontext = dbcontext;

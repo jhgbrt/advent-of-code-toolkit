@@ -11,10 +11,6 @@ class NotAuthenticatedException : Exception
     {
     }
 
-    protected NotAuthenticatedException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) : base(info, context)
-    {
-    }
-
     public NotAuthenticatedException(string? message) : base(message)
     {
     }

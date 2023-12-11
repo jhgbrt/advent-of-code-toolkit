@@ -26,9 +26,15 @@ class PuzzleManager : IPuzzleManager
 
         var puzzle = await db.GetPuzzle(key);
 
+
         if (puzzle == null)
         {
-            throw new Exception($"Puzzle {key} not initialized?");
+            puzzle = await SyncPuzzle(key);
+        }
+
+        if (puzzle == null)
+        {
+            throw new Exception($"Puzzle {key} not initialized on this machine. If this puzzle was solved on another machine, use sync first.");
         }
 
         return puzzle;

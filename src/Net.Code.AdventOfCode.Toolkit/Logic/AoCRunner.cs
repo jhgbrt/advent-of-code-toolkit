@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using Net.Code.AdventOfCode.Toolkit.Core;
 
 using System.Diagnostics;
-using System.Dynamic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -20,23 +19,6 @@ class AoCRunner : IAoCRunner
     {
         this.logger = logger;
         this.resolver = resolver;
-    }
-    public async Task Test(string? typeName, PuzzleKey key, Action<int, Result> progress)
-    {
-        var (year, day) = key;
-        object? aoc = GetAoC(typeName, year, day);
-
-        if (aoc == null)
-        {
-            return;
-        }
-
-        int i = 1;
-        foreach (var test in aoc.GetType().GetMethods().Where(m => m.Name.StartsWith("Test")))
-        {
-            var t = await Run(() => test.Invoke(aoc, Array.Empty<object>()) ?? "");
-            progress(i++, t);
-        }
     }
 
     public async Task<DayResult?> Run(string? typeName, PuzzleKey key, Action<int, Result> progress)
@@ -63,15 +45,15 @@ class AoCRunner : IAoCRunner
 
         return result;
     }
-
-
-    bool IsCompilerGenerated(Type type) => type.GetCustomAttribute<CompilerGeneratedAttribute>() != null;
+    bool IsCompilerGenerated(Type type) 
+    => (type?.FullName??string.Empty).Contains('<') 
+    || type?.GetCustomAttribute<CompilerGeneratedAttribute>() != null;
     private dynamic? GetAoC(string? typeName, int year, int day)
     {
         var assembly = resolver.GetEntryAssembly();
         if (assembly == null) throw new Exception("no entry assembly?");
 
-        var regex = new Regex(@$"[^\\d]{year}.*[^\\d]*{day:00}", RegexOptions.Compiled);
+        string yearday = $"{year}{day:00}";
 
         Type? type = null;
         MethodInfo? part1 = null;
@@ -87,18 +69,18 @@ class AoCRunner : IAoCRunner
 
                 logger.LogDebug($"considered {t.FullName}");
 
-                if (!regex.IsMatch(t.FullName ?? t.Name))
+                if (!(t?.FullName ?? string.Empty).EndsWith(yearday))
                 {
                     continue;
                 }
 
-                var methods = t.GetMethods();
+                var methods = t?.GetMethods() ?? Array.Empty<MethodInfo>();
                 var method1 = methods.FirstOrDefault(m => m.Name is "Part1" && m.GetParameters().Length is 0);
                 var method2 = methods.FirstOrDefault(m => m.Name is "Part2" && m.GetParameters().Length is 0);
 
                 if (method1 is null || method2 is null)
                 {
-                    logger.LogDebug($"{t.Name} does not have two parameterless methods Part1() and Part2()");
+                    logger.LogDebug($"{t?.Name} does not have two parameterless methods Part1() and Part2()");
                     continue;
                 }
 
@@ -123,33 +105,15 @@ class AoCRunner : IAoCRunner
         logger.LogInformation($"Using implementation type: {type}");
 
         if (type.IsAbstract)
-            return new StaticRunner(part1, part2);
+            return new Runner(part1, part2);
         else
             return Activator.CreateInstance(type);
     }
-
-    class InstanceRunner
-    {
-        readonly Func<object, object> part1;
-        readonly Func<object, object> part2;
-        readonly Dictionary<string, Func<object, object>> tests;
-
-        private readonly object target;
-
-        public InstanceRunner(object target, MethodInfo part1, MethodInfo part2, MethodInfo[] tests)
-        {
-            this.target = target;
-            this.part1 = part1.CreateDelegate<Func<object,object>>();
-            this.part2 = part2.CreateDelegate<Func<object, object>>();
-            this.tests = tests.ToDictionary(m => m.Name, m => m.CreateDelegate<Func<object, object>>());
-        }
-    }
-
-    class StaticRunner : DynamicObject
+    class Runner
     {
         readonly Func<object> part1;
         readonly Func<object> part2;
-        public StaticRunner(MethodInfo part1, MethodInfo part2)
+        public Runner(MethodInfo part1, MethodInfo part2)
         {
             this.part1 = part1.CreateDelegate<Func<object>>();
             this.part2 = part2.CreateDelegate<Func<object>>();
@@ -157,7 +121,7 @@ class AoCRunner : IAoCRunner
         public object Part1() => part1();
         public object Part2() => part2();
     }
-
+   
     static async Task<Result> Run(Func<object> f)
     {
         var sw = Stopwatch.StartNew();

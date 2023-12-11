@@ -5,7 +5,7 @@ class Puzzle : IHavePuzzleKey
     public PuzzleKey Key { get; init; }
     public int Year { get; init; }
     public int Day { get; init; }
-    public string Input { get; init; }
+    public string Input { get; private set; }
     public Answer Answer { get; set; }
     public Status Status { get; set; }
 
@@ -56,6 +56,7 @@ class Puzzle : IHavePuzzleKey
     {
         Answer = remote.Answer;
         Status = remote.Status;
+        Input = remote.Input;
     }
 }
 

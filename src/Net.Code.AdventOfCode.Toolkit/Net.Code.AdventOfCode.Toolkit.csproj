@@ -2,9 +2,9 @@
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>disable</ImplicitUsings>
+        <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <PackageVersion>2.0.0-pre.1</PackageVersion>
+        <PackageVersion>1.0.3-pre</PackageVersion>
         <PackageId>Net.Code.AdventOfCode.Toolkit</PackageId>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/jhgbrt/advent-of-code-toolkit</PackageProjectUrl>
@@ -19,12 +19,6 @@
         <UserSecretsId>4c3718ba-0840-4ad0-8560-59d33c161f26</UserSecretsId>
     </PropertyGroup>
     <ItemGroup>
-        <Using Include="System" />
-        <Using Include="System.Linq" />
-        <Using Include="System.Net.Http" />
-        <Using Include="System.Threading" />
-        <Using Include="System.Threading.Tasks" />
-        <Using Include="System.Collections.Generic" />
         <PackageReference Include="Basic.Reference.Assemblies.Net70" Version="1.4.5" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
