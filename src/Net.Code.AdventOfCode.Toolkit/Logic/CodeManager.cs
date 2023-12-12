@@ -6,6 +6,8 @@ using Microsoft.CodeAnalysis.Formatting;
 
 using Net.Code.AdventOfCode.Toolkit.Core;
 
+using System.Diagnostics;
+
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Net.Code.AdventOfCode.Toolkit.Logic;
@@ -75,7 +77,41 @@ class CodeManager : ICodeManager
             throw new Exception("Could not find a class with 2 methods called Part1 and Part2");
         }
 
+
         aocclass = AdjustInputReading(aocclass);
+
+        var constructors = (from c in aocclass.DescendantNodes().OfType<ConstructorDeclarationSyntax>()
+                            select c).ToArray();
+
+        IEnumerable<StatementSyntax> initialization = Array.Empty<StatementSyntax>();
+        StatementSyntax? readinput = null;
+        if (constructors.Length == 2)
+        {
+
+            var parameterlessconstructorInitializerArgument = (
+                from c in constructors
+                where c.ParameterList.Parameters.Count == 0
+                let initializer = c.DescendantNodes().OfType<ConstructorInitializerSyntax>().First(ci => ci.ArgumentList.Arguments.Count == 1)
+                let a = initializer.ArgumentList.Arguments.Single()
+                select a).Single();
+
+            var stringarrayparameterconstructor = (
+                from c in constructors
+                where c.ParameterList.Parameters.Count == 1
+                let p = c.ParameterList.Parameters.Single()
+                where p.Type is ArrayTypeSyntax ats && ats.ElementType is PredefinedTypeSyntax pts && pts.Keyword.IsKind(SyntaxKind.StringKeyword)
+                select (c, p)
+                ).FirstOrDefault();
+
+            var constructorcode = stringarrayparameterconstructor.c.DescendantNodes().OfType<BlockSyntax>().Single().DescendantNodes().OfType<StatementSyntax>().ToArray();
+            var variablename = stringarrayparameterconstructor.p.Identifier.ToString();
+
+            readinput = ParseStatement($"var {variablename} = {parameterlessconstructorInitializerArgument};");
+            initialization = constructorcode;
+        }
+
+
+
 
         // the actual methods: Part1 & Part2
         var implementations = (
@@ -93,8 +129,9 @@ class CodeManager : ICodeManager
         var fields =
             from node in aocclass.DescendantNodes().OfType<FieldDeclarationSyntax>()
             where node.Parent == aocclass
-            let fieldname = node.DescendantNodes().OfType<VariableDeclaratorSyntax>().Single().Identifier.ToString()
             select ToLocalDeclaration(node);
+
+
 
         // methods from the AoC class are converted to top-level methods
         var methods =
@@ -126,8 +163,9 @@ class CodeManager : ICodeManager
             var result = CompilationUnit()
             .WithUsings(List(usings))
             .WithMembers(
-                List(
-                    fields.Select(GlobalStatement)
+                List((readinput is null ? Array.Empty<GlobalStatementSyntax>() : new[]{GlobalStatement(readinput)})
+                    .Concat(fields.Select(GlobalStatement))
+                    .Concat(initialization.Select(GlobalStatement))
                     .Concat(new[]
                     {
                         GlobalStatement(ParseStatement("var sw = Stopwatch.StartNew();\r\n")!),
@@ -166,12 +204,8 @@ class CodeManager : ICodeManager
             node = node.ReplaceNode(n, ObjectCreationExpression(type).WithArgumentList(n.ArgumentList));
         }
 
-
         return LocalDeclarationStatement(
-                            VariableDeclaration(
-                                IdentifierName(
-                                    Identifier(TriviaList(), SyntaxKind.VarKeyword, "var", "var", TriviaList())
-                                    )
+                            VariableDeclaration(type
                                 ).WithVariables(
                                     SingletonSeparatedList(
                                         node.DescendantNodes().OfType<VariableDeclaratorSyntax>().Single()

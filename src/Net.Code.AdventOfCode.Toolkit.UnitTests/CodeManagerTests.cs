@@ -30,10 +30,16 @@ public class CodeManagerTests
         var code = @"
 namespace AoC.Year2021.Day03;
 
-public class AoC
+public class AoC202103
 {
-    static string[] input = Read.InputLines();
-    static int[] myvariable = input.Select(int.Parse).ToArray();
+    public AoC202103() : this(Read.InputLines())
+    {
+    }
+    public AoC202103(string[] input)
+    {
+        myvariable = input.Select(int.Parse).ToArray();
+    }
+    int[] myvariable;
     public object Part1() => Solve(1);
     public object Part2()
     {
@@ -49,6 +55,15 @@ public class AoC
 record MyRecord();
 class MyClass
 {
+}
+class Tests
+{
+    [Fact]
+    public void Test1()
+    {
+        var sut = new AoC202103(new[] { ""1"", ""2"" });
+        Assert.Equal(1, sut.Part1());
+    }
 }
 ";
 
@@ -90,7 +105,8 @@ class MyClass
         var code = await m.GenerateCodeAsync(new(2021, 3));
 
         Assert.Equal(@"var input = File.ReadAllLines(""input.txt"");
-var myvariable = input.Select(int.Parse).ToArray();
+int[] myvariable;
+myvariable = input.Select(int.Parse).ToArray();
 var sw = Stopwatch.StartNew();
 var part1 = Solve(1);
 var part2 = Part2();

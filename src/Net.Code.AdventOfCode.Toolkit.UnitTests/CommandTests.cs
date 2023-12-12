@@ -2,6 +2,7 @@
 using Net.Code.AdventOfCode.Toolkit.Core;
 
 using Net.Code.AdventOfCode.Toolkit.Infrastructure;
+using Net.Code.AdventOfCode.Toolkit.Logic;
 
 using NodaTime;
 
@@ -182,7 +183,6 @@ public class CommandTests
     }
 
 }
-
 
 public class PuzzleTests
 {

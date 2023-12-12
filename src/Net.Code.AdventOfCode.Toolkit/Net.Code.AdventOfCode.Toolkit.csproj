@@ -4,7 +4,8 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <PackageVersion>2.0.0</PackageVersion>
+        <LangVersion>latest</LangVersion>
+        <PackageVersion>2.0.1</PackageVersion>
         <PackageId>Net.Code.AdventOfCode.Toolkit</PackageId>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/jhgbrt/advent-of-code-toolkit</PackageProjectUrl>
