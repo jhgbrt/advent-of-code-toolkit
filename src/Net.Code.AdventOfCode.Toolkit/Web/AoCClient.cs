@@ -4,14 +4,17 @@ using System.Net;
 using Microsoft.Extensions.Logging;
 using Net.Code.AdventOfCode.Toolkit.Core;
 using System.Linq;
+using NodaTime;
 
 class AoCClient : IDisposable, IAoCClient
 {
+    readonly IClock clock;
     readonly IHttpClientWrapper client;
     private readonly ILogger<AoCClient> logger;
 
-    public AoCClient(IHttpClientWrapper client, ILogger<AoCClient> logger)
+    public AoCClient(IHttpClientWrapper client, IClock clock, ILogger<AoCClient> logger)
     {
+        this.clock = clock;
         this.client = client;
         this.logger = logger;
     }
@@ -37,7 +40,7 @@ class AoCClient : IDisposable, IAoCClient
         (var statusCode, var content) = await GetAsync($"{year}/leaderboard/private/view/{id}.json");
         if (statusCode != HttpStatusCode.OK || content.StartsWith("<"))
             return null;
-        return new LeaderboardJson(year, content).GetLeaderBoard();
+        return new LeaderboardJson(content).GetLeaderBoard();
     }
 
     public async Task<PersonalStats?> GetPersonalStatsAsync(int year)
@@ -80,7 +83,7 @@ class AoCClient : IDisposable, IAoCClient
 
     public async Task<IEnumerable<(int id, string description)>> GetLeaderboardIds()
     {
-        var year = DateTime.Now.Year;
+        var year = clock.GetCurrentInstant().ToDateTimeUtc().Year;
         (var statusCode, var html) = await GetAsync($"{year}/leaderboard/private");
         if (statusCode != HttpStatusCode.OK) return Enumerable.Empty<(int, string)>();
         return new LeaderboardHtml(html).GetLeaderboards();

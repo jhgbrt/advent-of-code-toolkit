@@ -16,27 +16,28 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         readonly static string leaderboardjson = File.ReadAllText("leaderboard-148156.json");
         readonly static string leaderboard = File.ReadAllText("leaderboard.html");
         readonly static string puzzle = File.ReadAllText("puzzle-answered-both-parts.html");
-
-        (string path, string content)[] items = new[]
-        {
+        const int Year = 2015;
+        const int Day = 1;
+        (string path, string content)[] items =
+        [
             (path: "settings", content: settings),
-            (path: $"2015/leaderboard/private/view/148156.json", content: leaderboardjson),
-            (path: $"2015/day/1", content: puzzle),
-            (path: $"2015/day/1/input", content: "input"),
-            (path: $"2015/leaderboard/private", content: leaderboard),
-            (path: $"{DateTime.Now.Year}/leaderboard/private", content: leaderboard)
-        };
+            (path: $"{Year}/leaderboard/private/view/148156.json", content: leaderboardjson),
+            (path: $"{Year}/day/{Day}", content: puzzle),
+            (path: $"{Year}/day/{Day}/input", content: "input"),
+            (path: $"{Year}/leaderboard/private", content: leaderboard)
+        ];
 
         IHttpClientWrapper wrapper;
         IAoCClient client;
         IAoCClient CreateClient()
         {
+            var clock = TestClock.Create(Year, 12, Day, 8, 0, 0);
             var logger = Substitute.For<ILogger<AoCClient>>();
             foreach (var (path,content) in items) 
             {
                 wrapper.GetAsync(path).Returns(Task.FromResult((HttpStatusCode.OK, content)));
             }
-            var client = new AoCClient(wrapper, logger);
+            var client = new AoCClient(wrapper, clock, logger);
             return client;
         }
 
@@ -56,8 +57,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         [Fact]
         public async Task GetLeaderBoardIds()
         {
-            var year = DateTime.Now.Year;
-            var path = $"{year}/leaderboard/private";
+            var path = $"{Year}/leaderboard/private";
             await client.GetLeaderboardIds();
             await Verify(path);
         }
@@ -65,9 +65,8 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         [Fact]
         public async Task GetLeaderBoard()
         {
-            var year = 2015;
-            await client.GetLeaderBoardAsync(year, 148156);
-            await Verify("2015/leaderboard/private/view/148156.json");
+            await client.GetLeaderBoardAsync(Year, 148156);
+            await Verify($"{Year}/leaderboard/private/view/148156.json");
         }
 
         [Fact]
@@ -80,23 +79,22 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         [Fact]
         public async Task GetMemberAsync()
         {
-            var year = 2015;
-            await client.GetPersonalStatsAsync(year);
-            await Verify("settings", "2015/leaderboard/private/view/148156.json");
+            await client.GetPersonalStatsAsync(Year);
+            await Verify("settings", $"{Year}/leaderboard/private/view/148156.json");
         }
 
         [Fact]
         public async Task GetPuzzle()
         {
-            await client.GetPuzzleAsync(new(2015, 1));
-            await Verify($"2015/day/1");
+            await client.GetPuzzleAsync(new(Year, Day));
+            await Verify($"{Year}/day/{Day}");
         }
 
         [Fact]
         public async Task GetPuzzleInput()
         {
-            await client.GetPuzzleInputAsync(new(2015, 1));
-            await Verify("2015/day/1/input");
+            await client.GetPuzzleInputAsync(new(Year, Day));
+            await Verify($"{Year}/day/{Day}/input");
         }
     }
 
@@ -105,15 +103,16 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         [Fact]
         public async Task PostAnswerAsync()
         {
-            var wrapper = Substitute.For<IHttpClientWrapper>();
-            var logger = Substitute.For<ILogger<AoCClient>>();
-
             var year = 2017;
             var day = 5;
             var path = $"{year}/day/{day}/answer";
-            wrapper.PostAsync(path, Arg.Any<FormUrlEncodedContent>()).Returns(Task.FromResult((HttpStatusCode.OK, "<article>CONTENT</article>")));
 
-            var client = new AoCClient(wrapper, logger);
+            var wrapper = Substitute.For<IHttpClientWrapper>();
+            wrapper.PostAsync(path, Arg.Any<FormUrlEncodedContent>()).Returns(Task.FromResult((HttpStatusCode.OK, "<article>CONTENT</article>")));
+            var logger = Substitute.For<ILogger<AoCClient>>();
+            var clock = TestClock.Create(year, 12, day, 8, 0, 0);
+            var client = new AoCClient(wrapper, clock, logger);
+
             await client.PostAnswerAsync(year, day, 1, "ANSWER");
 
             await wrapper.Received().PostAsync(path, Arg.Any<HttpContent>());

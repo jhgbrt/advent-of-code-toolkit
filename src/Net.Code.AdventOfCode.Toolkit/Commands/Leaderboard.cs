@@ -1,6 +1,8 @@
 ﻿using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 
+using NodaTime;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -11,11 +13,17 @@ namespace Net.Code.AdventOfCode.Toolkit.Commands;
 [Description("Show some stats from the configured private leaderboard. ")]
 class Leaderboard : AsyncCommand<Leaderboard.Settings>
 {
+    private readonly IClock clock;
     private readonly ILeaderboardManager manager;
     private readonly IInputOutputService io;
     private readonly AoCLogic logic;
-    public Leaderboard(ILeaderboardManager manager, IInputOutputService io, AoCLogic logic)
+    public Leaderboard(
+        IClock clock,
+        ILeaderboardManager manager, 
+        IInputOutputService io, 
+        AoCLogic logic)
     {
+        this.clock = clock;
         this.manager = manager;
         this.io = io;
         this.logic = logic;
@@ -24,7 +32,7 @@ class Leaderboard : AsyncCommand<Leaderboard.Settings>
     {
         [Description("Year (default: current year)")]
         [CommandArgument(0, "[YEAR]")]
-        public int year { get; set; } = DateTime.Now.Year;
+        public int? year { get; set; } 
         [Description("ID (if not provided, the leaderboard ID is looked up)")]
         [CommandArgument(0, "[id]")]
         public int? id { get; set; }
@@ -38,7 +46,7 @@ class Leaderboard : AsyncCommand<Leaderboard.Settings>
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings options)
     {
-        var year = options.year;
+        var year = options.year ?? clock.GetCurrentInstant().ToDateTimeUtc().Year;
 
         var ids = options.id.HasValue
             ? Enumerable.Repeat((id: options.id.Value, description: ""), 1)

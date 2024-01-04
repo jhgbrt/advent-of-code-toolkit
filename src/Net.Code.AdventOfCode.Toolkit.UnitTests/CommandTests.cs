@@ -34,7 +34,7 @@ public class CommandTests
     public async Task Leaderboard_WithId()
     {
         var manager = CreateLeaderboardManager();
-        var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic);
+        var run = new Leaderboard(Clock, manager, Substitute.For<IInputOutputService>(), AoCLogic);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021, id = 123 });
         await manager.Received(1).GetLeaderboardAsync(123, 2021);
 
@@ -44,7 +44,7 @@ public class CommandTests
     public async Task Leaderboard_NoId()
     {
         var manager = CreateLeaderboardManager();
-        var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic);
+        var run = new Leaderboard(Clock, manager, Substitute.For<IInputOutputService>(), AoCLogic);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021 });
         await manager.Received(1).GetLeaderboardAsync(123, 2021);
     }
@@ -52,7 +52,7 @@ public class CommandTests
     public async Task Leaderboard_All()
     {
         var manager = CreateLeaderboardManager();
-        var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic);
+        var run = new Leaderboard(Clock, manager, Substitute.For<IInputOutputService>(), AoCLogic);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021, all = true });
         await manager.Received().GetLeaderboardsAsync(123, Arg.Any<IEnumerable<int>>());
     }

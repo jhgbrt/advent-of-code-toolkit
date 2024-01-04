@@ -46,13 +46,13 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         [Fact]
         public void LeaderboardJson()
         {
-            var year = DateTime.Now.Year;
             var content = File.ReadAllText("leaderboard-148156.json");
-            var result = new LeaderboardJson(year, content).GetLeaderBoard();
+            var result = new LeaderboardJson(content).GetLeaderBoard();
             Assert.NotNull(result);
             Assert.Equal("user1", result!.Members[1].Name);
             Assert.Equal(1, result.Members[1].Id);
             Assert.Equal(17, result.Members[2].TotalStars);
+            Assert.Equal(2021, result!.Year);
         }
 
         [Fact]

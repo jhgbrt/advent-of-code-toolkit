@@ -6,34 +6,32 @@ using NodaTime;
 
 using System.Text.Json;
 
-record LeaderboardJson(int year, string content)
+record LeaderboardJson(string content)
 {
     public LeaderBoard GetLeaderBoard()
     {
         var jobject = JsonDocument.Parse(content).RootElement;
 
-        var (ownerid, members) = jobject.EnumerateObject()
+        var (ownerid, members, year) = jobject.EnumerateObject()
             .Aggregate(
-                (ownerid: -1, members: Enumerable.Empty<PersonalStats>()),
+                (ownerid: -1, members: Enumerable.Empty<PersonalStats>(), year: -1),
                 (m, p) => p.Name switch
                 {
-                    "owner_id" => (GetInt32(p.Value), m.members),
-                    "members" => (m.ownerid, GetMembers(p.Value)),
+                    "owner_id" => (GetInt32(p.Value), m.members, m.year),
+                    "event" => (m.ownerid, m.members, GetInt32(p.Value)),
+                    "members" => (m.ownerid, GetMembers(p.Value), m.year),
                     _ => m
                 }
             );
 
         return new LeaderBoard(ownerid, year, members.ToDictionary(m => m.Id));
 
-        int GetInt32(JsonElement value)
+        int GetInt32(JsonElement value) => value.ValueKind switch
         {
-            return value.ValueKind switch
-            {
-                JsonValueKind.Number => value.GetInt32(),
-                JsonValueKind.String => int.Parse(value.GetString()!),
-                _ => throw new InvalidOperationException("expected string or number")
-            };
-        }
+            JsonValueKind.Number => value.GetInt32(),
+            JsonValueKind.String => int.Parse(value.GetString()!),
+            _ => throw new InvalidOperationException("expected string or number")
+        };
 
         IEnumerable<PersonalStats> GetMembers(JsonElement element)
         {
