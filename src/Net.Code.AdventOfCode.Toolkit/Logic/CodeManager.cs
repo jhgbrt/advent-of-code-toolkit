@@ -90,9 +90,10 @@ class CodeManager : ICodeManager
             var initializerArguments = (
                 from c in constructors
                 where c.ParameterList.Parameters.Count == 0
-                let initializer = c.DescendantNodes().OfType<ConstructorInitializerSyntax>().First()
+                let initializer = c.DescendantNodes().OfType<ConstructorInitializerSyntax>().FirstOrDefault()
+                where initializer is not null
                 let a = initializer.ArgumentList.Arguments
-                select a).Single();
+                select a).FirstOrDefault();
 
             var constructor = (
                 from c in constructors
@@ -106,7 +107,7 @@ class CodeManager : ICodeManager
                 let name = item.Second.Identifier.Value
                 select ParseStatement($"var {name} = {value};")
              ).Concat(
-                from statement in constructor.DescendantNodes().OfType<BlockSyntax>().Single().DescendantNodes().OfType<StatementSyntax>()
+                from statement in constructor.DescendantNodes().OfType<BlockSyntax>().First().ChildNodes().OfType<StatementSyntax>()
                 where !IsSimpleThisAssignment(statement)
                 select ConvertConstructorInitializationStatement(statement)
              ).ToArray();

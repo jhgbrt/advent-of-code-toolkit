@@ -194,6 +194,56 @@ public class CodeManagerTests
         Console.WriteLine((part1, part2, sw.Elapsed));
         object Solve(int i) => i;
         """)]
+    [InlineData("""
+        public class AoC202103
+        {
+            string[] input;
+            public AoC202103() 
+            {
+                input = Read.InputLines();
+            }
+            public object Part1() => 1;
+            public object Part2() => 2;
+        }
+        """, """
+        var input = File.ReadAllLines("input.txt");
+        var sw = Stopwatch.StartNew();
+        var part1 = 1;
+        var part2 = 2;
+        Console.WriteLine((part1, part2, sw.Elapsed));
+        """)]
+        [InlineData("""
+        public class AoC202103
+        {
+            public AoC202318():this(Read.InputLines(), Console.Out) {}
+            readonly TextWriter writer;
+            string[] input;
+            readonly ImmutableArray<string> items;
+            public AoC202318(string[] input, TextWriter writer)
+            {
+                this.input = input;
+                items = input.Select(s =>
+                    {
+                        return s;
+                    }
+                ) .ToImmutableArray();
+                this.writer = writer;
+            }
+            public object Part1() => 1;
+            public object Part2() => 2;
+        }
+        """, """
+        var input = File.ReadAllLines("input.txt");
+        var writer = Console.Out;
+        var items = input.Select(s =>
+        {
+            return s;
+        }).ToImmutableArray();
+        var sw = Stopwatch.StartNew();
+        var part1 = 1;
+        var part2 = 2;
+        Console.WriteLine((part1, part2, sw.Elapsed));
+        """)]
     public async Task GenerateCodeTests(string input, string expected)
     {
         var m = CreateCodeManager(true, input);
