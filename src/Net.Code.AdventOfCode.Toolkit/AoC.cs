@@ -80,7 +80,6 @@ public static class AoC
             AddCommand<Verify>(config);
             AddCommand<Init>(config);
             AddCommand<Sync>(config);
-            AddCommand<Show>(config);
             AddCommand<Post>(config);
             AddCommand<Export>(config);
             AddCommand<Report>(config);

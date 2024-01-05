@@ -214,7 +214,7 @@ class CodeManager : ICodeManager
         return left.Name.ToString().Equals(right.ToString());
     }
 
-    /// Converts 'a = b' to 'var a = b'
+    // Converts 'a = b' to 'var a = b'
     private StatementSyntax ConvertConstructorInitializationStatement(StatementSyntax node)
     {
         if (node is not ExpressionStatementSyntax ess) return node;
