@@ -43,6 +43,8 @@ public static class AoC
         string[] args
         )
     {
+
+
         string? loglevel = null;
         for (int i = 0; i < args.Length; i++)
         {
@@ -76,7 +78,6 @@ public static class AoC
         {
             AddCommand<Run>(config);
             AddCommand<Verify>(config);
-            AddCommand<Migrate>(config);
             AddCommand<Init>(config);
             AddCommand<Sync>(config);
             AddCommand<Show>(config);
