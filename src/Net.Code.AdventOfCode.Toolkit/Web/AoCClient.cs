@@ -37,7 +37,7 @@ class AoCClient : IDisposable, IAoCClient
         (var statusCode, var content) = await GetAsync($"{year}/leaderboard/private/view/{id}.json");
         if (statusCode != HttpStatusCode.OK || content.StartsWith("<"))
             return null;
-        return new LeaderboardJson(year, content).GetLeaderBoard();
+        return new LeaderboardJson(content).GetLeaderBoard();
     }
 
     public async Task<PersonalStats?> GetPersonalStatsAsync(int year)
@@ -78,9 +78,8 @@ class AoCClient : IDisposable, IAoCClient
         return new PuzzleHtml(key, html, input).GetPuzzle();
     }
 
-    public async Task<IEnumerable<(int id, string description)>> GetLeaderboardIds()
+    public async Task<IEnumerable<(int id, string description)>> GetLeaderboardIds(int year)
     {
-        var year = DateTime.Now.Year;
         (var statusCode, var html) = await GetAsync($"{year}/leaderboard/private");
         if (statusCode != HttpStatusCode.OK) return Enumerable.Empty<(int, string)>();
         return new LeaderboardHtml(html).GetLeaderboards();

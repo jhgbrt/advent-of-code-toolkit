@@ -6,19 +6,20 @@ using NodaTime;
 
 using System.Text.Json;
 
-record LeaderboardJson(int year, string content)
+record LeaderboardJson(string content)
 {
     public LeaderBoard GetLeaderBoard()
     {
         var jobject = JsonDocument.Parse(content).RootElement;
 
-        var (ownerid, members) = jobject.EnumerateObject()
+        var (ownerid, members, year) = jobject.EnumerateObject()
             .Aggregate(
-                (ownerid: -1, members: Enumerable.Empty<PersonalStats>()),
+                (ownerid: -1, members: Enumerable.Empty<PersonalStats>(), year: -1),
                 (m, p) => p.Name switch
                 {
-                    "owner_id" => (GetInt32(p.Value), m.members),
-                    "members" => (m.ownerid, GetMembers(p.Value)),
+                    "owner_id" => (GetInt32(p.Value), m.members, m.year),
+                    "members" => (m.ownerid, GetMembers(p.Value), m.year),
+                    "event" => (m.ownerid, m.members, GetInt32(p.Value)),
                     _ => m
                 }
             );

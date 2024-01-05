@@ -2,7 +2,6 @@
 using Net.Code.AdventOfCode.Toolkit.Core;
 
 using Net.Code.AdventOfCode.Toolkit.Infrastructure;
-using Net.Code.AdventOfCode.Toolkit.Logic;
 
 using NodaTime;
 
@@ -14,9 +13,11 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests;
 
 public class CommandTests
 {
+    const int Year = 2021;
+    const int Day = 26;
     public CommandTests()
     {
-        Clock = TestClock.Create(2021, 12, 26, 0, 0, 0);
+        Clock = TestClock.Create(Year, 12, Day, 0, 0, 0);
         AoCLogic = new AoCLogic(Clock);
     }
     IClock Clock;
@@ -27,7 +28,7 @@ public class CommandTests
         var manager = CreateCodeManager();
         var puzzleManager = CreatePuzzleManager();
         var sut = new Init(puzzleManager, manager, AoCLogic, Substitute.For<IInputOutputService>());
-        await sut.ExecuteAsync(new(2021, 1), new());
+        await sut.ExecuteAsync(new(Year, 1), new());
         await manager.Received(1).InitializeCodeAsync(Arg.Is<Puzzle>(p => p.Year == 2021 && p.Day == 1), false, Arg.Any<Action<string>>());
     }
 
@@ -35,9 +36,9 @@ public class CommandTests
     public async Task Leaderboard_WithId()
     {
         var manager = CreateLeaderboardManager();
-        var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic);
+        var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic, Clock);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021, id = 123 });
-        await manager.Received(1).GetLeaderboardAsync(123, 2021);
+        await manager.Received(1).GetLeaderboardAsync(123, Year);
 
     }
 
@@ -45,15 +46,15 @@ public class CommandTests
     public async Task Leaderboard_NoId()
     {
         var manager = CreateLeaderboardManager();
-        var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic);
+        var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic, Clock);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021 });
-        await manager.Received(1).GetLeaderboardAsync(123, 2021);
+        await manager.Received(1).GetLeaderboardAsync(123, Year);
     }
     [Fact]
     public async Task Leaderboard_All()
     {
         var manager = CreateLeaderboardManager();
-        var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic);
+        var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic, Clock);
         await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021, all = true });
         await manager.Received().GetLeaderboardsAsync(123, Arg.Any<IEnumerable<int>>());
     }
@@ -74,8 +75,8 @@ public class CommandTests
     {
         IPuzzleManager manager = CreatePuzzleManager();
         var run = new Verify(manager, AoCLogic, Substitute.For<IInputOutputService>());
-        await run.ExecuteAsync(new(2021, 1), new());
-        await manager.Received(1).GetPuzzleResult(new(2021, 1));
+        await run.ExecuteAsync(new(Year, 1), new());
+        await manager.Received(1).GetPuzzleResult(new(Year, 1));
     }
 
     [Fact]
@@ -84,7 +85,7 @@ public class CommandTests
         var manager = CreateCodeManager();
         var puzzleManager = CreatePuzzleManager();
         var sut = new Sync(puzzleManager, manager, AoCLogic, Substitute.For<IInputOutputService>());
-        await sut.ExecuteAsync(new(2021, 1), new());
+        await sut.ExecuteAsync(new(Year, 1), new());
         await manager.Received(1).SyncPuzzleAsync(Arg.Is<Puzzle>(p => p.Year == 2021 && p.Day == 1));
     }
 
@@ -93,8 +94,8 @@ public class CommandTests
     {
         var manager = CreateCodeManager();
         var sut = new Export(manager, AoCLogic, Substitute.For<IInputOutputService>());
-        await sut.ExecuteAsync(new(2021, 1), new());
-        await manager.Received(1).GenerateCodeAsync(new(2021, 1));
+        await sut.ExecuteAsync(new(Year, 1), new());
+        await manager.Received(1).GenerateCodeAsync(new(Year, 1));
         await manager.DidNotReceive().ExportCode(Arg.Any<PuzzleKey>(), Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string>());
     }
 
@@ -103,7 +104,7 @@ public class CommandTests
     {
         var manager = CreateCodeManager();
         var sut = new Export(manager, AoCLogic, Substitute.For<IInputOutputService>());
-        PuzzleKey key = new(2021, 1);
+        PuzzleKey key = new(Year, 1);
         await sut.ExecuteAsync(key, new Export.Settings { output = "output.txt" });
         await manager.Received(1).GenerateCodeAsync(key);
         await manager.Received(1).ExportCode(key, "public class AoC202101 {}", null, "output.txt");
@@ -113,7 +114,7 @@ public class CommandTests
     {
         var manager = CreateCodeManager();
         var sut = new Export(manager, AoCLogic, Substitute.For<IInputOutputService>());
-        PuzzleKey key = new(2021, 1);
+        PuzzleKey key = new(Year, 1);
         var common = new[] { "file1", "file2" };
         await sut.ExecuteAsync(key, new Export.Settings { output = "output", includecommon = common });
         await manager.Received(1).GenerateCodeAsync(key);
@@ -125,7 +126,7 @@ public class CommandTests
     {
         var manager = CreatePuzzleManager();
         var sut = new Post(manager, AoCLogic, Substitute.For<IInputOutputService>());
-        PuzzleKey key = new(2021, 5);
+        PuzzleKey key = new(Year, 5);
         await sut.ExecuteAsync(key, new Post.Settings { value = "SOLUTION" });
         await manager.Received().PostAnswer(key, "SOLUTION");
     }
@@ -151,7 +152,7 @@ public class CommandTests
     private ILeaderboardManager CreateLeaderboardManager()
     {
         var manager = Substitute.For<ILeaderboardManager>();
-        manager.GetLeaderboardIds().Returns(new[] { (123, "") });
+        manager.GetLeaderboardIds(Year).Returns(new[] { (123, "") });
         return manager;
     }
 

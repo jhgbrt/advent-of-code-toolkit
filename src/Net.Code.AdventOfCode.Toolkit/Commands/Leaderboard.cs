@@ -1,6 +1,8 @@
 ﻿using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 
+using NodaTime;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -11,20 +13,22 @@ namespace Net.Code.AdventOfCode.Toolkit.Commands;
 [Description("Show some stats from the configured private leaderboard. ")]
 class Leaderboard : AsyncCommand<Leaderboard.Settings>
 {
+    private readonly IClock clock;
     private readonly ILeaderboardManager manager;
     private readonly IInputOutputService io;
     private readonly AoCLogic logic;
-    public Leaderboard(ILeaderboardManager manager, IInputOutputService io, AoCLogic logic)
+    public Leaderboard(ILeaderboardManager manager, IInputOutputService io, AoCLogic logic, IClock clock)
     {
         this.manager = manager;
         this.io = io;
         this.logic = logic;
+        this.clock = clock;
     }
     public class Settings : CommandSettings
     {
         [Description("Year (default: current year)")]
         [CommandArgument(0, "[YEAR]")]
-        public int year { get; set; } = DateTime.Now.Year;
+        public int? year { get; set; }
         [Description("ID (if not provided, the leaderboard ID is looked up)")]
         [CommandArgument(0, "[id]")]
         public int? id { get; set; }
@@ -38,11 +42,11 @@ class Leaderboard : AsyncCommand<Leaderboard.Settings>
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings options)
     {
-        var year = options.year;
+        var year = options.year ?? clock.GetCurrentInstant().InUtc().YearOfEra;
 
         var ids = options.id.HasValue
             ? Enumerable.Repeat((id: options.id.Value, description: ""), 1)
-            : await manager.GetLeaderboardIds();
+            : await manager.GetLeaderboardIds(year);
 
         var id = ids.Count() switch
         {

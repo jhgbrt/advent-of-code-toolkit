@@ -16,15 +16,16 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         readonly static string leaderboardjson = File.ReadAllText("leaderboard-148156.json");
         readonly static string leaderboard = File.ReadAllText("leaderboard.html");
         readonly static string puzzle = File.ReadAllText("puzzle-answered-both-parts.html");
-
+        const int Year = 2015;
+        const int Day = 1;
         (string path, string content)[] items = new[]
         {
             (path: "settings", content: settings),
-            (path: $"2015/leaderboard/private/view/148156.json", content: leaderboardjson),
-            (path: $"2015/day/1", content: puzzle),
-            (path: $"2015/day/1/input", content: "input"),
-            (path: $"2015/leaderboard/private", content: leaderboard),
-            (path: $"{DateTime.Now.Year}/leaderboard/private", content: leaderboard)
+            (path: $"{Year}/leaderboard/private/view/148156.json", content: leaderboardjson),
+            (path: $"{Year}/day/{Day}", content: puzzle),
+            (path: $"{Year}/day/{Day}/input", content: "input"),
+            (path: $"{Year}/leaderboard/private", content: leaderboard),
+            (path: $"{Year}/leaderboard/private", content: leaderboard)
         };
 
         IHttpClientWrapper wrapper;
@@ -56,16 +57,15 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         [Fact]
         public async Task GetLeaderBoardIds()
         {
-            var year = DateTime.Now.Year;
-            var path = $"{year}/leaderboard/private";
-            await client.GetLeaderboardIds();
+            var path = $"{Year}/leaderboard/private";
+            await client.GetLeaderboardIds(Year);
             await Verify(path);
         }
 
         [Fact]
         public async Task GetLeaderBoard()
         {
-            var year = 2015;
+            var year = Year;
             await client.GetLeaderBoardAsync(year, 148156);
             await Verify("2015/leaderboard/private/view/148156.json");
         }
@@ -80,23 +80,22 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         [Fact]
         public async Task GetMemberAsync()
         {
-            var year = 2015;
-            await client.GetPersonalStatsAsync(year);
-            await Verify("settings", "2015/leaderboard/private/view/148156.json");
+            await client.GetPersonalStatsAsync(Year);
+            await Verify("settings", $"{Year}/leaderboard/private/view/148156.json");
         }
 
         [Fact]
         public async Task GetPuzzle()
         {
-            await client.GetPuzzleAsync(new(2015, 1));
-            await Verify($"2015/day/1");
+            await client.GetPuzzleAsync(new(Year, Day));
+            await Verify($"{Year}/day/{Day}");
         }
 
         [Fact]
         public async Task GetPuzzleInput()
         {
-            await client.GetPuzzleInputAsync(new(2015, 1));
-            await Verify("2015/day/1/input");
+            await client.GetPuzzleInputAsync(new(Year, Day));
+            await Verify($"{Year}/day/{Day}/input");
         }
     }
 

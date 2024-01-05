@@ -15,8 +15,8 @@ class LeaderboardManager : ILeaderboardManager
         this.client = client;
     }
 
-    public Task<IEnumerable<(int id, string description)>> GetLeaderboardIds()
-          => client.GetLeaderboardIds();
+    public Task<IEnumerable<(int id, string description)>> GetLeaderboardIds(int year)
+          => client.GetLeaderboardIds(year);
 
     public async Task<IEnumerable<LeaderboardEntry>> GetLeaderboardsAsync(int id, IEnumerable<int> years)
     {

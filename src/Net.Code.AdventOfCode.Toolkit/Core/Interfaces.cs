@@ -9,7 +9,7 @@ record Configuration(string BaseAddress, string SessionCookie);
 interface IAoCClient : IDisposable
 {
     Task<LeaderBoard?> GetLeaderBoardAsync(int year, int id);
-    Task<IEnumerable<(int id, string description)>> GetLeaderboardIds();
+    Task<IEnumerable<(int id, string description)>> GetLeaderboardIds(int year);
     Task<PersonalStats?> GetPersonalStatsAsync(int year);
     Task<int> GetMemberId();
     Task<Puzzle> GetPuzzleAsync(PuzzleKey key);
@@ -44,7 +44,7 @@ interface ILeaderboardManager
 {
     Task<IEnumerable<LeaderboardEntry>> GetLeaderboardsAsync(int id, IEnumerable<int> years);
     Task<IEnumerable<LeaderboardEntry>> GetLeaderboardAsync(int id, int year);
-    Task<IEnumerable<(int id, string description)>> GetLeaderboardIds();
+    Task<IEnumerable<(int id, string description)>> GetLeaderboardIds(int year);
     IAsyncEnumerable<MemberStats> GetMemberStats(IEnumerable<int> years);
 }
 
