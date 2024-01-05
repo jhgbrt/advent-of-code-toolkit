@@ -84,34 +84,33 @@ class CodeManager : ICodeManager
                             select c).ToArray();
 
         IEnumerable<StatementSyntax> initialization = Array.Empty<StatementSyntax>();
-        StatementSyntax? readinput = null;
-        if (constructors.Length == 2)
+        if (constructors.Length > 0)
         {
 
-            var parameterlessconstructorInitializerArgument = (
+            var initializerArguments = (
                 from c in constructors
                 where c.ParameterList.Parameters.Count == 0
-                let initializer = c.DescendantNodes().OfType<ConstructorInitializerSyntax>().First(ci => ci.ArgumentList.Arguments.Count == 1)
-                let a = initializer.ArgumentList.Arguments.Single()
+                let initializer = c.DescendantNodes().OfType<ConstructorInitializerSyntax>().First()
+                let a = initializer.ArgumentList.Arguments
                 select a).Single();
 
-            var stringarrayparameterconstructor = (
+            var constructor = (
                 from c in constructors
-                where c.ParameterList.Parameters.Count == 1
-                let p = c.ParameterList.Parameters.Single()
-                where p.Type is ArrayTypeSyntax ats && ats.ElementType is PredefinedTypeSyntax pts && pts.Keyword.IsKind(SyntaxKind.StringKeyword)
-                select (c, p)
-                ).FirstOrDefault();
+                where c.ParameterList.Parameters.Count == initializerArguments.Count
+                select c
+                ).Single();
 
-            var constructorcode = stringarrayparameterconstructor.c.DescendantNodes().OfType<BlockSyntax>().Single().DescendantNodes().OfType<StatementSyntax>().ToArray();
-            var variablename = stringarrayparameterconstructor.p.Identifier.ToString();
-
-            readinput = ParseStatement($"var {variablename} = {parameterlessconstructorInitializerArgument};");
-            initialization = constructorcode;
+            initialization = (
+                from item in initializerArguments.Zip(constructor.ParameterList.Parameters)
+                let value = item.First
+                let name = item.Second.Identifier.Value
+                select ParseStatement($"var {name} = {value};")
+             ).Concat(
+                from statement in constructor.DescendantNodes().OfType<BlockSyntax>().Single().DescendantNodes().OfType<StatementSyntax>()
+                where !IsSimpleThisAssignment(statement)
+                select ConvertConstructorInitializationStatement(statement)
+             ).ToArray();
         }
-
-
-
 
         // the actual methods: Part1 & Part2
         var implementations = (
@@ -129,9 +128,11 @@ class CodeManager : ICodeManager
         var fields =
             from node in aocclass.DescendantNodes().OfType<FieldDeclarationSyntax>()
             where node.Parent == aocclass
+            && !IsInitialized(node, initialization)
             select ToLocalDeclaration(node);
 
 
+        Debugger.Break();
 
         // methods from the AoC class are converted to top-level methods
         var methods =
@@ -163,7 +164,7 @@ class CodeManager : ICodeManager
             var result = CompilationUnit()
             .WithUsings(List(usings))
             .WithMembers(
-                List((readinput is null ? Array.Empty<GlobalStatementSyntax>() : new[]{GlobalStatement(readinput)})
+                List(Enumerable.Empty<GlobalStatementSyntax>()
                     .Concat(fields.Select(GlobalStatement))
                     .Concat(initialization.Select(GlobalStatement))
                     .Concat(new[]
@@ -190,6 +191,42 @@ class CodeManager : ICodeManager
         return code;
     }
 
+    private bool IsInitialized(FieldDeclarationSyntax node, IEnumerable<StatementSyntax> initialization)
+    {
+        return initialization.OfType<LocalDeclarationStatementSyntax>().Any(ld => IsInitializationFor(ld, node));
+    }
+
+    private bool IsInitializationFor(LocalDeclarationStatementSyntax ld, FieldDeclarationSyntax node)
+    {
+        if (ld.ChildNodes().First() is not VariableDeclarationSyntax child) return false;
+        if (node.Declaration.Variables.Count != 1) return false;
+        return ld.DescendantNodes().OfType<VariableDeclaratorSyntax>().Any(n => n.Identifier.Text == node.Declaration.Variables.Single().Identifier.Text);
+    }
+
+    private bool IsSimpleThisAssignment(StatementSyntax statement)
+    {
+        if (statement is not ExpressionStatementSyntax ess) return false;
+        var child = ess.ChildNodes().Single();
+        if (child is not AssignmentExpressionSyntax assignment) return false;
+        if (assignment.Left is not MemberAccessExpressionSyntax left) return false;
+        if (assignment.Right is not IdentifierNameSyntax right) return false;
+        return left.Name.ToString().Equals(right.ToString());
+    }
+
+    /// Converts 'a = b' to 'var a = b'
+    private StatementSyntax ConvertConstructorInitializationStatement(StatementSyntax node)
+    {
+        if (node is not ExpressionStatementSyntax ess) return node;
+        var child = ess.ChildNodes().Single();
+        if (child is not AssignmentExpressionSyntax assignment) return node;
+        if (assignment.Left is not IdentifierNameSyntax identifierName) return node;
+        var value = assignment.Right;
+        var variableDeclarator = VariableDeclarator(identifierName.Identifier)
+            .WithInitializer(EqualsValueClause(value));
+        var variableDeclaration = VariableDeclaration(IdentifierName("var"))
+            .WithVariables(SingletonSeparatedList(variableDeclarator));
+        return LocalDeclarationStatement(variableDeclaration);        
+    }
     private LocalDeclarationStatementSyntax ToLocalDeclaration(FieldDeclarationSyntax node)
     {
         var type = node.Declaration.Type;

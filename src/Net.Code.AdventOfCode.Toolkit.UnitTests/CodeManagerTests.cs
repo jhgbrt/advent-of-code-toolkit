@@ -13,7 +13,49 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests;
 
 public class CodeManagerTests
 {
-    private static CodeManager CreateCodeManager(bool codeFolderExists)
+    const string code = """
+        namespace AoC.Year2021.Day03;
+
+        public class AoC202103
+        {
+            public AoC202103() : this(Read.InputLines(), Console.Out)
+            {
+            }
+            public AoC202103(string[] input, TextWriter writer)
+            {
+                this.writer = writer;
+                myvariable = input.Select(int.Parse).ToArray();
+            }
+            TextWriter writer;
+            int[] myvariable;
+            public object Part1() => Solve(1);
+            public object Part2()
+            {
+                return Solve(2);
+            }
+            public long Solve(int part)
+            {
+                return ToLong(part);
+            }
+            static long ToLong(int i) => i;
+        }
+
+        record MyRecord();
+        class MyClass
+        {
+        }
+        class Tests
+        {
+            [Fact]
+            public void Test1()
+            {
+                var sut = new AoC202103(new[] { ""1"", ""2"" });
+                Assert.Equal(1, sut.Part1());
+            }
+        }
+        """;
+
+    private static CodeManager CreateCodeManager(bool codeFolderExists, string code)
     {
         var filesystem = Substitute.For<IFileSystemFactory>();
         var m = new CodeManager(filesystem);
@@ -27,45 +69,6 @@ public class CodeManagerTests
         filesystem.GetCodeFolder(new(2021, 3)).Returns(codeFolder);
         filesystem.GetTemplateFolder().Returns(templateFolder);
 
-        var code = @"
-namespace AoC.Year2021.Day03;
-
-public class AoC202103
-{
-    public AoC202103() : this(Read.InputLines())
-    {
-    }
-    public AoC202103(string[] input)
-    {
-        myvariable = input.Select(int.Parse).ToArray();
-    }
-    int[] myvariable;
-    public object Part1() => Solve(1);
-    public object Part2()
-    {
-        return Solve(2);
-    }
-    public long Solve(int part)
-    {
-        return ToLong(part);
-    }
-    static long ToLong(int i) => i;
-}
-
-record MyRecord();
-class MyClass
-{
-}
-class Tests
-{
-    [Fact]
-    public void Test1()
-    {
-        var sut = new AoC202103(new[] { ""1"", ""2"" });
-        Assert.Equal(1, sut.Part1());
-    }
-}
-";
 
         codeFolder.ReadCode().Returns(code);
 
@@ -75,7 +78,7 @@ class Tests
     [Fact]
     public async Task InitializeCode_WhenCodeFolderDoesNotExist_Succeeds()
     {
-        CodeManager m = CreateCodeManager(false);
+        CodeManager m = CreateCodeManager(false, code);
         var puzzle = Puzzle.Create(new(2021, 3), "input", Answer.Empty);
         await m.InitializeCodeAsync(puzzle, false, s => { });
     }
@@ -83,7 +86,7 @@ class Tests
     [Fact]
     public async Task InitializeCode_WhenCodeFolderExists_WithForce_Succeeds()
     {
-        CodeManager m = CreateCodeManager(true);
+        CodeManager m = CreateCodeManager(true, code);
 
         var puzzle = Puzzle.Create(new(2021, 3), "input", Answer.Empty);
         await m.InitializeCodeAsync(puzzle, true, s => { });
@@ -92,40 +95,145 @@ class Tests
     [Fact]
     public async Task InitializeCode_WhenCodeFolderExists_Throws()
     {
-        CodeManager m = CreateCodeManager(true);
+        CodeManager m = CreateCodeManager(true, code);
         var puzzle = Puzzle.Create(new (2021, 3), "input", Answer.Empty);
         await Assert.ThrowsAsync<Exception>(async () => await m.InitializeCodeAsync(puzzle, false, s => { }));
+    }
+
+    [Theory]
+    [InlineData("""
+        public class AoC202103
+        {
+            public object Part1() => 1;
+            public object Part2() => 1;
+        }
+        """, """
+        var sw = Stopwatch.StartNew();
+        var part1 = 1;
+        var part2 = 1;
+        Console.WriteLine((part1, part2, sw.Elapsed));
+        """)]
+    [InlineData("""
+        namespace AoC.Year2021.Day03;
+    
+        public class AoC202103
+        {
+            static string[] input = Read.InputLines();
+            public object Part1() => 1;
+            public object Part2() => 1;
+        }
+        """, """
+        string[] input = File.ReadAllLines("input.txt");
+        var sw = Stopwatch.StartNew();
+        var part1 = 1;
+        var part2 = 1;
+        Console.WriteLine((part1, part2, sw.Elapsed));
+        """)]
+    [InlineData("""
+        namespace AoC.Year2021.Day03;
+    
+        public class AoC202103
+        {
+            public AoC202103() : this(Read.InputLines()) {}
+            const int A = 42;
+            Grid grid;
+            public AoC202103(string[] input)
+            {
+                grid = new Grid(input);
+            }
+            public object Part1() => 1;
+            public object Part2() => 1;
+        }
+        """, """
+        int A = 42;
+        var input = File.ReadAllLines("input.txt");
+        var grid = new Grid(input);
+        var sw = Stopwatch.StartNew();
+        var part1 = 1;
+        var part2 = 1;
+        Console.WriteLine((part1, part2, sw.Elapsed));
+        """)]
+    [InlineData("""
+        namespace AoC.Year2021.Day03;
+    
+        public class AoC202103
+        {
+            public AoC202103() : this(Read.InputLines(), Console.Out) {}
+            Grid grid;
+            TextWriter writer;
+            public AoC202103(string[] input, TextWriter writer)
+            {
+                this.writer = writer;
+                grid = new Grid(input);
+            }
+            public object Part1() => 1;
+            public object Part2() => 1;
+        }
+        """, """
+        var input = File.ReadAllLines("input.txt");
+        var writer = Console.Out;
+        var grid = new Grid(input);
+        var sw = Stopwatch.StartNew();
+        var part1 = 1;
+        var part2 = 1;
+        Console.WriteLine((part1, part2, sw.Elapsed));
+        """)]
+    [InlineData("""
+        namespace AoC.Year2021.Day03;
+    
+        public class AoC202103
+        {
+            public object Part1() => Solve(1);
+            public object Part2() => Solve(2);
+            private object Solve(int i) => i;
+        }
+        """, """
+        var sw = Stopwatch.StartNew();
+        var part1 = Solve(1);
+        var part2 = Solve(2);
+        Console.WriteLine((part1, part2, sw.Elapsed));
+        object Solve(int i) => i;
+        """)]
+    public async Task GenerateCodeTests(string input, string expected)
+    {
+        var m = CreateCodeManager(true, input);
+
+        var code = await m.GenerateCodeAsync(new(2021, 3));
+
+        Assert.Equal(expected, code);
     }
 
     [Fact]
     public async Task GenerateCodeTest()
     {
-        var m = CreateCodeManager(true);
+        var m = CreateCodeManager(true, code);
 
-        var code = await m.GenerateCodeAsync(new(2021, 3));
+        var result = await m.GenerateCodeAsync(new(2021, 3));
 
-        Assert.Equal(@"var input = File.ReadAllLines(""input.txt"");
-int[] myvariable;
-myvariable = input.Select(int.Parse).ToArray();
-var sw = Stopwatch.StartNew();
-var part1 = Solve(1);
-var part2 = Part2();
-Console.WriteLine((part1, part2, sw.Elapsed));
-object Part2()
-{
-    return Solve(2);
-}
+        Assert.Equal("""
+            var input = File.ReadAllLines("input.txt");
+            var writer = Console.Out;
+            var myvariable = input.Select(int.Parse).ToArray();
+            var sw = Stopwatch.StartNew();
+            var part1 = Solve(1);
+            var part2 = Part2();
+            Console.WriteLine((part1, part2, sw.Elapsed));
+            object Part2()
+            {
+                return Solve(2);
+            }
 
-long Solve(int part)
-{
-    return ToLong(part);
-}
+            long Solve(int part)
+            {
+                return ToLong(part);
+            }
 
-long ToLong(int i) => i;
-record MyRecord();
-class MyClass
-{
-}", code, ignoreLineEndingDifferences: true);
+            long ToLong(int i) => i;
+            record MyRecord();
+            class MyClass
+            {
+            }
+            """, result, ignoreLineEndingDifferences: true);
 
     }
 }
