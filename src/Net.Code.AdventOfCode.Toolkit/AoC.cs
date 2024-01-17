@@ -59,6 +59,9 @@ public static class AoC
                 break;
             }
         }
+
+        var debug = args.Contains("--debug");
+
         var services = await InitializeServicesAsync(
             resolver,
             io,
@@ -67,7 +70,7 @@ public static class AoC
             httpclient,
             filesystem,
             string.IsNullOrEmpty(loglevel) ? LogLevel.Warning : Enum.Parse<LogLevel>(loglevel, true),
-            args.Contains("--debug")
+            debug
             );
 
         var registrar = new TypeRegistrar(services);
@@ -112,13 +115,15 @@ public static class AoC
 
             return returnValue;
         }
-        catch(AoCException e)
+        catch(AoCException e) 
         {
             AnsiConsole.WriteLine(e.Message);
+            if (debug) throw;
         }
         catch (Exception e)
         {
             AnsiConsole.WriteException(e, ExceptionFormats.ShortenEverything);
+            if (debug) throw;
         }
         return 99;
     }

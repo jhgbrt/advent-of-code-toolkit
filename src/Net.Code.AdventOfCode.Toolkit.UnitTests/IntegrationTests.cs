@@ -46,7 +46,7 @@ public class IntegrationTests
             database,
             client,
             fileSystem,
-            args.Concat(new[] { "--loglevel=Trace" }).ToArray());
+            args.Concat(new[] { "--loglevel=Trace", "--debug" }).ToArray());
     }
 
     public class DuringAdvent_OnDayOfPuzzle : IntegrationTests
@@ -265,30 +265,20 @@ public class IntegrationTests
         [Fact]
         public async Task Init()
         {
-            var result = await Do("init", $"{Year}", $"{Day}");
-            Assert.NotEqual(0, result);
+            await Assert.ThrowsAnyAsync<AoCException>(() => Do("init", $"{Year}", $"{Day}"));
         }
 
-        [Fact]
-        public async Task InitTwice()
-        {
-            await Do("init", $"{Year}", $"{Day}");
-            var result = await Do("init", $"{Year}", $"{Day}", "--force");
-            Assert.NotEqual(0, result);
-        }
 
         [Fact]
         public async Task Sync()
         {
-            var result = await Do("sync", $"{Year}", $"{Day}");
-            Assert.NotEqual(0, result);
+            await Assert.ThrowsAnyAsync<AoCException>(() => Do("sync", $"{Year}", $"{Day}"));
         }
 
         [Fact]
         public async Task Run()
         {
-            var result = await Do("run", $"{Year}", $"{Day}");
-            Assert.NotEqual(0, result);
+            await Assert.ThrowsAnyAsync<AoCException>(() => Do("run", $"{Year}", $"{Day}"));
         }
 
         [Fact]
@@ -301,19 +291,13 @@ public class IntegrationTests
         [Fact]
         public async Task Post()
         {
-            var result = await Do("post", "answer1", $"{Year}", $"{Day}");
-            Assert.NotEqual(0, result);
+            await Assert.ThrowsAnyAsync<AoCException>(() => Do("post", "answer1", $"{Year}", $"{Day}"));
         }
 
         [Fact]
         public async Task Verify()
         {
-            await Do("init", $"{Year}", $"{Day}");
-            await Do("run", $"{Year}", $"{Day}");
-            await Do("post", "answer1", $"{Year}", $"{Day}");
-            await Do("post", "answer2", $"{Year}", $"{Day}");
-            var result = await Do("verify", $"{Year}", $"{Day}");
-            Assert.NotEqual(0, result);
+            await Assert.ThrowsAnyAsync<AoCException>(() => Do("verify", $"{Year}", $"{Day}"));
         }
     }
 

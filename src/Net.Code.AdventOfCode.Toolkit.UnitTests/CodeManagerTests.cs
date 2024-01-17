@@ -63,7 +63,8 @@ public class CodeManagerTests
         var codeFolder = Substitute.For<ICodeFolder>();
         var templateFolder = Substitute.For<ITemplateFolder>();
         templateFolder.Notebook.Returns(new FileInfo("aoc.ipynb"));
-
+        templateFolder.Exists.Returns(true);
+        templateFolder.Sample.Returns(new FileInfo("sample.txt"));
         codeFolder.Exists.Returns(codeFolderExists);
 
         filesystem.GetCodeFolder(new(2021, 3)).Returns(codeFolder);
@@ -97,7 +98,7 @@ public class CodeManagerTests
     {
         CodeManager m = CreateCodeManager(true, code);
         var puzzle = Puzzle.Create(new (2021, 3), "input", Answer.Empty);
-        await Assert.ThrowsAsync<Exception>(async () => await m.InitializeCodeAsync(puzzle, false, null, s => { }));
+        await Assert.ThrowsAnyAsync<AoCException>(async () => await m.InitializeCodeAsync(puzzle, false, null, s => { }));
     }
 
     [Theory]

@@ -23,10 +23,10 @@ abstract class SinglePuzzleCommand<TSettings> : AsyncCommand<TSettings> where TS
         }
 
         if (!year.HasValue || !day.HasValue)
-            throw new Exception("Please specify year & day explicitly");
+            throw new AoCException("Please specify year & day explicitly");
 
         if (!AoCLogic.IsValidAndUnlocked(year.Value, day.Value))
-            throw new Exception($"Not a valid puzzle, or puzzle not yet unlocked: {year}/{day}");
+            throw new AoCException($"Not a valid puzzle, or puzzle not yet unlocked: {year}/{day}");
 
         return await ExecuteAsync(new PuzzleKey(year.Value, day.Value), options);
     }
