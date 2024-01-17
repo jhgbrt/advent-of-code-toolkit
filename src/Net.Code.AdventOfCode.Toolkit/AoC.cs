@@ -112,11 +112,15 @@ public static class AoC
 
             return returnValue;
         }
+        catch(AoCException e)
+        {
+            AnsiConsole.WriteLine(e.Message);
+        }
         catch (Exception e)
         {
             AnsiConsole.WriteException(e, ExceptionFormats.ShortenEverything);
-            return 99;
         }
+        return 99;
     }
 
     class TraceInterceptor : ICommandInterceptor

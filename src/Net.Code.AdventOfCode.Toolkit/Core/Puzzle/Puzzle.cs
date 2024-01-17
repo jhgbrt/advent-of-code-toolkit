@@ -60,7 +60,21 @@ class Puzzle : IHavePuzzleKey
     }
 }
 
-internal class PuzzleLockedException : Exception 
+class AoCException:Exception{
+    public AoCException() : base()
+    {
+    }
+
+    public AoCException(string? message) : base(message)
+    {
+    }
+
+    public AoCException(string? message, Exception? innerException) : base(message, innerException)
+    {
+    }
+}
+
+internal class PuzzleLockedException : AoCException 
 {
     public PuzzleLockedException() : base()
     {
@@ -75,7 +89,7 @@ internal class PuzzleLockedException : Exception
     }
 }
 
-internal class AlreadyCompletedException : Exception 
+internal class AlreadyCompletedException : AoCException
 {
     public AlreadyCompletedException() : base()
     {

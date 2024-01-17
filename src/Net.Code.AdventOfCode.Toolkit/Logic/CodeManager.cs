@@ -21,14 +21,19 @@ class CodeManager : ICodeManager
         this.fileSystem = fileSystem;
     }
 
-    public async Task InitializeCodeAsync(Puzzle puzzle, bool force, Action<string> progress)
+    public async Task InitializeCodeAsync(Puzzle puzzle, bool force, string? template, Action<string> progress)
     {
         var codeFolder = fileSystem.GetCodeFolder(puzzle.Key);
-        var templateDir = fileSystem.GetTemplateFolder();
+        var templateDir = fileSystem.GetTemplateFolder(template);
+
+        if (!templateDir.Exists)
+        {
+            throw new AoCException($"Template folder for {template??"default"} template not found.");
+        }
 
         if (codeFolder.Exists && !force)
         {
-            throw new Exception($"Puzzle for {puzzle.Key} already initialized. Use --force to re-initialize.");
+            throw new AoCException($"Puzzle for {puzzle.Key} already initialized. Use --force to re-initialize.");
         }
 
         var input = puzzle.Input;
@@ -37,7 +42,14 @@ class CodeManager : ICodeManager
 
         var code = await templateDir.ReadCode(puzzle.Key);
         await codeFolder.WriteCode(code);
-        await codeFolder.WriteSample("");
+        if (templateDir.Sample.Exists)
+        {
+            codeFolder.CopyFile(templateDir.Sample);
+        }
+        else
+        {
+            await codeFolder.WriteSample("");
+        }
         await codeFolder.WriteInput(input);
         if (templateDir.Notebook.Exists)
         {
@@ -347,7 +359,7 @@ class CodeManager : ICodeManager
         var codeDir = fileSystem.GetCodeFolder(key);
         var commonDir = fileSystem.GetFolder("Common");
         var outputDir = fileSystem.GetOutputFolder(output);
-        var templateDir = fileSystem.GetTemplateFolder();
+        var templateDir = fileSystem.GetTemplateFolder(null);
         await outputDir.CreateIfNotExists();
         await outputDir.WriteCode(code);
         outputDir.CopyFiles(

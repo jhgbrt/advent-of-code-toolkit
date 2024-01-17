@@ -18,7 +18,11 @@ class FileSystemFactory : IFileSystemFactory
 
     public ICodeFolder GetCodeFolder(PuzzleKey key) => new CodeFolder(Path.Combine(filesystem.CurrentDirectory, $"Year{key.Year}", $"Day{key.Day:00}"), filesystem, logger);
     public IFolder GetFolder(string name) => new Folder(Path.Combine(filesystem.CurrentDirectory, name), filesystem, logger);
-    public ITemplateFolder GetTemplateFolder() => new TemplateFolder(Path.Combine(filesystem.CurrentDirectory, "Template"), filesystem, logger);
+    public ITemplateFolder GetTemplateFolder(string? template) => new TemplateFolder(
+    string.IsNullOrEmpty(template) 
+        ? Path.Combine(filesystem.CurrentDirectory, "Template")
+        : Path.Combine(filesystem.CurrentDirectory, "Template", template)
+        , filesystem, logger);
     public IOutputFolder GetOutputFolder(string output) => new OutputFolder(output, filesystem, logger);
 }
 
@@ -146,9 +150,11 @@ internal class TemplateFolder : Folder, ITemplateFolder
     private string CODE => GetFileName("aoc.cs");
     private string NOTEBOOK => GetFileName("aoc.ipynb");
     private string CSPROJ => GetFileName("aoc.csproj");
+    private string SAMPLE => GetFileName("sample.txt");
     public FileInfo Code => new FileInfo(CODE);
     public FileInfo CsProj => new FileInfo(CSPROJ);
     public FileInfo Notebook => new FileInfo(NOTEBOOK);
+    public FileInfo Sample => new FileInfo(SAMPLE);
     public async Task<string> ReadCode(PuzzleKey key)
     {
         var template = await ReadFile(CODE);

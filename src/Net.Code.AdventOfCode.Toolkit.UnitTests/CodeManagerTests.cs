@@ -67,7 +67,7 @@ public class CodeManagerTests
         codeFolder.Exists.Returns(codeFolderExists);
 
         filesystem.GetCodeFolder(new(2021, 3)).Returns(codeFolder);
-        filesystem.GetTemplateFolder().Returns(templateFolder);
+        filesystem.GetTemplateFolder(null).Returns(templateFolder);
 
 
         codeFolder.ReadCode().Returns(code);
@@ -80,7 +80,7 @@ public class CodeManagerTests
     {
         CodeManager m = CreateCodeManager(false, code);
         var puzzle = Puzzle.Create(new(2021, 3), "input", Answer.Empty);
-        await m.InitializeCodeAsync(puzzle, false, s => { });
+        await m.InitializeCodeAsync(puzzle, false, null, s => { });
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public class CodeManagerTests
         CodeManager m = CreateCodeManager(true, code);
 
         var puzzle = Puzzle.Create(new(2021, 3), "input", Answer.Empty);
-        await m.InitializeCodeAsync(puzzle, true, s => { });
+        await m.InitializeCodeAsync(puzzle, true, null, s => { });
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class CodeManagerTests
     {
         CodeManager m = CreateCodeManager(true, code);
         var puzzle = Puzzle.Create(new (2021, 3), "input", Answer.Empty);
-        await Assert.ThrowsAsync<Exception>(async () => await m.InitializeCodeAsync(puzzle, false, s => { }));
+        await Assert.ThrowsAsync<Exception>(async () => await m.InitializeCodeAsync(puzzle, false, null, s => { }));
     }
 
     [Theory]

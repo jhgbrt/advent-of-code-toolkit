@@ -24,13 +24,17 @@ class Init : SinglePuzzleCommand<Init.Settings>
         [property: Description("Force (if true, refresh cache)")]
         [CommandOption("-f|--force")]
         public bool? force { get; set; }
+        [property: Description("Template to use. Looks for subfolders under 'Template'. If not specified, the default template is assumed to be under Template")]
+        [CommandOption("-t|--template")]
+        public string? template{ get; set; }
     }
     public override async Task<int> ExecuteAsync(PuzzleKey key, Settings options)
     {
         var force = options.force ?? false;
-        output.WriteLine($"The puzzle for {key} is unlocked; initializing code...");
+        var template = options.template;
+        output.WriteLine($"The puzzle for {key} is unlocked; initializing code using {template ?? "default"} template...");
         var puzzle = await puzzleManager.SyncPuzzle(key);
-        await codeManager.InitializeCodeAsync(puzzle, force, output.WriteLine);
+        await codeManager.InitializeCodeAsync(puzzle, force, options.template, output.WriteLine);
         return 0;
     }
 

@@ -29,7 +29,7 @@ public class CommandTests
         var puzzleManager = CreatePuzzleManager();
         var sut = new Init(puzzleManager, manager, AoCLogic, Substitute.For<IInputOutputService>());
         await sut.ExecuteAsync(new(Year, 1), new());
-        await manager.Received(1).InitializeCodeAsync(Arg.Is<Puzzle>(p => p.Year == 2021 && p.Day == 1), false, Arg.Any<Action<string>>());
+        await manager.Received(1).InitializeCodeAsync(Arg.Is<Puzzle>(p => p.Year == 2021 && p.Day == 1), false, null, Arg.Any<Action<string>>());
     }
 
     [Fact]
