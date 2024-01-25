@@ -12,10 +12,10 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
 
     public class AoCClientGetTests
     {
-        readonly static string settings = File.ReadAllText("settings.html");
-        readonly static string leaderboardjson = File.ReadAllText("leaderboard-148156.json");
-        readonly static string leaderboard = File.ReadAllText("leaderboard.html");
-        readonly static string puzzle = File.ReadAllText("puzzle-answered-both-parts.html");
+        readonly static string settings = Content.ReadAllText("settings.html");
+        readonly static string leaderboardjson = Content.ReadAllText("leaderboard-148156.json");
+        readonly static string leaderboard = Content.ReadAllText("leaderboard.html");
+        readonly static string puzzle = Content.ReadAllText("puzzle-answered-both-parts.html");
         const int Year = 2015;
         const int Day = 1;
         (string path, string content)[] items = new[]
@@ -24,7 +24,6 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             (path: $"{Year}/leaderboard/private/view/148156.json", content: leaderboardjson),
             (path: $"{Year}/day/{Day}", content: puzzle),
             (path: $"{Year}/day/{Day}/input", content: "input"),
-            (path: $"{Year}/leaderboard/private", content: leaderboard),
             (path: $"{Year}/leaderboard/private", content: leaderboard)
         };
 
@@ -76,7 +75,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             await client.GetMemberId();
             await Verify("settings");
         }
-
+        
         [Fact]
         public async Task GetMemberAsync()
         {

@@ -1,15 +1,31 @@
 ﻿using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Web;
 
+using System.Reflection;
+
 namespace Net.Code.AdventOfCode.Toolkit.UnitTests
 {
+    static class Content
+    {
+        public static string ReadAllText(string filename)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceName = $"Net.Code.AdventOfCode.Toolkit.UnitTests.{filename}";
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            using var reader = new StreamReader(stream!);
+            return reader.ReadToEnd();
+
+        }
+    }
+
+
     public class DeserializationTests
     {
 
         [Fact]
         public void Puzzle_Answered_BothParts()
         {
-            var content = File.ReadAllText("puzzle-answered-both-parts.html");
+            var content = Content.ReadAllText("puzzle-answered-both-parts.html");
             var result = new PuzzleHtml(new(2015, 1), content, "input").GetPuzzle();
 
             Assert.NotNull(result);
@@ -23,7 +39,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         [Fact]
         public void Puzzle_Unanswered()
         {
-            var content = File.ReadAllText("puzzle-unanswered.html");
+            var content = Content.ReadAllText("puzzle-unanswered.html");
             var result = new PuzzleHtml(new(2019, 9), content, "input").GetPuzzle();
 
             Assert.NotNull(result);
@@ -37,7 +53,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         [Fact]
         public void LeaderboardHtmlTest()
         {
-            var content = File.ReadAllText("leaderboard.html");
+            var content = Content.ReadAllText("leaderboard.html");
             var result = new LeaderboardHtml(content).GetLeaderboards().ToList();
             Assert.Equal(29328, result.First().id);
             Assert.Equal(148156, result.Last().id);
@@ -46,7 +62,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         [Fact]
         public void LeaderboardJson()
         {
-            var content = File.ReadAllText("leaderboard-148156.json");
+            var content = Content.ReadAllText("leaderboard-148156.json");
             var result = new LeaderboardJson(content).GetLeaderBoard();
             Assert.NotNull(result);
             Assert.Equal("user1", result!.Members[1].Name);
@@ -57,7 +73,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         [Fact]
         public void SettingsHtml()
         {
-            var content = File.ReadAllText("settings.html");
+            var content = Content.ReadAllText("settings.html");
             var result = new SettingsHtml(content).GetMemberId();
             Assert.Equal(148156, result);
         }
