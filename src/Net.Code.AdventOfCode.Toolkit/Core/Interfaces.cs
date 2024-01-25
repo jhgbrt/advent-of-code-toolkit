@@ -26,7 +26,7 @@ interface ICodeManager
 {
     Task ExportCode(PuzzleKey key, string code, string[]? includecommon, string output);
     Task<string> GenerateCodeAsync(PuzzleKey key);
-    Task InitializeCodeAsync(Puzzle puzzle, bool force, Action<string> progress);
+    Task InitializeCodeAsync(Puzzle puzzle, bool force, string? template, Action<string> progress);
     Task SyncPuzzleAsync(Puzzle puzzle);
 }
 
@@ -52,7 +52,7 @@ interface IFileSystemFactory
 {
     ICodeFolder GetCodeFolder(PuzzleKey key);
     IFolder GetFolder(string name);
-    ITemplateFolder GetTemplateFolder();
+    ITemplateFolder GetTemplateFolder(string? template);
     IOutputFolder GetOutputFolder(string output);
 
 }
@@ -98,6 +98,8 @@ interface ITemplateFolder
     FileInfo Code { get; }
     FileInfo CsProj { get; }
     FileInfo Notebook { get; }
+    FileInfo Sample { get; }
+    bool Exists { get; }
     Task<string> ReadCode(PuzzleKey key);
 }
 interface IHttpClientWrapper : IDisposable

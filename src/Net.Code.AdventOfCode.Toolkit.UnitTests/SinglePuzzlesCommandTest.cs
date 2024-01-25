@@ -33,7 +33,7 @@ public class SinglePuzzlesCommandTest
     {
         var sut = CreateSystemUnderTest(2017, 1, 1);
         var options = new AoCSettings();
-        await Assert.ThrowsAsync<Exception>(() => DoTest(sut, options));
+        await Assert.ThrowsAnyAsync<AoCException>(() => DoTest(sut, options));
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class SinglePuzzlesCommandTest
     {
         var sut = CreateSystemUnderTest(2017, 12, 26);
         var options = new AoCSettings();
-        await Assert.ThrowsAsync<Exception>(() => DoTest(sut, options));
+        await Assert.ThrowsAnyAsync<AoCException>(() => DoTest(sut, options));
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class SinglePuzzlesCommandTest
     {
         var sut = CreateSystemUnderTest(2017, 1, 1);
         var options = new AoCSettings { year = 2017 };
-        await Assert.ThrowsAsync<Exception>(() => DoTest(sut, options));
+        await Assert.ThrowsAnyAsync<AoCException>(() => DoTest(sut, options));
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public class SinglePuzzlesCommandTest
     {
         var sut = CreateSystemUnderTest(2017, 12, 27);
         var options = new AoCSettings { year = 2017 };
-        await Assert.ThrowsAsync<Exception>(() => DoTest(sut, options));
+        await Assert.ThrowsAnyAsync<AoCException>(() => DoTest(sut, options));
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class SinglePuzzlesCommandTest
     {
         var sut = CreateSystemUnderTest(2017, 1, 1);
         var options = new AoCSettings { year = 2018, day = 23 };
-        await Assert.ThrowsAsync<Exception>(() => DoTest(sut, options));
+        await Assert.ThrowsAnyAsync<AoCException>(() => DoTest(sut, options));
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public class SinglePuzzlesCommandTest
     {
         var sut = CreateSystemUnderTest(2017, 12, 20);
         var options = new AoCSettings { year = 2017, day = 23 };
-        await Assert.ThrowsAsync<Exception>(() => DoTest(sut, options));
+        await Assert.ThrowsAnyAsync<AoCException>(() => DoTest(sut, options));
     }
 
 }

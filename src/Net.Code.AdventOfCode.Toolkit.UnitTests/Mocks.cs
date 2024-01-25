@@ -340,7 +340,8 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
             {
                 path = FullyQualifiedPath(path);
                 var dir = Path.GetDirectoryName(path)!;
-                return data.TryGetValue(dir, out var d);
+                var exists = data.TryGetValue(path, out var d);
+                return exists;
             }
 
             public void DeleteFile(string path)

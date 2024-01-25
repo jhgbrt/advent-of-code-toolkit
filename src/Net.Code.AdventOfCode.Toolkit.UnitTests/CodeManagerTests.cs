@@ -63,11 +63,12 @@ public class CodeManagerTests
         var codeFolder = Substitute.For<ICodeFolder>();
         var templateFolder = Substitute.For<ITemplateFolder>();
         templateFolder.Notebook.Returns(new FileInfo("aoc.ipynb"));
-
+        templateFolder.Exists.Returns(true);
+        templateFolder.Sample.Returns(new FileInfo("sample.txt"));
         codeFolder.Exists.Returns(codeFolderExists);
 
         filesystem.GetCodeFolder(new(2021, 3)).Returns(codeFolder);
-        filesystem.GetTemplateFolder().Returns(templateFolder);
+        filesystem.GetTemplateFolder(null).Returns(templateFolder);
 
 
         codeFolder.ReadCode().Returns(code);
@@ -80,7 +81,7 @@ public class CodeManagerTests
     {
         CodeManager m = CreateCodeManager(false, code);
         var puzzle = Puzzle.Create(new(2021, 3), "input", Answer.Empty);
-        await m.InitializeCodeAsync(puzzle, false, s => { });
+        await m.InitializeCodeAsync(puzzle, false, null, s => { });
     }
 
     [Fact]
@@ -89,7 +90,7 @@ public class CodeManagerTests
         CodeManager m = CreateCodeManager(true, code);
 
         var puzzle = Puzzle.Create(new(2021, 3), "input", Answer.Empty);
-        await m.InitializeCodeAsync(puzzle, true, s => { });
+        await m.InitializeCodeAsync(puzzle, true, null, s => { });
     }
 
     [Fact]
@@ -97,7 +98,7 @@ public class CodeManagerTests
     {
         CodeManager m = CreateCodeManager(true, code);
         var puzzle = Puzzle.Create(new (2021, 3), "input", Answer.Empty);
-        await Assert.ThrowsAsync<Exception>(async () => await m.InitializeCodeAsync(puzzle, false, s => { }));
+        await Assert.ThrowsAnyAsync<AoCException>(async () => await m.InitializeCodeAsync(puzzle, false, null, s => { }));
     }
 
     [Theory]
@@ -193,6 +194,56 @@ public class CodeManagerTests
         var part2 = Solve(2);
         Console.WriteLine((part1, part2, sw.Elapsed));
         object Solve(int i) => i;
+        """)]
+    [InlineData("""
+        public class AoC202103
+        {
+            string[] input;
+            public AoC202103() 
+            {
+                input = Read.InputLines();
+            }
+            public object Part1() => 1;
+            public object Part2() => 2;
+        }
+        """, """
+        var input = File.ReadAllLines("input.txt");
+        var sw = Stopwatch.StartNew();
+        var part1 = 1;
+        var part2 = 2;
+        Console.WriteLine((part1, part2, sw.Elapsed));
+        """)]
+        [InlineData("""
+        public class AoC202103
+        {
+            public AoC202318():this(Read.InputLines(), Console.Out) {}
+            readonly TextWriter writer;
+            string[] input;
+            readonly ImmutableArray<string> items;
+            public AoC202318(string[] input, TextWriter writer)
+            {
+                this.input = input;
+                items = input.Select(s =>
+                    {
+                        return s;
+                    }
+                ) .ToImmutableArray();
+                this.writer = writer;
+            }
+            public object Part1() => 1;
+            public object Part2() => 2;
+        }
+        """, """
+        var input = File.ReadAllLines("input.txt");
+        var writer = Console.Out;
+        var items = input.Select(s =>
+        {
+            return s;
+        }).ToImmutableArray();
+        var sw = Stopwatch.StartNew();
+        var part1 = 1;
+        var part2 = 2;
+        Console.WriteLine((part1, part2, sw.Elapsed));
         """)]
     public async Task GenerateCodeTests(string input, string expected)
     {

@@ -85,7 +85,7 @@ class AoCLogic
     }
 }
 
-class InvalidPuzzleException : Exception
+class InvalidPuzzleException : AoCException
 {
     public InvalidPuzzleException(PuzzleKey key) : this($"Puzzle for {key} is invalid or not yet unlocked.")
     {

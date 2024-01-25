@@ -43,6 +43,8 @@ public static class AoC
         string[] args
         )
     {
+
+
         string? loglevel = null;
         for (int i = 0; i < args.Length; i++)
         {
@@ -57,6 +59,9 @@ public static class AoC
                 break;
             }
         }
+
+        var debug = args.Contains("--debug");
+
         var services = await InitializeServicesAsync(
             resolver,
             io,
@@ -65,7 +70,7 @@ public static class AoC
             httpclient,
             filesystem,
             string.IsNullOrEmpty(loglevel) ? LogLevel.Warning : Enum.Parse<LogLevel>(loglevel, true),
-            args.Contains("--debug")
+            debug
             );
 
         var registrar = new TypeRegistrar(services);
@@ -76,10 +81,8 @@ public static class AoC
         {
             AddCommand<Run>(config);
             AddCommand<Verify>(config);
-            AddCommand<Migrate>(config);
             AddCommand<Init>(config);
             AddCommand<Sync>(config);
-            AddCommand<Show>(config);
             AddCommand<Post>(config);
             AddCommand<Export>(config);
             AddCommand<Report>(config);
@@ -112,11 +115,17 @@ public static class AoC
 
             return returnValue;
         }
+        catch(AoCException e) 
+        {
+            AnsiConsole.WriteLine(e.Message);
+            if (debug) throw;
+        }
         catch (Exception e)
         {
             AnsiConsole.WriteException(e, ExceptionFormats.ShortenEverything);
-            return 99;
+            if (debug) throw;
         }
+        return 99;
     }
 
     class TraceInterceptor : ICommandInterceptor
