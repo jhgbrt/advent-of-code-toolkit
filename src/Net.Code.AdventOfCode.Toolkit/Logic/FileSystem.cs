@@ -5,17 +5,8 @@ using Net.Code.AdventOfCode.Toolkit.Core;
 
 namespace Net.Code.AdventOfCode.Toolkit.Logic;
 
-class FileSystemFactory : IFileSystemFactory
+class FileSystemFactory(IFileSystem filesystem, ILogger<FileSystemFactory> logger) : IFileSystemFactory
 {
-    private readonly IFileSystem filesystem;
-    private readonly ILogger<FileSystemFactory> logger;
-
-    public FileSystemFactory(IFileSystem filesystem, ILogger<FileSystemFactory> logger)
-    {
-        this.filesystem = filesystem;
-        this.logger = logger;
-    }
-
     public ICodeFolder GetCodeFolder(PuzzleKey key) => new CodeFolder(Path.Combine(filesystem.CurrentDirectory, $"Year{key.Year}", $"Day{key.Day:00}"), filesystem, logger);
     public IFolder GetFolder(string name) => new Folder(Path.Combine(filesystem.CurrentDirectory, name), filesystem, logger);
     public ITemplateFolder GetTemplateFolder(string? template) => new TemplateFolder(
@@ -26,18 +17,18 @@ class FileSystemFactory : IFileSystemFactory
     public IOutputFolder GetOutputFolder(string output) => new OutputFolder(output, filesystem, logger);
 }
 
-class FileSystem : IFileSystem
+class FileSystem(ILogger<FileSystem> logger) : IFileSystem
 {
     public string CurrentDirectory => Environment.CurrentDirectory;
-    private readonly ILogger<FileSystem> logger;
-    public FileSystem(ILogger<FileSystem> logger)
-    {
-        this.logger = logger;
-    }
+
     public void CreateDirectoryIfNotExists(string path, FileAttributes? attributes)
     {
         var dir = new DirectoryInfo(path);
-        if (!dir.Exists) dir.Create();
+        if (!dir.Exists)
+        {
+            dir.Create();
+            logger.LogTrace("Creating {path}", path);
+        }
         if (attributes.HasValue)
             dir.Attributes |= attributes.Value;
     }

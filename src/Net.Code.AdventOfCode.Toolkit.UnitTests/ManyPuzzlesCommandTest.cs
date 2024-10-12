@@ -1,14 +1,10 @@
 ﻿using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Infrastructure;
+
 using NSubstitute;
 using NSubstitute.Extensions;
 
 using Spectre.Console.Cli;
-
-using System;
-using System.Threading.Tasks;
-
-using Xunit;
 
 namespace Net.Code.AdventOfCode.Toolkit.UnitTests;
 
@@ -23,7 +19,7 @@ public class ManyPuzzlesCommandTest
     }
     private async Task DoTest(ManyPuzzlesCommand<AoCSettings> sut, AoCSettings options)
     {
-        var context = new CommandContext(Substitute.For<IRemainingArguments>(), "name", default);
+        var context = new CommandContext([], Substitute.For<IRemainingArguments>(), "name", default);
         await sut.Configure().ExecuteAsync(Arg.Any<PuzzleKey>(), options);
         await sut.ExecuteAsync(context, options);
     }

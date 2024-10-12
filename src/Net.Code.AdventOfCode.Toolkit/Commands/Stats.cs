@@ -4,22 +4,13 @@ using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 using Spectre.Console.Cli;
 
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace Net.Code.AdventOfCode.Toolkit.Commands;
 
 [Description("Show some stats from the configured private leaderboard. Set AOC_LEADERBOARD_ID as a environment variable.")]
-class Stats : AsyncCommand<AoCSettings>
+class Stats(ILeaderboardManager manager, IInputOutputService io, AoCLogic logic) : AsyncCommand<AoCSettings>
 {
-    private readonly ILeaderboardManager manager;
-    private readonly IInputOutputService io;
-    private readonly AoCLogic logic;
-    public Stats(ILeaderboardManager manager, IInputOutputService io, AoCLogic logic)
-    {
-        this.manager = manager;
-        this.io = io;
-        this.logic = logic;
-    }
-
     public override async Task<int> ExecuteAsync(CommandContext context, AoCSettings _)
     {
 
@@ -29,5 +20,15 @@ class Stats : AsyncCommand<AoCSettings>
         }
 
         return 0;
+    }
+}
+
+
+class Test : AsyncCommand<AoCSettings>
+{
+    public override Task<int> ExecuteAsync(CommandContext context, AoCSettings settings)
+    {
+        Debugger.Break();
+        return Task.FromResult(0);
     }
 }

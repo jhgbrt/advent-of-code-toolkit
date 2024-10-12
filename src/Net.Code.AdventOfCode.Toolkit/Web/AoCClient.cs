@@ -3,21 +3,12 @@
 using System.Net;
 using Microsoft.Extensions.Logging;
 using Net.Code.AdventOfCode.Toolkit.Core;
-using System.Linq;
 
-class AoCClient : IDisposable, IAoCClient
+class AoCClient(IHttpClientWrapper client, ILogger<AoCClient> logger) : IDisposable, IAoCClient
 {
-    readonly IHttpClientWrapper client;
-    private readonly ILogger<AoCClient> logger;
-
-    public AoCClient(IHttpClientWrapper client, ILogger<AoCClient> logger)
-    {
-        this.client = client;
-        this.logger = logger;
-    }
-
     public async Task<(HttpStatusCode status, string content)> PostAnswerAsync(int year, int day, int part, string value)
     {
+        logger.LogDebug("Posting answer for {year} - {day}: {value}", year, day, value);
         await VerifyAuthorized();
 
         var formValues = new Dictionary<string, string>()
@@ -51,9 +42,12 @@ class AoCClient : IDisposable, IAoCClient
     private async Task VerifyAuthorized()
     {
         // not all endpoints return the correct status code
-        // therefore we request a small input, this endpoint does give 404 when not authorized.
         (var status, _) = await client.GetAsync($"{2015}/day/4/input");
-        if (status == HttpStatusCode.Unauthorized) throw new UnauthorizedAccessException("You are not logged in. This probably means you need to renew your AOC_SESSION cookie. Log in on adventofcode.com, copy the session cookie and set it as a user secret or environment variable.");
+        if (status != HttpStatusCode.OK)
+        {
+            logger.LogError("Unauthorized");
+            throw new UnauthorizedAccessException("You are not logged in. This probably means you need to renew your AOC_SESSION cookie. Log in on adventofcode.com, copy the session cookie and set it as a user secret or environment variable.");
+        } 
     }
     private async Task<(HttpStatusCode StatusCode, string Content)> GetAsync(string path)
     {
@@ -81,7 +75,7 @@ class AoCClient : IDisposable, IAoCClient
     public async Task<IEnumerable<(int id, string description)>> GetLeaderboardIds(int year)
     {
         (var statusCode, var html) = await GetAsync($"{year}/leaderboard/private");
-        if (statusCode != HttpStatusCode.OK) return Enumerable.Empty<(int, string)>();
+        if (statusCode != HttpStatusCode.OK) return [];
         return new LeaderboardHtml(html).GetLeaderboards();
     }
 

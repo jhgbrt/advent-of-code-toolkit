@@ -9,17 +9,8 @@ using System.ComponentModel;
 namespace Net.Code.AdventOfCode.Toolkit.Commands;
 
 [Description("Export the code for a puzzle to a stand-alone C# project")]
-partial class Export : SinglePuzzleCommand<Export.Settings>
+partial class Export(ICodeManager manager, AoCLogic logic, IInputOutputService output) : SinglePuzzleCommand<Export.Settings>(logic)
 {
-    private readonly ICodeManager manager;
-    private readonly IInputOutputService output;
-
-    public Export(ICodeManager manager, AoCLogic logic, IInputOutputService output) : base(logic)
-    {
-        this.manager = manager;
-        this.output = output;
-    }
-
     public class Settings : AoCSettings
     {
         [Description("output location. If empty, exported code is written to stdout")]
@@ -31,18 +22,17 @@ partial class Export : SinglePuzzleCommand<Export.Settings>
     }
     public override async Task<int> ExecuteAsync(PuzzleKey key, Settings options)
     {
-        var output = options.output;
         var includecommon = options.includecommon;
         string code = await manager.GenerateCodeAsync(key);
 
-        if (string.IsNullOrEmpty(output))
+        if (string.IsNullOrEmpty(options.output))
         {
-            this.output.WriteLine(code.EscapeMarkup());
+            output.WriteLine(code.EscapeMarkup());
         }
         else
         {
-            this.output.WriteLine($"Exporting puzzle: {key} to {output}");
-            await manager.ExportCode(key, code, includecommon, output);
+            output.WriteLine($"Exporting puzzle: {key} to {options.output}");
+            await manager.ExportCode(key, code, includecommon, options.output);
         }
         return 0;
     }

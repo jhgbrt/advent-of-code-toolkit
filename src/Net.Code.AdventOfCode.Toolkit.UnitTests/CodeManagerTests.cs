@@ -4,11 +4,6 @@ using Net.Code.AdventOfCode.Toolkit.Logic;
 
 using NSubstitute;
 
-using System;
-using System.Threading.Tasks;
-
-using Xunit;
-
 namespace Net.Code.AdventOfCode.Toolkit.UnitTests;
 
 public class CodeManagerTests

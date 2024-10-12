@@ -6,15 +6,8 @@ using NodaTime;
 
 namespace Net.Code.AdventOfCode.Toolkit.Logic;
 
-class LeaderboardManager : ILeaderboardManager
+class LeaderboardManager(IAoCClient client) : ILeaderboardManager
 {
-    private readonly IAoCClient client;
-
-    public LeaderboardManager(IAoCClient client)
-    {
-        this.client = client;
-    }
-
     public Task<IEnumerable<(int id, string description)>> GetLeaderboardIds(int year)
           => client.GetLeaderboardIds(year);
 

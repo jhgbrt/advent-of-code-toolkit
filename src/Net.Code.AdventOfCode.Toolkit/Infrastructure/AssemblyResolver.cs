@@ -10,15 +10,8 @@ public class AssemblyResolver : IAssemblyResolver
     public Assembly? GetEntryAssembly() => Assembly.GetEntryAssembly();
 }
 
-class FixedAssemblyResolver : IAssemblyResolver
+class FixedAssemblyResolver(Assembly assembly) : IAssemblyResolver
 {
-    private Assembly assembly;
-
-    public FixedAssemblyResolver(Assembly assembly)
-    {
-        this.assembly = assembly;
-    }
-
     public Assembly? GetEntryAssembly() => assembly;
 }
 

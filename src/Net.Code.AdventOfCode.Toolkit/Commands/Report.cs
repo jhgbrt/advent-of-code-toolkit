@@ -8,18 +8,8 @@ using Spectre.Console.Cli;
 using System.ComponentModel;
 
 [Description("Show a list of all puzzles, their status (unlocked, answered), and the answers posted.")]
-class Report : AsyncCommand<Report.Settings>
+class Report(IPuzzleManager manager, IInputOutputService io) : AsyncCommand<Report.Settings>
 {
-    private readonly IPuzzleManager manager;
-    private readonly IInputOutputService io;
-    private readonly AoCLogic logic;
-
-    public Report(IPuzzleManager manager, IInputOutputService io, AoCLogic logic)
-    {
-        this.manager = manager;
-        this.io = io;
-        this.logic = logic;
-    }
     public class Settings : CommandSettings
     {
         [Description($"Filter by status. Valid values: {nameof(ResultStatus.NotImplemented)}, {nameof(ResultStatus.AnsweredButNotImplemented)}, {nameof(ResultStatus.Failed)}")]

@@ -1,11 +1,8 @@
 ﻿
 using Net.Code.AdventOfCode.Toolkit.Core;
 
-using System;
-using System.Linq;
-
-using Xunit;
 using NodaTime;
+
 using NSubstitute;
 
 namespace Net.Code.AdventOfCode.Toolkit.UnitTests

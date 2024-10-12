@@ -12,15 +12,8 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Net.Code.AdventOfCode.Toolkit.Logic;
 
-class CodeManager : ICodeManager
+class CodeManager(IFileSystemFactory fileSystem) : ICodeManager
 {
-    private readonly IFileSystemFactory fileSystem;
-
-    public CodeManager(IFileSystemFactory fileSystem)
-    {
-        this.fileSystem = fileSystem;
-    }
-
     public async Task InitializeCodeAsync(Puzzle puzzle, bool force, string? template, Action<string> progress)
     {
         var codeFolder = fileSystem.GetCodeFolder(puzzle.Key);

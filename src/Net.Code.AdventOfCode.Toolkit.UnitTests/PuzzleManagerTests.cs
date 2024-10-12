@@ -1,15 +1,9 @@
 ﻿using Net.Code.AdventOfCode.Toolkit.Core;
-
-using Net.Code.AdventOfCode.Toolkit.Data;
 using Net.Code.AdventOfCode.Toolkit.Logic;
 
 using NSubstitute;
 
-using System.Collections.Generic;
 using System.Net;
-using System.Threading.Tasks;
-
-using Xunit;
 
 namespace Net.Code.AdventOfCode.Toolkit.UnitTests
 {

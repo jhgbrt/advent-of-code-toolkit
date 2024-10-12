@@ -7,18 +7,8 @@ using Spectre.Console.Cli;
 using System.ComponentModel;
 
 [Description("Initialize the code for a specific puzzle. Requires AOC_SESSION set as an environment variable")]
-class Init : SinglePuzzleCommand<Init.Settings>
+class Init(IPuzzleManager puzzleManager, ICodeManager codeManager, AoCLogic logic, IInputOutputService output) : SinglePuzzleCommand<Init.Settings>(logic)
 {
-    private readonly IPuzzleManager puzzleManager;
-    private readonly ICodeManager codeManager;
-    private readonly IInputOutputService output;
-
-    public Init(IPuzzleManager puzzleManager, ICodeManager codeManager, AoCLogic logic, IInputOutputService output) : base(logic)
-    {
-        this.puzzleManager = puzzleManager;
-        this.codeManager = codeManager;
-        this.output = output;
-    }
     public class Settings : AoCSettings
     {
         [property: Description("Force (if true, refresh cache)")]

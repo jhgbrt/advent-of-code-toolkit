@@ -7,19 +7,8 @@ using System.Text;
 
 namespace Net.Code.AdventOfCode.Toolkit.Logic;
 
-class PuzzleManager : IPuzzleManager
+class PuzzleManager(IAoCClient client, IAoCDbContext db, AoCLogic logic) : IPuzzleManager
 {
-    private readonly IAoCClient client;
-    private readonly IAoCDbContext db;
-    private readonly AoCLogic logic;
-
-    public PuzzleManager(IAoCClient client, IAoCDbContext db, AoCLogic logic)
-    {
-        this.client = client;
-        this.db = db;
-        this.logic = logic;
-    }
-
     public async Task<Puzzle> GetPuzzle(PuzzleKey key)
     {
         logic.EnsureValid(key);

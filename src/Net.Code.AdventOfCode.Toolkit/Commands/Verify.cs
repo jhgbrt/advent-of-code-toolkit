@@ -5,17 +5,8 @@ using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 using System.ComponentModel;
 
 [Description("Verify the results for the given puzzle(s). Does not run the puzzle code.")]
-class Verify : ManyPuzzlesCommand<AoCSettings>
+class Verify(IPuzzleManager manager, AoCLogic aocLogic, IInputOutputService io) : ManyPuzzlesCommand<AoCSettings>(aocLogic)
 {
-    private readonly IPuzzleManager manager;
-    private readonly IInputOutputService io;
-
-    public Verify(IPuzzleManager manager, AoCLogic aocLogic, IInputOutputService io) : base(aocLogic)
-    {
-        this.manager = manager;
-        this.io = io;
-    }
-
     public override async Task<int> ExecuteAsync(PuzzleKey key, AoCSettings options)
     {
         var resultStatus = await manager.GetPuzzleResult(key);
@@ -25,3 +16,4 @@ class Verify : ManyPuzzlesCommand<AoCSettings>
     }
 
 }
+

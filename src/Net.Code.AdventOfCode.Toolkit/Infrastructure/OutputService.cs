@@ -22,17 +22,13 @@ public class InputOutputService : IInputOutputService
     public void MarkupLine(string markup) => AnsiConsole.MarkupLine(markup);
 }
 
-class DelegatingIOService : IInputOutputService
+class DelegatingIOService(Action<string> log) : IInputOutputService
 {
-    Action<string> Log;
-
-    public DelegatingIOService(Action<string> log) => Log = log;
-
-    public void MarkupLine(string markup) => Log(markup);
+    public void MarkupLine(string markup) => log(markup);
 
     public T Prompt<T>(IPrompt<T> prompt) => default!;
 
-    public void Write(IRenderable renderable) => Log(renderable?.ToString() ?? string.Empty);
+    public void Write(IRenderable renderable) => log(renderable?.ToString() ?? string.Empty);
 
-    public void WriteLine(string message) => Log(message);
+    public void WriteLine(string message) => log(message);
 }

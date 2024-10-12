@@ -37,7 +37,7 @@ public class CommandTests
     {
         var manager = CreateLeaderboardManager();
         var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic, Clock);
-        await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021, id = 123 });
+        await run.ExecuteAsync(new CommandContext([], Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021, id = 123 });
         await manager.Received(1).GetLeaderboardAsync(123, Year);
 
     }
@@ -47,7 +47,7 @@ public class CommandTests
     {
         var manager = CreateLeaderboardManager();
         var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic, Clock);
-        await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021 });
+        await run.ExecuteAsync(new CommandContext([], Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021 });
         await manager.Received(1).GetLeaderboardAsync(123, Year);
     }
     [Fact]
@@ -55,7 +55,7 @@ public class CommandTests
     {
         var manager = CreateLeaderboardManager();
         var run = new Leaderboard(manager, Substitute.For<IInputOutputService>(), AoCLogic, Clock);
-        await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021, all = true });
+        await run.ExecuteAsync(new CommandContext([], Substitute.For<IRemainingArguments>(), "leaderboard", default), new Leaderboard.Settings { year = 2021, all = true });
         await manager.Received().GetLeaderboardsAsync(123, Arg.Any<IEnumerable<int>>());
     }
 
@@ -135,8 +135,8 @@ public class CommandTests
     public async Task Report()
     {
         var manager = CreatePuzzleManager();
-        var run = new Report(manager, Substitute.For<IInputOutputService>(), AoCLogic);
-        await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "report", default), new());
+        var run = new Report(manager, Substitute.For<IInputOutputService>());
+        await run.ExecuteAsync(new CommandContext([], Substitute.For<IRemainingArguments>(), "report", default), new());
         await manager.Received().GetPuzzleResults(Arg.Any<int?>(), Arg.Any<TimeSpan?>());
     }
 
@@ -145,7 +145,7 @@ public class CommandTests
     {
         var manager = CreateLeaderboardManager();
         var run = new Stats(manager, Substitute.For<IInputOutputService>(), AoCLogic);
-        await run.ExecuteAsync(new CommandContext(Substitute.For<IRemainingArguments>(), "stats", default), default!);
+        await run.ExecuteAsync(new CommandContext([], Substitute.For<IRemainingArguments>(), "stats", default), default!);
         manager.Received().GetMemberStats(Arg.Any<IEnumerable<int>>());
     }
 

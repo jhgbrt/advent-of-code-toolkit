@@ -2,16 +2,10 @@
 
 using NodaTime;
 
-using System.Runtime.Serialization;
-
-class AoCLogic
+class AoCLogic(IClock clock)
 {
-    public AoCLogic(IClock clock)
-    {
-        Clock = clock;
-    }
     public AoCLogic() : this(SystemClock.Instance) { }
-    public IClock Clock { get; }
+    public IClock Clock { get; } = clock;
     ZonedDateTime Now => Clock.GetCurrentInstant().InZone(DateTimeZoneProviders.Tzdb["EST"]);
     bool InAdvent => Now.Month == 12 && Now.Day <= 25;
     public int? Year => Now.Month == 12 ? Now.Year : null;

@@ -46,7 +46,7 @@ public class IntegrationTests
             database,
             client,
             fileSystem,
-            args.Concat(new[] { "--loglevel=Trace", "--debug" }).ToArray());
+            args.Concat(["--loglevel=Trace", "--debug"]).ToArray());
     }
 
     public class DuringAdvent_OnDayOfPuzzle : IntegrationTests

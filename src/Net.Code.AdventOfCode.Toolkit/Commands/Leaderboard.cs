@@ -11,19 +11,8 @@ using System.ComponentModel;
 namespace Net.Code.AdventOfCode.Toolkit.Commands;
 
 [Description("Show some stats from the configured private leaderboard. ")]
-class Leaderboard : AsyncCommand<Leaderboard.Settings>
+class Leaderboard(ILeaderboardManager manager, IInputOutputService io, AoCLogic logic, IClock clock) : AsyncCommand<Leaderboard.Settings>
 {
-    private readonly IClock clock;
-    private readonly ILeaderboardManager manager;
-    private readonly IInputOutputService io;
-    private readonly AoCLogic logic;
-    public Leaderboard(ILeaderboardManager manager, IInputOutputService io, AoCLogic logic, IClock clock)
-    {
-        this.manager = manager;
-        this.io = io;
-        this.logic = logic;
-        this.clock = clock;
-    }
     public class Settings : CommandSettings
     {
         [Description("Year (default: current year)")]

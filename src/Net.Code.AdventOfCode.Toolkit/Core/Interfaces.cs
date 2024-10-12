@@ -1,8 +1,8 @@
 ﻿namespace Net.Code.AdventOfCode.Toolkit.Core;
 using System.Net;
 using System.Reflection;
+
 using Net.Code.AdventOfCode.Toolkit.Core.Leaderboard;
-using Net.Code.AdventOfCode.Toolkit.Logic;
 
 record Configuration(string BaseAddress, string SessionCookie);
 

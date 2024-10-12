@@ -6,7 +6,6 @@ using Net.Code.AdventOfCode.Toolkit.Core;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
 
 namespace Net.Code.AdventOfCode.Toolkit.Logic;
 

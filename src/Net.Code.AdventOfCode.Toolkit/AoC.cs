@@ -88,32 +88,29 @@ public static class AoC
             AddCommand<Report>(config);
             AddCommand<Leaderboard>(config);
             AddCommand<Stats>(config);
+            AddCommand<Test>(config);
             config.PropagateExceptions();
             if (args.Contains("--debug"))
             {
                 config.ValidateExamples();
             };
-            config.SetInterceptor(new TraceInterceptor());
+            //config.SetExceptionHandler();
         });
-
+        
         app.SetDefaultCommand<Run>();
-
 
         try
         {
 
             var returnValue = await app.RunAsync(args);
-            if (registrar.Scope is not null)
-            {
-                using (var db = registrar.ServiceProvider?.GetService<IAoCDbContext>()!)
-                {
-                    await db.SaveChangesAsync();
-                }
 
-                registrar.Scope.Dispose();
-            }
+
 
             return returnValue;
+        }
+        catch (UnauthorizedAccessException e)
+        {
+            AnsiConsole.MarkupInterpolated($"[red]{e.Message}[/]");
         }
         catch(AoCException e) 
         {
@@ -126,6 +123,20 @@ public static class AoC
             if (debug) throw;
         }
         return 99;
+    }
+
+    class MyInterceptor(IAoCDbContext db) : ICommandInterceptor
+    {
+        public void Intercept(CommandContext context, CommandSettings settings)
+        {
+            if (!Directory.Exists(".cache")) Directory.CreateDirectory(".cache");
+            db.Migrate();
+        }
+        public void InterceptResult(CommandContext context, CommandSettings settings, ref int result)
+        {
+            db.SaveChangesAsync().Wait();
+        }
+
     }
 
     class TraceInterceptor : ICommandInterceptor
@@ -223,6 +234,8 @@ public static class AoC
         {
             services.AddTransient(type);
         }
+        services.AddTransient<ICommandInterceptor, MyInterceptor>();
+        services.AddTransient<ICommandInterceptor, TraceInterceptor>();
 
         if (level == LogLevel.Trace)
         {
@@ -238,43 +251,29 @@ public static class AoC
         => provider.GetCustomAttributes(typeof(DescriptionAttribute), false).OfType<DescriptionAttribute>().SingleOrDefault()?.Description;
 }
 
-sealed class TypeRegistrar : ITypeRegistrar
+sealed class TypeRegistrar(IServiceCollection builder) : ITypeRegistrar
 {
     public IServiceProvider? ServiceProvider => serviceProvider;
-    private readonly IServiceCollection _builder;
+
     private IServiceProvider? serviceProvider;
-
-    // ugly hack, but currently no other way to create a scope.
-    // see also https://github.com/spectreconsole/spectre.console/issues/1093
-    public IServiceScope? Scope { get; set; }
-
-    public TypeRegistrar(IServiceCollection builder)
-    {
-        _builder = builder;
-    }
+    private IServiceScope? Scope { get; set; }
 
     public ITypeResolver Build()
     {
-        serviceProvider = _builder.BuildServiceProvider();
-        if (Scope is not null) throw new Exception("expected scope to be null");
+        serviceProvider = builder.BuildServiceProvider();
         Scope = serviceProvider.CreateScope();
         return new TypeResolver(serviceProvider);
     }
 
-    public void Register(Type service, Type implementation) => _builder.AddTransient(service, implementation);
+    public void Register(Type service, Type implementation) => builder.AddTransient(service, implementation);
 
-    public void RegisterInstance(Type service, object implementation) => _builder.AddTransient(service, _ => implementation);
+    public void RegisterInstance(Type service, object implementation) => builder.AddTransient(service, _ => implementation);
 
-    public void RegisterLazy(Type service, Func<object> factory) => _builder.AddTransient(service, _ => factory());
+    public void RegisterLazy(Type service, Func<object> factory) => builder.AddTransient(service, _ => factory());
 }
 
-sealed class TypeResolver : ITypeResolver
+sealed class TypeResolver(IServiceProvider _provider) : ITypeResolver
 {
-    private readonly IServiceProvider _provider;
-
-    public TypeResolver(IServiceProvider provider)
-        => _provider = provider ?? throw new ArgumentNullException(nameof(provider));
-
     public object Resolve(Type? type)
         => _provider.GetRequiredService(type ?? throw new ArgumentNullException(nameof(type)));
 }

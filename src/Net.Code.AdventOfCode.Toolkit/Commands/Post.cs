@@ -10,16 +10,8 @@ using System.ComponentModel.DataAnnotations;
 
 
 [Description("Post an answer for a puzzle part. Requires AOC_SESSION set as an environment variable.")]
-class Post : SinglePuzzleCommand<Post.Settings>
+class Post(IPuzzleManager manager, AoCLogic logic, IInputOutputService io) : SinglePuzzleCommand<Post.Settings>(logic)
 {
-    private readonly IPuzzleManager manager;
-    private readonly IInputOutputService io;
-
-    public Post(IPuzzleManager manager, AoCLogic logic, IInputOutputService io) : base(logic)
-    {
-        this.manager = manager;
-        this.io = io;
-    }
     public class Settings : CommandSettings, IAoCSettings
     {
 

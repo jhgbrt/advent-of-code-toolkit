@@ -8,19 +8,8 @@ using System.ComponentModel;
 namespace Net.Code.AdventOfCode.Toolkit.Commands;
 
 [Description("Run the code for a specific puzzle.")]
-class Run : ManyPuzzlesCommand<Run.Settings>
+class Run(IAoCRunner manager, IPuzzleManager puzzleManager, AoCLogic aocLogic, IInputOutputService io) : ManyPuzzlesCommand<Run.Settings>(aocLogic)
 {
-    private readonly IAoCRunner manager;
-    private readonly IPuzzleManager puzzleManager;
-    private readonly IInputOutputService io;
-
-    public Run(IAoCRunner manager, IPuzzleManager puzzleManager, AoCLogic aocLogic, IInputOutputService io) : base(aocLogic)
-    {
-        this.manager = manager;
-        this.puzzleManager = puzzleManager;
-        this.io = io;
-    }
-
     public class Settings : AoCSettings
     {
         [Description("The fully qualified name of the type containing the code for this puzzle. " +
