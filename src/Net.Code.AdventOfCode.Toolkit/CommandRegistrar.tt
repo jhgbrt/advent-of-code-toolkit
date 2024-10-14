@@ -1,0 +1,45 @@
+﻿<#@ template debug="false" hostspecific="true" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="System.IO" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.IO" #>
+<#@ output extension=".cs" #>
+
+namespace Net.Code.AdventOfCode.Toolkit;
+using Microsoft.Extensions.DependencyInjection;
+using Net.Code.AdventOfCode.Toolkit.Commands;
+using Spectre.Console.Cli;
+using System.ComponentModel;
+using System.Reflection;
+
+/*
+<# 
+    var commandNames = from file in new DirectoryInfo(Path.Combine(Host.ResolvePath("Commands"))).GetFiles()
+					   select Path.GetFileNameWithoutExtension(file.Name);
+#>
+*/
+
+static class CommandRegistrar
+{
+
+	public static void RegisterCommands(IServiceCollection services)
+	{
+<# foreach (var command in commandNames) { #>
+		services.AddTransient<<#= command #>>();
+<# } #>
+	}
+
+	public static void AddCommands(IConfigurator config)
+	{
+<# foreach (var command in commandNames) { #>
+		AddCommand<<#= command #>>(config);
+<# } #>
+	}
+
+    static ICommandConfigurator AddCommand<T>(IConfigurator config) where T : class, ICommand
+        => config.AddCommand<T>(typeof(T).Name.ToLower()).WithDescription(GetDescription(typeof(T)) ?? typeof(T).Name);
+    static string? GetDescription(ICustomAttributeProvider provider)
+        => provider.GetCustomAttributes(typeof(DescriptionAttribute), false).OfType<DescriptionAttribute>().SingleOrDefault()?.Description;
+}

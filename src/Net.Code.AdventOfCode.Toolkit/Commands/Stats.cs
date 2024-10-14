@@ -1,10 +1,10 @@
 ﻿
 using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Infrastructure;
+
 using Spectre.Console.Cli;
 
 using System.ComponentModel;
-using System.Diagnostics;
 
 namespace Net.Code.AdventOfCode.Toolkit.Commands;
 
@@ -20,15 +20,5 @@ class Stats(ILeaderboardManager manager, IInputOutputService io, AoCLogic logic)
         }
 
         return 0;
-    }
-}
-
-
-class Test : AsyncCommand<AoCSettings>
-{
-    public override Task<int> ExecuteAsync(CommandContext context, AoCSettings settings)
-    {
-        Debugger.Break();
-        return Task.FromResult(0);
     }
 }

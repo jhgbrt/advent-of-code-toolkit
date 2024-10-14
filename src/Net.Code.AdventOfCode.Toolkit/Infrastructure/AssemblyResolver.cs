@@ -6,7 +6,7 @@ namespace Net.Code.AdventOfCode.Toolkit.Infrastructure;
 
 public class AssemblyResolver : IAssemblyResolver
 {
-    public static IAssemblyResolver Instance = new AssemblyResolver();
+    public readonly static IAssemblyResolver Instance = new AssemblyResolver();
     public Assembly? GetEntryAssembly() => Assembly.GetEntryAssembly();
 }
 

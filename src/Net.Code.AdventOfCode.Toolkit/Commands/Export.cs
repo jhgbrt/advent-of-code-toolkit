@@ -9,7 +9,7 @@ using System.ComponentModel;
 namespace Net.Code.AdventOfCode.Toolkit.Commands;
 
 [Description("Export the code for a puzzle to a stand-alone C# project")]
-partial class Export(ICodeManager manager, AoCLogic logic, IInputOutputService output) : SinglePuzzleCommand<Export.Settings>(logic)
+class Export(ICodeManager manager, AoCLogic logic, IInputOutputService output) : SinglePuzzleCommand<Export.Settings>(logic)
 {
     public class Settings : AoCSettings
     {

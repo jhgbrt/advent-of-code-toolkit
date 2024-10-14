@@ -6,7 +6,7 @@ using Net.Code.AdventOfCode.Toolkit.Core.Leaderboard;
 
 record Configuration(string BaseAddress, string SessionCookie);
 
-interface IAoCClient : IDisposable
+interface IAoCClient 
 {
     Task<LeaderBoard?> GetLeaderBoardAsync(int year, int id);
     Task<IEnumerable<(int id, string description)>> GetLeaderboardIds(int year);
@@ -102,7 +102,7 @@ interface ITemplateFolder
     bool Exists { get; }
     Task<string> ReadCode(PuzzleKey key);
 }
-interface IHttpClientWrapper : IDisposable
+interface IHttpClientWrapper 
 {
     Task<(HttpStatusCode status, string content)> PostAsync(string path, HttpContent body);
     Task<(HttpStatusCode status, string content)> GetAsync(string path);

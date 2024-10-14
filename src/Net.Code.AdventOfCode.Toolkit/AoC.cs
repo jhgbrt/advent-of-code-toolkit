@@ -18,6 +18,8 @@ using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 using Net.Code.AdventOfCode.Toolkit.Logic;
 using Net.Code.AdventOfCode.Toolkit.Web;
 
+using Newtonsoft.Json.Linq;
+
 using NodaTime;
 
 using Spectre.Console;
@@ -26,7 +28,9 @@ using Spectre.Console.Cli;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Net;
 using System.Reflection;
+using System.Text;
 
 public static class AoC
 {
@@ -43,8 +47,6 @@ public static class AoC
         string[] args
         )
     {
-
-
         string? loglevel = null;
         for (int i = 0; i < args.Length; i++)
         {
@@ -79,56 +81,41 @@ public static class AoC
 
         app.Configure(config =>
         {
-            AddCommand<Run>(config);
-            AddCommand<Verify>(config);
-            AddCommand<Init>(config);
-            AddCommand<Sync>(config);
-            AddCommand<Post>(config);
-            AddCommand<Export>(config);
-            AddCommand<Report>(config);
-            AddCommand<Leaderboard>(config);
-            AddCommand<Stats>(config);
-            AddCommand<Test>(config);
+            CommandRegistrar.AddCommands(config);
             config.PropagateExceptions();
             if (args.Contains("--debug"))
             {
                 config.ValidateExamples();
             };
-            //config.SetExceptionHandler();
+            config.SetExceptionHandler(
+                (exception, resolver) =>
+                {
+                    if (exception is AoCException)
+                        AnsiConsole.MarkupInterpolated($"[red]{exception.Message}[/]");
+                    else
+                        AnsiConsole.WriteException(exception, ExceptionFormats.ShortenEverything);
+                    return 99;
+                }
+                );
         });
         
         app.SetDefaultCommand<Run>();
 
-        try
-        {
-
-            var returnValue = await app.RunAsync(args);
-
-
-
-            return returnValue;
-        }
-        catch (UnauthorizedAccessException e)
-        {
-            AnsiConsole.MarkupInterpolated($"[red]{e.Message}[/]");
-        }
-        catch(AoCException e) 
-        {
-            AnsiConsole.WriteLine(e.Message);
-            if (debug) throw;
-        }
-        catch (Exception e)
-        {
-            AnsiConsole.WriteException(e, ExceptionFormats.ShortenEverything);
-            if (debug) throw;
-        }
-        return 99;
+        return await app.RunAsync(args);
     }
 
-    class MyInterceptor(IAoCDbContext db) : ICommandInterceptor
+    class AoCCommandInterceptor(IAoCDbContext db, ILogger<AoCCommandInterceptor> logger) : ICommandInterceptor
     {
         public void Intercept(CommandContext context, CommandSettings settings)
         {
+            var sb = new StringBuilder("command: {command}, options: ");
+            var info = from p in settings.GetType().GetProperties()
+                       select (p.Name, Value: p.GetValue(settings));
+            sb.Append(string.Join(", ", info.Select(item => $"{item.Name}: {{{item.Name}}}")));
+
+            var values = new[] { context.Name }.Concat(info.Select(p => p.Value)).ToArray();
+
+            logger.LogTrace(sb.ToString(), values);
             if (!Directory.Exists(".cache")) Directory.CreateDirectory(".cache");
             db.Migrate();
         }
@@ -137,17 +124,6 @@ public static class AoC
             db.SaveChangesAsync().Wait();
         }
 
-    }
-
-    class TraceInterceptor : ICommandInterceptor
-    {
-        public void Intercept(CommandContext context, CommandSettings settings)
-        {
-            Trace.TraceInformation($"command name: {context.Name}");
-            var info = from p in settings.GetType().GetProperties()
-                       select $"{{ {p.Name}: {p.GetValue(settings)} }}";
-            Trace.TraceInformation($"options: {{ {string.Join(",", info)} }}");
-        }
     }
 
     static Task<ServiceCollection> InitializeServicesAsync(
@@ -191,7 +167,7 @@ public static class AoC
         {
             services.AddTransient<IFileSystem, FileSystem>();
         }
-        services.AddSingleton<IAssemblyResolver>(resolver);
+        services.AddSingleton(resolver);
         if (httpclient is not null)
         {
             services.AddSingleton(httpclient);
@@ -226,29 +202,52 @@ public static class AoC
                 }, contextLifetime: ServiceLifetime.Scoped
                 );
         }
-        foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(ICommand))))
-        {
-            services.AddTransient(type);
-        }
-        foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(CommandSettings))))
-        {
-            services.AddTransient(type);
-        }
-        services.AddTransient<ICommandInterceptor, MyInterceptor>();
-        services.AddTransient<ICommandInterceptor, TraceInterceptor>();
 
-        if (level == LogLevel.Trace)
+        if (httpclient is null)
         {
-            Trace.Listeners.Add(new ConsoleTraceListener());
+            services.AddHttpClient<IHttpClientWrapper, HttpClientWrapper>(client =>
+            {
+                client.BaseAddress = new Uri(baseAddress);
+                if (string.IsNullOrEmpty(configuration.SessionCookie))
+                {
+                    throw new NotAuthenticatedException("This command requires logging in, but the AOC_SESSION cookie is not set. " +
+                        "Log in to adventofcode.com, and find the 'session' cookie value in your browser devtools. " +
+                        "Copy this value and set it as an environment variable in your shell, or as a dotnet user-secret for your project.");
+                }
+            }).ConfigurePrimaryHttpMessageHandler(s =>
+            {
+                var sessionCookie = configuration.SessionCookie;
+                var cookieContainer = new CookieContainer();
+                cookieContainer.Add(new Uri(baseAddress), new Cookie("session", sessionCookie));
+                var handler = new HttpClientHandler { CookieContainer = cookieContainer };
+                return handler;
+            });
         }
+        else
+        {
+            services.AddSingleton(httpclient);
+        }
+
+
+
+        CommandRegistrar.RegisterCommands(services);
+
+        var typesToRegister = 
+            from type in Assembly.GetExecutingAssembly().GetTypes()
+            where !type.IsAbstract && (
+                type.IsAssignableTo(typeof(ICommand)) || type.IsAssignableTo(typeof(CommandSettings))
+            )
+            select type;
+
+        foreach (var type in typesToRegister)
+        {
+            services.AddTransient(type);
+        }
+        services.AddTransient<ICommandInterceptor, AoCCommandInterceptor>();
+
         return Task.FromResult(services);
     }
 
-    static ICommandConfigurator AddCommand<T>(IConfigurator config) where T : class, ICommand
-        => config.AddCommand<T>(typeof(T).Name.ToLower()).WithDescription(GetDescription(typeof(T)) ?? typeof(T).Name);
-
-    static string? GetDescription(ICustomAttributeProvider provider)
-        => provider.GetCustomAttributes(typeof(DescriptionAttribute), false).OfType<DescriptionAttribute>().SingleOrDefault()?.Description;
 }
 
 sealed class TypeRegistrar(IServiceCollection builder) : ITypeRegistrar

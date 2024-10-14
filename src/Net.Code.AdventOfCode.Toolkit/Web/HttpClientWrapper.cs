@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 using Net.Code.AdventOfCode.Toolkit.Core;
 
-class NotAuthenticatedException : Exception
+class NotAuthenticatedException : AoCException
 {
     public NotAuthenticatedException() : base()
     {
@@ -20,36 +20,28 @@ class NotAuthenticatedException : Exception
     }
 }
 
-class HttpClientWrapper : IHttpClientWrapper
+class HttpClientWrapper(Configuration configuration, ILogger<HttpClientWrapper> logger, HttpClient client) : IHttpClientWrapper
 {
-    readonly HttpClientHandler handler;
-    readonly HttpClient client;
-    private readonly ILogger logger;
-    private readonly string sessionCookie;
-    public HttpClientWrapper(Configuration configuration, ILogger<HttpClientWrapper> logger)
+    private async Task EnsureAuthenticated()
     {
-        var baseAddress = new Uri(configuration.BaseAddress);
-        sessionCookie = configuration.SessionCookie;
-
-        var cookieContainer = new CookieContainer();
-        cookieContainer.Add(baseAddress, new Cookie("session", sessionCookie));
-
-        handler = new HttpClientHandler { CookieContainer = cookieContainer };
-        client = new HttpClient(handler) { BaseAddress = baseAddress };
-        this.logger = logger;
-    }
-    private void EnsureAuthenticated()
-    {
-        if (string.IsNullOrEmpty(sessionCookie))
+        //if (string.IsNullOrEmpty(configuration.SessionCookie))
+        //{
+        //    throw new NotAuthenticatedException("This command requires logging in, but the AOC_SESSION cookie is not set. " +
+        //        "Log in to adventofcode.com, and find the 'session' cookie value in your browser devtools. " +
+        //        "Copy this value and set it as an environment variable in your shell, or as a dotnet user-secret for your project.");
+        //}
+        var response = await client.GetAsync($"{2015}/day/4/input");
+        if (response.StatusCode != HttpStatusCode.OK)
         {
-            throw new NotAuthenticatedException("This command requires logging in, but the AOC_SESSION cookie is not set. " +
+            logger.LogError("Unauthorized");
+            throw new NotAuthenticatedException("This command requires logging in. The AOC_SESSION cookie is set, but may be expired. " +
                 "Log in to adventofcode.com, and find the 'session' cookie value in your browser devtools. " +
                 "Copy this value and set it as an environment variable in your shell, or as a dotnet user-secret for your project.");
         }
     }
     public async Task<(HttpStatusCode status, string content)> PostAsync(string path, HttpContent body)
     {
-        EnsureAuthenticated();
+        await EnsureAuthenticated();
         var response = await client.PostAsync(path, body);
         logger.LogTrace("POST: {path} - {statusCode}", path, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
@@ -57,7 +49,7 @@ class HttpClientWrapper : IHttpClientWrapper
     }
     public async Task<(HttpStatusCode status, string content)> GetAsync(string path)
     {
-        EnsureAuthenticated();
+        await EnsureAuthenticated();
         var response = await client.GetAsync(path);
         var content = await response.Content.ReadAsStringAsync();
         if (response.StatusCode != HttpStatusCode.OK)
@@ -70,11 +62,6 @@ class HttpClientWrapper : IHttpClientWrapper
             logger.LogTrace("GET: {path} - {statusCode}", path, response.StatusCode);
         }
         return (response.StatusCode, content);
-    }
-    public void Dispose()
-    {
-        client.Dispose();
-        handler.Dispose();
     }
 
 }

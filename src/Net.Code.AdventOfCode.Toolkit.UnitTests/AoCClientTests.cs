@@ -1,9 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 
+using Net.Code.AdventOfCode.Toolkit.Commands;
 using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Web;
 
 using NSubstitute;
+
+using RichardSzalay.MockHttp;
 
 using System.Net;
 
@@ -18,14 +21,15 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         readonly static string puzzle = Content.ReadAllText("puzzle-answered-both-parts.html");
         const int Year = 2015;
         const int Day = 1;
-        (string path, string content)[] items = new[]
-        {
+        readonly static (string path, string content)[] items =
+        [
             (path: "settings", content: settings),
             (path: $"{Year}/leaderboard/private/view/148156.json", content: leaderboardjson),
             (path: $"{Year}/day/{Day}", content: puzzle),
             (path: $"{Year}/day/{Day}/input", content: "input"),
-            (path: $"{Year}/leaderboard/private", content: leaderboard)
-        };
+            (path: $"{Year}/leaderboard/private", content: leaderboard),
+            (path: $"2015/day/4/input", content: "OK")
+        ];
 
         IHttpClientWrapper wrapper;
         IAoCClient client;
@@ -103,7 +107,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         [Fact]
         public async Task PostAnswerAsync()
         {
-            var wrapper = Substitute.For<IHttpClientWrapper>();
+            IHttpClientWrapper wrapper = CreateClient();
             var logger = Substitute.For<ILogger<AoCClient>>();
 
             var year = 2017;
@@ -116,5 +120,43 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
 
             await wrapper.Received().PostAsync(path, Arg.Any<HttpContent>());
         }
+
+        private static IHttpClientWrapper CreateClient()
+        {
+            var wrapper = Substitute.For<IHttpClientWrapper>();
+            wrapper.GetAsync("2015/day/4/input").Returns(Task.FromResult((HttpStatusCode.OK, "OK")));
+            return wrapper;
+        }
+    }
+
+    public class ClientWrapperTests
+    {
+        [Fact]
+        public async Task GetAsync_WhenSessionCookieInvalid_ThrowsNotAuthenticated()
+        {
+            HttpClientWrapper wrapper = CreateClient("someCookie", false);
+            await Assert.ThrowsAsync<NotAuthenticatedException>(() => wrapper.GetAsync("2017/day/1"));
+        }
+
+        [Fact]
+        public async Task GetAsync_WhenSessionCookieValid_ThrowsNotAuthenticated()
+        {
+            HttpClientWrapper wrapper = CreateClient("someCookie", true);
+            await wrapper.GetAsync("2017/day/1");
+        }
+
+        private static HttpClientWrapper CreateClient(string cookieValue, bool isValid)
+        {
+
+            var client = Mocks.HttpClient("https://example.com",
+                (HttpMethod.Get, "2015/day/4/input", isValid ? HttpStatusCode.OK : HttpStatusCode.InternalServerError, new StringContent("")),
+                (HttpMethod.Get, "2017/day/1", HttpStatusCode.OK, new StringContent(""))
+                );
+            var config = new Configuration("https://example.com", cookieValue);
+            var wrapper = new HttpClientWrapper(config, Substitute.For<ILogger<HttpClientWrapper>>(), client);
+            return wrapper;
+        }
+
+
     }
 }

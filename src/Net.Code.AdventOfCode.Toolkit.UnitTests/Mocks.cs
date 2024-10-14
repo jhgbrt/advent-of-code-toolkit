@@ -5,6 +5,8 @@ using NodaTime;
 
 using NSubstitute;
 
+using RichardSzalay.MockHttp;
+
 using Spectre.Console;
 using Spectre.Console.Rendering;
 
@@ -22,6 +24,27 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         public static IHttpClientWrapper HttpClientWrapper() => new TestHttpWrapper();
         public static IAoCDbContext DbContext() => new TestDbContext();
         public static IFileSystem FileSystem() => new TestFileSystem();
+
+        public static HttpClient HttpClient(
+            string baseAddress,
+            params IEnumerable<(HttpMethod method, string url, HttpStatusCode responseCode, HttpContent responseContent)> items)
+        {
+            var handler = new MockHttpMessageHandler();
+
+            foreach (var item in items)
+            {
+                handler
+                    .Expect(item.method, $"{baseAddress}/{item.url}")
+                    .Respond(req => new HttpResponseMessage(item.responseCode) { Content = item.responseContent });
+            }
+
+            var client = new HttpClient(handler) 
+            { 
+                BaseAddress = new Uri(baseAddress) 
+            };
+            return client;
+        }
+
         public static IAssemblyResolver AssemblyResolver()
         {
             var resolver = Substitute.For<IAssemblyResolver>();
