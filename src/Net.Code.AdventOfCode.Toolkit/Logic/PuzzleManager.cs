@@ -44,6 +44,7 @@ class PuzzleManager(IAoCClient client, IAoCDbContext db, AoCLogic logic) : IPuzz
         {
             puzzle.UpdateFrom(remote);
         }
+        await db.SaveChangesAsync();
         return puzzle;
     }
 
@@ -139,6 +140,7 @@ class PuzzleManager(IAoCClient client, IAoCDbContext db, AoCLogic logic) : IPuzz
         {
             db.AddResult(result);
         }
+        await db.SaveChangesAsync();
     }
 }
 
