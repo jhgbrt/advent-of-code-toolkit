@@ -135,7 +135,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         public static IInputOutputService InputOutput(ITestOutputHelper output) => new TestOutputService(output);
         public static IAoCDbContext DbContext() => new TestDbContext();
         public static IFileSystem FileSystem() => new TestFileSystem();
-        public static HttpMessageHandler HttpMessageHandler(
+        public static MockHttpMessageHandler HttpMessageHandler(
             string baseAddress,
             params IEnumerable<(HttpMethod method, string path, HttpStatusCode responseCode, string responseContent)> items)
         {

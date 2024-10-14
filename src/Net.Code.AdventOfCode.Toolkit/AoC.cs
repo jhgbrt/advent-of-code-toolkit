@@ -196,7 +196,7 @@ public static class AoC
                 );
         }
 
-            services.AddHttpClient<IHttpClientWrapper, HttpClientWrapper>(client =>
+            services.AddHttpClient<IAoCClient, AoCClient>(client =>
             {
                 client.BaseAddress = new Uri(baseAddress);
                 if (string.IsNullOrEmpty(configuration.SessionCookie))

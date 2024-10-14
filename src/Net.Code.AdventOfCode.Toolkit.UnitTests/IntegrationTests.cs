@@ -3,6 +3,8 @@ using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 
 using NodaTime;
 
+using RichardSzalay.MockHttp;
+
 using System.Net;
 
 using Xunit.Abstractions;
@@ -25,16 +27,21 @@ public class IntegrationTests(ITestOutputHelper output, DateTime Now, (int year,
         IEnumerable<(HttpMethod method, string url, HttpStatusCode responsecode, string responseContent)> http
         )
     {
-
+        MockHttpMessageHandler handler = Mocks.HttpMessageHandler("https://adventofcode.com", http);
         Environment.SetEnvironmentVariable("AOC_SESSION", "somecookie");
-        return await AoC.RunAsync(
+        var returnValue = await AoC.RunAsync(
             resolver,
             io,
             clock,
             database,
-            Mocks.HttpMessageHandler("https://adventofcode.com", http),
+            handler,
             fileSystem,
             args.Concat(["--loglevel=Trace", "--debug"]).ToArray());
+
+        handler.VerifyNoOutstandingRequest();
+        handler.VerifyNoOutstandingExpectation();
+
+        return returnValue;
     }
 
     IEnumerable<string> Args(string command, int? year, int? day)

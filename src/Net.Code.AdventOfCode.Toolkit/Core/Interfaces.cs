@@ -13,7 +13,6 @@ interface IAoCClient
     Task<PersonalStats?> GetPersonalStatsAsync(int year);
     Task<int> GetMemberId();
     Task<Puzzle> GetPuzzleAsync(PuzzleKey key);
-    Task<string> GetPuzzleInputAsync(PuzzleKey key);
     Task<(HttpStatusCode status, string content)> PostAnswerAsync(int year, int day, int part, string value);
 }
 

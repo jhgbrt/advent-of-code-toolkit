@@ -5,7 +5,12 @@ using Net.Code.AdventOfCode.Toolkit.Web;
 
 using NSubstitute;
 
+using RichardSzalay.MockHttp;
+
+using System.IO;
 using System.Net;
+
+using Xunit.Abstractions;
 
 namespace Net.Code.AdventOfCode.Toolkit.UnitTests
 {
@@ -18,112 +23,105 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         readonly static string puzzle = Content.ReadAllText("puzzle-answered-both-parts.html");
         const int Year = 2015;
         const int Day = 1;
-        readonly static (string path, string content)[] items =
-        [
-            (path: "settings", content: settings),
-            (path: $"{Year}/leaderboard/private/view/148156.json", content: leaderboardjson),
-            (path: $"{Year}/day/{Day}", content: puzzle),
-            (path: $"{Year}/day/{Day}/input", content: "input"),
-            (path: $"{Year}/leaderboard/private", content: leaderboard),
-            (path: $"2015/day/4/input", content: "OK")
-        ];
 
-        IHttpClientWrapper wrapper;
+        MockHttpMessageHandler wrapper;
+        string baseAddress = "https://example.com";
         IAoCClient client;
         IAoCClient CreateClient()
         {
             var logger = Substitute.For<ILogger<AoCClient>>();
-            foreach (var (path,content) in items) 
-            {
-                wrapper.GetAsync(path).Returns(Task.FromResult((HttpStatusCode.OK, content)));
-            }
-            var client = new AoCClient(wrapper, logger);
-            return client;
+            wrapper.Expect($"{baseAddress}/2015/day/4/input").Respond(HttpStatusCode.OK, new StringContent("OK"));
+            var client = new HttpClient(wrapper) { BaseAddress = new Uri(baseAddress) };
+            return new AoCClient(client, logger);
         }
 
         public AoCClientGetTests()
         {
-            wrapper = Substitute.For<IHttpClientWrapper>();
+            wrapper = new MockHttpMessageHandler();
             client = CreateClient();
         }
 
 
-        private async Task Verify(params string[] paths)
+        private async Task Verify()
         {
-            foreach (var path in paths)
-                await wrapper.Received().GetAsync(path);
+            wrapper.VerifyNoOutstandingExpectation();
+            wrapper.VerifyNoOutstandingRequest();
+            await Task.FromResult(0);
         }
 
         [Fact]
         public async Task GetLeaderBoardIds()
         {
             var path = $"{Year}/leaderboard/private";
+
+            wrapper.Expect($"{baseAddress}/{path}").Respond(HttpStatusCode.OK, new StringContent(leaderboard));
+
             await client.GetLeaderboardIds(Year);
-            await Verify(path);
+            await Verify();
         }
 
         [Fact]
         public async Task GetLeaderBoard()
         {
             var year = Year;
+            wrapper.Expect($"{baseAddress}/2015/leaderboard/private/view/148156.json").Respond(HttpStatusCode.OK, new StringContent(leaderboardjson));
             await client.GetLeaderBoardAsync(year, 148156);
-            await Verify("2015/leaderboard/private/view/148156.json");
+            await Verify();
         }
 
         [Fact]
         public async Task GetMemberId()
         {
+            wrapper.Expect($"{baseAddress}/settings").Respond(HttpStatusCode.OK, new StringContent(settings));
             await client.GetMemberId();
-            await Verify("settings");
+            await Verify();
         }
         
         [Fact]
         public async Task GetMemberAsync()
         {
+            wrapper.Expect($"{baseAddress}/settings").Respond(HttpStatusCode.OK, new StringContent(settings));
+            wrapper.Expect($"{baseAddress}/{Year}/leaderboard/private/view/148156.json").Respond(HttpStatusCode.OK, new StringContent(leaderboardjson));
             await client.GetPersonalStatsAsync(Year);
-            await Verify("settings", $"{Year}/leaderboard/private/view/148156.json");
+            await Verify();
         }
 
         [Fact]
         public async Task GetPuzzle()
         {
+            wrapper.Expect($"{baseAddress}/{Year}/day/{Day}").Respond(HttpStatusCode.OK, new StringContent(puzzle));
+            wrapper.Expect($"{baseAddress}/{Year}/day/{Day}/input").Respond(HttpStatusCode.OK, new StringContent(puzzle));
             await client.GetPuzzleAsync(new(Year, Day));
-            await Verify($"{Year}/day/{Day}");
+            await Verify();
         }
 
-        [Fact]
-        public async Task GetPuzzleInput()
-        {
-            await client.GetPuzzleInputAsync(new(Year, Day));
-            await Verify($"{Year}/day/{Day}/input");
-        }
     }
 
     public class AoCClientPostTests
     {
+        MockHttpMessageHandler wrapper = new MockHttpMessageHandler();
         [Fact]
         public async Task PostAnswerAsync()
         {
-            IHttpClientWrapper wrapper = CreateClient();
-            var logger = Substitute.For<ILogger<AoCClient>>();
+            var client = CreateClient();
 
-            var year = 2017;
-            var day = 5;
-            var path = $"{year}/day/{day}/answer";
-            wrapper.PostAsync(path, Arg.Any<FormUrlEncodedContent>()).Returns(Task.FromResult((HttpStatusCode.OK, "<article>CONTENT</article>")));
+            await client.PostAnswerAsync(2017, 5, 1, "ANSWER");
 
-            var client = new AoCClient(wrapper, logger);
-            await client.PostAnswerAsync(year, day, 1, "ANSWER");
-
-            await wrapper.Received().PostAsync(path, Arg.Any<HttpContent>());
+            wrapper.VerifyNoOutstandingExpectation();
+            wrapper.VerifyNoOutstandingRequest();
         }
 
-        private static IHttpClientWrapper CreateClient()
+        IAoCClient CreateClient()
         {
-            var wrapper = Substitute.For<IHttpClientWrapper>();
-            wrapper.GetAsync("2015/day/4/input").Returns(Task.FromResult((HttpStatusCode.OK, "OK")));
-            return wrapper;
+            var baseAddress = "https://example.com";
+            var logger = Substitute.For<ILogger<AoCClient>>();
+            wrapper.Expect($"{baseAddress}/2015/day/4/input").Respond(HttpStatusCode.OK, new StringContent("OK"));
+            wrapper.Expect(HttpMethod.Post, $"{baseAddress}/2017/day/5/answer").Respond(HttpStatusCode.OK, new StringContent("<article>CONTENT</article>"));
+            var client = new HttpClient(wrapper) { BaseAddress = new Uri(baseAddress) };
+            return new AoCClient(client, logger);
         }
+
+
     }
 
 }
