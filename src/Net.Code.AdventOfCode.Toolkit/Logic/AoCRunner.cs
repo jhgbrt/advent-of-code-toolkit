@@ -59,21 +59,17 @@ class AoCRunner : IAoCRunner
         MethodInfo? part2 = null;
         if (string.IsNullOrEmpty(typeName))
         {
-            foreach (var t in assembly.GetTypes().OrderBy(t => t.Name))
+            var types = from t in assembly.GetTypes()
+                        where (!IsCompilerGenerated(t))
+                        && (t?.FullName ?? string.Empty).EndsWith(yearday)
+                        select t;
+
+            foreach (var t in types)
             {
-                if (IsCompilerGenerated(t)) // skip compiler-generated classes
-                {
-                    continue;
-                }
 
-                logger.LogDebug($"considered {t.FullName}");
+                logger.LogDebug("considered {typeName}", t.FullName);
 
-                if (!(t?.FullName ?? string.Empty).EndsWith(yearday))
-                {
-                    continue;
-                }
-
-                var methods = t?.GetMethods() ?? Array.Empty<MethodInfo>();
+                var methods = t.GetMethods() ?? [];
                 var method1 = methods.FirstOrDefault(m => m.Name is "Part1" && m.GetParameters().Length is 0);
                 var method2 = methods.FirstOrDefault(m => m.Name is "Part2" && m.GetParameters().Length is 0);
 
@@ -90,18 +86,18 @@ class AoCRunner : IAoCRunner
         else
         {
             type = assembly.GetType(string.Format(typeName, year, day));
-            var methods = type?.GetMethods();
-            part1 = methods?.FirstOrDefault(m => m.Name == "Part1" && m.GetParameters().Length == 0);
-            part2 = methods?.FirstOrDefault(m => m.Name == "Part2" && m.GetParameters().Length == 0);
+            var methods = type?.GetMethods() ?? [];
+            part1 = methods.FirstOrDefault(m => m.Name == "Part1" && m.GetParameters().Length == 0);
+            part2 = methods.FirstOrDefault(m => m.Name == "Part2" && m.GetParameters().Length == 0);
         }
 
         if (type is null || part1 is null || part2 is null)
         {
-            logger.LogWarning($"No AoC implementation found for {year}/{day}");
+            logger.LogWarning("No AoC implementation found for {year}/{day}", year, day);
             return null;
         }
 
-        logger.LogInformation($"Using implementation type: {type}");
+        logger.LogInformation("Using implementation type: {type}", type.FullName);
 
         if (type.IsAbstract)
             return new Runner(part1, part2);
