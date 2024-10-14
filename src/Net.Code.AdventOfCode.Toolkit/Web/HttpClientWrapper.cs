@@ -20,10 +20,13 @@ class NotAuthenticatedException : AoCException
     }
 }
 
-class HttpClientWrapper(Configuration configuration, ILogger<HttpClientWrapper> logger, HttpClient client) : IHttpClientWrapper
+class HttpClientWrapper(ILogger<HttpClientWrapper> logger, HttpClient client) : IHttpClientWrapper
 {
+    Dictionary<string, (HttpStatusCode statusCode, string content)> cache = [];
+    bool authenticated;
     private async Task EnsureAuthenticated()
     {
+        if (authenticated) return;
         //if (string.IsNullOrEmpty(configuration.SessionCookie))
         //{
         //    throw new NotAuthenticatedException("This command requires logging in, but the AOC_SESSION cookie is not set. " +
@@ -38,6 +41,7 @@ class HttpClientWrapper(Configuration configuration, ILogger<HttpClientWrapper> 
                 "Log in to adventofcode.com, and find the 'session' cookie value in your browser devtools. " +
                 "Copy this value and set it as an environment variable in your shell, or as a dotnet user-secret for your project.");
         }
+        authenticated = true;
     }
     public async Task<(HttpStatusCode status, string content)> PostAsync(string path, HttpContent body)
     {
@@ -49,6 +53,7 @@ class HttpClientWrapper(Configuration configuration, ILogger<HttpClientWrapper> 
     }
     public async Task<(HttpStatusCode status, string content)> GetAsync(string path)
     {
+        if (cache.ContainsKey(path)) return cache[path];
         await EnsureAuthenticated();
         var response = await client.GetAsync(path);
         var content = await response.Content.ReadAsStringAsync();
@@ -61,6 +66,7 @@ class HttpClientWrapper(Configuration configuration, ILogger<HttpClientWrapper> 
         {
             logger.LogTrace("GET: {path} - {statusCode}", path, response.StatusCode);
         }
+        cache[path] = (response.StatusCode, content);
         return (response.StatusCode, content);
     }
 

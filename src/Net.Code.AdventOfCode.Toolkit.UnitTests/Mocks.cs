@@ -1,5 +1,10 @@
-﻿using Net.Code.AdventOfCode.Toolkit.Core;
+﻿using Castle.Core.Logging;
+
+using Microsoft.Extensions.Logging;
+
+using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Infrastructure;
+using Net.Code.AdventOfCode.Toolkit.Web;
 
 using NodaTime;
 
@@ -18,31 +23,130 @@ using Xunit.Abstractions;
 
 namespace Net.Code.AdventOfCode.Toolkit.UnitTests
 {
+    static class TestContent
+    {
+        public static string HtmlContentNoAnswers => content_0_answers;
+        public static string HtmlContentOneAnswer => content_1_answers;
+        public static string HtmlContentTwoAnswers => content_2_answers;
+        public static string HtmlContentCorrectAnswerResponse => correct;
+        public static string HtmlContentWrongAnswerResponse => wrong;
+        public static string Settings => settings;
+        public static string Leaderboard => leaderboard;
+        const string content_0_answers = """
+            <!DOCTYPE html>
+            <html lang="en-us">
+            <body>
+            <p>content for puzzle 2017 day 3 - part 1</p>
+            </body>
+            </html>
+            """;
+        const string content_1_answers = """
+            <!DOCTYPE html>
+            <html lang="en-us">
+            <body>
+            <p>content for puzzle 2017 day 3 - part 1</p>
+            <p>Your puzzle answer was <code>answer1</code>.</p>
+            <p>content for puzzle 2017 day 3 - part 2</p>
+            </body>
+            </html>
+            """;
+        const string content_2_answers = """
+            <!DOCTYPE html>
+            <html lang="en-us">
+            <body>
+            <p>content for puzzle 2017 day 3 - part 1</p>
+            <p>Your puzzle answer was <code>answer1</code>.</p>
+            <p>content for puzzle 2017 day 3 - part 2</p>
+            <p>Your puzzle answer was <code>answer2</code>.</p>
+            </body>
+            </html>
+            """;
+        const string correct = """
+            <!DOCTYPE html>
+            <html lang="en-us">
+            <body>
+            <article>That's the right answer!</article>
+            </body>
+            """;
+
+        const string wrong = """
+            <!DOCTYPE html>
+            <html lang="en-us">
+            <body>
+            <article>That's NOT the right answer!</article>
+            </body>
+            """;
+        const string settings = """
+            <!DOCTYPE html>
+            <html lang="en-us">
+            <head>
+            <meta charset="utf-8"/>
+            <title>Settings - Advent of Code 2022</title>
+            </head>
+            <body>
+            <main>
+            <article>
+            <p>What would you like to be called?</p>
+            <div><label><input type="radio" name="display_name" onchange="anon(true)" value="anonymous"/><span>(anonymous user #123)</span></label></div>
+            <div><label><input type="radio" name="display_name" onchange="anon(false)" value="0" checked="checked"/><span><img src="https://avatars.githubusercontent.com/u/12345" height="20"/>name</span></label></div>
+            <p><label><input type="checkbox" id="display_url" name="display_url" value="1" checked="checked"/><span>Link to https://github.com/REDACTED</span></label></p>
+            <p>Sponsor join code: <input type="text" name="sponsor_join" oninput="document.getElementById('sponsor-privboard-warning').classList[/-/.exec(this.value)?'add':'remove']('warning-active')"/> <span class="quiet">(Leave blank unless you are an employee (or similar) of a sponsor. </span><span id="sponsor-privboard-warning" class="quiet warning">Not for <a href="/2022/leaderboard/private">private leaderboard</a> codes.</span><span class="quiet">)</span></p><p style="margin-bottom:3em;"><input type="submit" value="[Save]"/></p></form>
+            <p style="width:45em;">Advanced actions:</p>
+            <ul style="width:45em;">
+            <li>Provide <span class="hidden-until-hover"><code>ownerproof-REDACTED</code></span> if you are asked to prove you own this account by an Advent of Code administrator. Don't post this code in a public place.</li>
+            </ul>
+            </article>
+            </main>
+            </body>
+            </html>
+            """;
+
+        const string leaderboard = """
+            {
+                "owner_id": 123,
+                "event": "2015",
+                "members": {
+                    "123": {
+                        "stars": 0,
+                        "local_score": 0,
+                        "global_score": 0,
+                        "completion_day_level": {},
+                        "id": 123,
+                        "name": "member1",
+                        "last_star_ts": 0
+                    },
+                    "456": {
+                        "stars": 0,
+                        "local_score": 0,
+                        "id": 456,
+                        "name": "member2",
+                        "last_star_ts": 0,
+                        "global_score": 0,
+                        "completion_day_level": {}
+                    }
+                }
+            }
+            """;
+
+    }
+
     static class Mocks
     {
         public static IInputOutputService InputOutput(ITestOutputHelper output) => new TestOutputService(output);
-        public static IHttpClientWrapper HttpClientWrapper() => new TestHttpWrapper();
         public static IAoCDbContext DbContext() => new TestDbContext();
         public static IFileSystem FileSystem() => new TestFileSystem();
-
-        public static HttpClient HttpClient(
+        public static HttpMessageHandler HttpMessageHandler(
             string baseAddress,
-            params IEnumerable<(HttpMethod method, string url, HttpStatusCode responseCode, HttpContent responseContent)> items)
+            params IEnumerable<(HttpMethod method, string path, HttpStatusCode responseCode, string responseContent)> items)
         {
             var handler = new MockHttpMessageHandler();
-
             foreach (var item in items)
             {
                 handler
-                    .Expect(item.method, $"{baseAddress}/{item.url}")
-                    .Respond(req => new HttpResponseMessage(item.responseCode) { Content = item.responseContent });
+                    .Expect(item.method, $"{baseAddress}/{item.path}")
+                    .Respond(req => new HttpResponseMessage(item.responseCode) { Content = new StringContent(item.responseContent) });
             }
-
-            var client = new HttpClient(handler) 
-            { 
-                BaseAddress = new Uri(baseAddress) 
-            };
-            return client;
+            return handler;
         }
 
         public static IAssemblyResolver AssemblyResolver()
@@ -78,7 +182,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         class TestDbContext : IAoCDbContext
         {
             Dictionary<PuzzleKey, Puzzle> puzzles = new[]
-                {
+            {
                 Puzzle.Create(new(2017,1), "input", new("answer1", "answer2")),
                 Puzzle.Create(new(2017,2), "input", new("answer1", "")),
                 Puzzle.Create(new(2017,3), "input", new("", "")),
@@ -127,156 +231,7 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
                 return Task.FromResult(0);
             }
         }
-        class TestHttpWrapper : IHttpClientWrapper
-        {
-            public void Dispose()
-            {
-            }
 
-            Dictionary<string, string> values = new()
-            {
-                ["2015/day/4/input"] = "input",
-                ["2017/day/3"] = content_0_answers,
-                ["2017/day/3/input"] = "input",
-                ["2017/day/5"] = content_0_answers,
-                ["2017/day/5/input"] = "input",
-                ["settings"] = settings,
-                ["2015/leaderboard/private/view/123.json"] = leaderboard,
-                ["2016/leaderboard/private/view/123.json"] = leaderboard,
-                ["2017/leaderboard/private/view/123.json"] = leaderboard,
-                ["2018/leaderboard/private/view/123.json"] = leaderboard,
-                ["2019/leaderboard/private/view/123.json"] = leaderboard
-
-
-            };
-
-            const string leaderboard = """
-            {
-                "owner_id": 123,
-                "event": "2015",
-                "members": {
-                    "123": {
-                        "stars": 0,
-                        "local_score": 0,
-                        "global_score": 0,
-                        "completion_day_level": {},
-                        "id": 123,
-                        "name": "member1",
-                        "last_star_ts": 0
-                    },
-                    "456": {
-                        "stars": 0,
-                        "local_score": 0,
-                        "id": 456,
-                        "name": "member2",
-                        "last_star_ts": 0,
-                        "global_score": 0,
-                        "completion_day_level": {}
-                    }
-                }
-            }
-            """;
-            const string content_0_answers = """
-            <!DOCTYPE html>
-            <html lang="en-us">
-            <body>
-            <p>content for puzzle 2017 day 3 - part 1</p>
-            </body>
-            </html>
-            """;
-            const string content_1_answers = """
-            <!DOCTYPE html>
-            <html lang="en-us">
-            <body>
-            <p>content for puzzle 2017 day 3 - part 1</p>
-            <p>Your puzzle answer was <code>answer1</code>.</p>
-            <p>content for puzzle 2017 day 3 - part 2</p>
-            </body>
-            </html>
-            """;
-            const string content_2_answers = """
-            <!DOCTYPE html>
-            <html lang="en-us">
-            <body>
-            <p>content for puzzle 2017 day 3 - part 1</p>
-            <p>Your puzzle answer was <code>answer1</code>.</p>
-            <p>content for puzzle 2017 day 3 - part 2</p>
-            <p>Your puzzle answer was <code>answer2</code>.</p>
-            </body>
-            </html>
-            """;
-
-            const string correct = """
-            <!DOCTYPE html>
-            <html lang="en-us">
-            <body>
-            <article>That's the right answer!</article>
-            </body>
-            """;
-
-            const string wrong = """
-            <!DOCTYPE html>
-            <html lang="en-us">
-            <body>
-            <article>That's NOT the right answer!</article>
-            </body>
-            """;
-
-            const string settings = """
-            <!DOCTYPE html>
-            <html lang="en-us">
-            <head>
-            <meta charset="utf-8"/>
-            <title>Settings - Advent of Code 2022</title>
-            </head>
-            <body>
-            <main>
-            <article>
-            <p>What would you like to be called?</p>
-            <div><label><input type="radio" name="display_name" onchange="anon(true)" value="anonymous"/><span>(anonymous user #123)</span></label></div>
-            <div><label><input type="radio" name="display_name" onchange="anon(false)" value="0" checked="checked"/><span><img src="https://avatars.githubusercontent.com/u/12345" height="20"/>name</span></label></div>
-            <p><label><input type="checkbox" id="display_url" name="display_url" value="1" checked="checked"/><span>Link to https://github.com/REDACTED</span></label></p>
-            <p>Sponsor join code: <input type="text" name="sponsor_join" oninput="document.getElementById('sponsor-privboard-warning').classList[/-/.exec(this.value)?'add':'remove']('warning-active')"/> <span class="quiet">(Leave blank unless you are an employee (or similar) of a sponsor. </span><span id="sponsor-privboard-warning" class="quiet warning">Not for <a href="/2022/leaderboard/private">private leaderboard</a> codes.</span><span class="quiet">)</span></p><p style="margin-bottom:3em;"><input type="submit" value="[Save]"/></p></form>
-            <p style="width:45em;">Advanced actions:</p>
-            <ul style="width:45em;">
-            <li>Provide <span class="hidden-until-hover"><code>ownerproof-REDACTED</code></span> if you are asked to prove you own this account by an Advent of Code administrator. Don't post this code in a public place.</li>
-            </ul>
-            </article>
-            </main>
-            </body>
-            </html>
-            """;
-
-            public Task<(HttpStatusCode status, string content)> GetAsync(string path)
-            {
-                return Task.FromResult((HttpStatusCode.OK, values[path]));
-            }
-
-            public async Task<(HttpStatusCode status, string content)> PostAsync(string path, HttpContent body)
-            {
-                var contentpath = path[0..^7];
-                var content = values[contentpath];
-                if (body is not FormUrlEncodedContent f)
-                {
-                    throw new Exception("expected form url encoded content");
-                }
-
-                var bodyregex = new Regex(@"level=(?<level>\d+)&answer=(?<answer>.*)", RegexOptions.Compiled);
-                var match = bodyregex.Match(await f.ReadAsStringAsync());
-
-                var part = match.Groups["level"].Value;
-                var answer = match.Groups["answer"].Value;
-
-                (values[contentpath], var status, var result) = (part, answer, content) switch
-                {
-                    ("1", "answer1", content_0_answers) => (content_1_answers, HttpStatusCode.OK, correct),
-                    ("2", "answer2", content_1_answers) => (content_2_answers, HttpStatusCode.OK, correct),
-                    ("1" or "2", _, content_0_answers or content_1_answers) => (content, HttpStatusCode.OK, wrong),
-                    _ => (content, HttpStatusCode.OK, "something is wrong")
-                };
-                return (status, result);
-            }
-        }
         class TestFileSystem : IFileSystem
         {
 

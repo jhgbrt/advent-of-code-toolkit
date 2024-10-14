@@ -1,12 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 
-using Net.Code.AdventOfCode.Toolkit.Commands;
 using Net.Code.AdventOfCode.Toolkit.Core;
 using Net.Code.AdventOfCode.Toolkit.Web;
 
 using NSubstitute;
-
-using RichardSzalay.MockHttp;
 
 using System.Net;
 
@@ -129,34 +126,4 @@ namespace Net.Code.AdventOfCode.Toolkit.UnitTests
         }
     }
 
-    public class ClientWrapperTests
-    {
-        [Fact]
-        public async Task GetAsync_WhenSessionCookieInvalid_ThrowsNotAuthenticated()
-        {
-            HttpClientWrapper wrapper = CreateClient("someCookie", false);
-            await Assert.ThrowsAsync<NotAuthenticatedException>(() => wrapper.GetAsync("2017/day/1"));
-        }
-
-        [Fact]
-        public async Task GetAsync_WhenSessionCookieValid_ThrowsNotAuthenticated()
-        {
-            HttpClientWrapper wrapper = CreateClient("someCookie", true);
-            await wrapper.GetAsync("2017/day/1");
-        }
-
-        private static HttpClientWrapper CreateClient(string cookieValue, bool isValid)
-        {
-
-            var client = Mocks.HttpClient("https://example.com",
-                (HttpMethod.Get, "2015/day/4/input", isValid ? HttpStatusCode.OK : HttpStatusCode.InternalServerError, new StringContent("")),
-                (HttpMethod.Get, "2017/day/1", HttpStatusCode.OK, new StringContent(""))
-                );
-            var config = new Configuration("https://example.com", cookieValue);
-            var wrapper = new HttpClientWrapper(config, Substitute.For<ILogger<HttpClientWrapper>>(), client);
-            return wrapper;
-        }
-
-
-    }
 }

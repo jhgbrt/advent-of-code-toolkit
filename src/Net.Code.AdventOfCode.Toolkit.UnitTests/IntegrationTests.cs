@@ -3,193 +3,255 @@ using Net.Code.AdventOfCode.Toolkit.Infrastructure;
 
 using NodaTime;
 
+using System.Net;
+
 using Xunit.Abstractions;
 
 namespace Net.Code.AdventOfCode.Toolkit.UnitTests;
 
-public class IntegrationTests
-{ 
+public class IntegrationTests(ITestOutputHelper output, DateTime Now, (int year, int day) puzzle)
+{
 
-    private IAssemblyResolver resolver;
-    private IInputOutputService io;
-    private IClock clock;
-    private IAoCDbContext database;
-    private IHttpClientWrapper client;
-    internal IFileSystem fileSystem;
+    private readonly IAssemblyResolver resolver = Mocks.AssemblyResolver();
+    private readonly IInputOutputService io = Mocks.InputOutput(output);
+    private readonly IClock clock = Mocks.Clock(Now);
+    private readonly IAoCDbContext database = Mocks.DbContext();
+    internal IFileSystem fileSystem = Mocks.FileSystem();
     protected int Year => puzzle.year;
     protected int Day => puzzle.day;
-    private readonly (int year, int day) puzzle;
-    private readonly DateTime Now;
-    protected ITestOutputHelper output;
 
-
-    public IntegrationTests(ITestOutputHelper output, DateTime now, (int year, int day) puzzle)
+    protected async Task<int> Do(
+        IEnumerable<string> args,
+        IEnumerable<(HttpMethod method, string url, HttpStatusCode responsecode, string responseContent)> http
+        )
     {
-        this.output = output;
-        Now = now;
-        this.puzzle = puzzle;
-        resolver = Mocks.AssemblyResolver();
-        io = Mocks.InputOutput(output);
-        clock = Mocks.Clock(Now);
-        database = Mocks.DbContext();
-        client = Mocks.HttpClientWrapper();
-        fileSystem = Mocks.FileSystem();
-    }
 
-    protected async Task<int> Do(params string[] args)
-    {
         Environment.SetEnvironmentVariable("AOC_SESSION", "somecookie");
         return await AoC.RunAsync(
-            resolver, 
-            io, 
-            clock, 
+            resolver,
+            io,
+            clock,
             database,
-            client,
+            Mocks.HttpMessageHandler("https://adventofcode.com", http),
             fileSystem,
             args.Concat(["--loglevel=Trace", "--debug"]).ToArray());
     }
 
-    public class DuringAdvent_OnDayOfPuzzle : IntegrationTests
+    IEnumerable<string> Args(string command, int? year, int? day)
     {
-        public DuringAdvent_OnDayOfPuzzle(ITestOutputHelper output) : base(output, new(2017, 12, 3), (2017, 3))
-        {
-        }
+        yield return command;
+        if (year.HasValue) yield return $"{year}";
+        if (day.HasValue) yield return $"{day}";
+    }
 
+    protected Task<int> Help() => Do(["--help"], []);
+    protected Task<int> Init(int? year = null, int? day = null, bool force = false)
+    {
+        if (!year.HasValue) year = Year;
+        if (!day.HasValue) day = Day;
+
+        IEnumerable<(HttpMethod, string, HttpStatusCode, string)> http = [
+              (HttpMethod.Get, "2015/day/4/input", HttpStatusCode.OK, string.Empty)
+            , (HttpMethod.Get, $"{year}/day/{day}", HttpStatusCode.OK, TestContent.HtmlContentNoAnswers)
+            , (HttpMethod.Get, $"{year}/day/{day}/input", HttpStatusCode.OK, "input")
+            ];
+
+        IEnumerable<string> args = Args("init", year, day);
+        if (force) args = args.Append("--force");
+
+        return Do(args, http);
+    }
+
+    protected Task<int> Sync(int? year = null, int? day = null)
+    {
+        if (!year.HasValue) year = Year;
+        if (!day.HasValue) day = Day;
+
+        IEnumerable<(HttpMethod, string, HttpStatusCode, string)> http = [
+              (HttpMethod.Get, "2015/day/4/input", HttpStatusCode.OK, string.Empty)
+            , (HttpMethod.Get, $"{year}/day/{day}", HttpStatusCode.OK, TestContent.HtmlContentNoAnswers)
+            , (HttpMethod.Get, $"{year}/day/{day}/input", HttpStatusCode.OK, "input")
+            ];
+        return Do(Args("sync", year, day), http);
+    }
+
+    protected Task<int> Run(int? year = null, int? day = null)
+    {
+        return Do(Args("run", year, day), []);
+    }
+
+    protected Task<int> Stats()
+    {
+        IEnumerable<(HttpMethod, string, HttpStatusCode, string)> http = [
+              (HttpMethod.Get, "2015/day/4/input", HttpStatusCode.OK, string.Empty)
+            , (HttpMethod.Get, $"settings", HttpStatusCode.OK, TestContent.Settings)
+            , (HttpMethod.Get, $"2015/leaderboard/private/view/123.json", HttpStatusCode.OK, TestContent.Leaderboard)
+            , (HttpMethod.Get, $"2016/leaderboard/private/view/123.json", HttpStatusCode.OK, TestContent.Leaderboard)
+            , (HttpMethod.Get, $"2017/leaderboard/private/view/123.json", HttpStatusCode.OK, TestContent.Leaderboard)
+
+            ];
+        return Do(["stats"], http);
+    }
+
+    protected Task<int> Post(string value, int? year = null, int? day = null)
+    {
+        IEnumerable<string> args = ["post", value];
+        if (year.HasValue) args = args.Append($"{year}");
+        if (day.HasValue) args = args.Append($"{day}");
+
+        if (!year.HasValue) year = Year;
+        if (!day.HasValue) day = Day;
+
+        IEnumerable<(HttpMethod, string, HttpStatusCode, string)> http = [
+              (HttpMethod.Get, "2015/day/4/input", HttpStatusCode.OK, string.Empty)
+            , (HttpMethod.Post, $"{year}/day/{day}/answer", HttpStatusCode.OK, TestContent.HtmlContentCorrectAnswerResponse)
+            , (HttpMethod.Get, $"settings", HttpStatusCode.OK, TestContent.Settings)
+            , (HttpMethod.Get, $"{year}/leaderboard/private/view/123.json", HttpStatusCode.OK, TestContent.Leaderboard)
+            ];
+
+        return Do(args, http);
+    }
+
+    protected Task<int> Verify(int? year = null, int? day = null)
+    {
+        return Do(Args("verify", year, day), []);
+    }
+
+    public class DuringAdvent_OnDayOfPuzzle(ITestOutputHelper output) 
+        : IntegrationTests(output, new(2017, 12, 3), (2017, 3))
+    {
         [Fact]
-        public async Task Help()
+        public async Task TestHelp()
         {
-            var result = await Do("--help");
+            var result = await Help();
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task InitTwice()
+        public async Task TestInit()
         {
-            await Do("init");
-            var result = await Do("init", "--force");
+            var result = await Init();
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Sync()
+        public async Task TestInitTwice()
         {
-            await Do("init");
-            var result = await Do("sync");
+            await Init();
+            var result = await Init(force: true);
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Run()
+        public async Task TestSync()
         {
-            await Do("init");
-            var result = await Do("run");
+            await Init();
+            var result = await Sync();
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Stats()
+        public async Task TestRun()
         {
-            var result = await Do("stats");
+            await Init();
+            var result = await Sync();
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Post()
+        public async Task TestStats()
         {
-            await Do("init");
-            var result = await Do("post", "123", $"{Year}", $"{Day}");
+            var result = await Stats();
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Verify()
+        public async Task TestPost()
         {
-            await Do("init");
-            await Do("run");
-            await Do("post", "answer1");
-            await Do("post", "answer2");
-            var result = await Do("verify");
+            await Init();
+            var result = await Post("123", Year, Day);
+            Assert.Equal(0, result);
+        }
+
+        [Fact]
+        public async Task TestVerify()
+        {
+            await Init();
+            await Run();
+            await Post("answer1");
+            await Post("answer2");
+            var result = await Verify();
             Assert.Equal(0, result);
         }
     }
 
-    public class DuringAdvent_AfterDayOfPuzzle : IntegrationTests
+    public class DuringAdvent_AfterDayOfPuzzle(ITestOutputHelper output) : IntegrationTests(output, new(2017, 12, 5), (2017, 3))
     {
-        public DuringAdvent_AfterDayOfPuzzle(ITestOutputHelper output) : base(output, new(2017, 12, 5), (2017, 3)) { }
-
         [Fact]
-        public async Task Help()
+        public async Task TestHelp()
         {
-            var result = await Do("--help");
+            var result = await Help();
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task InitTwice()
+        public async Task TestInitTwice()
         {
-            await Do("init", $"{Year}", $"{Day}");
-            var result = await Do("init", $"{Day}", "--force");
+            await Init(Year, Day, true);
+            var result = await Init(day: Day, force: true);
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Sync()
+        public async Task TestSync()
         {
-            await Do("init", $"{Year}", $"{Day}");
-            var result = await Do("sync", $"{Day}");
+            await Init(Year, Day);
+            var result = await Sync(day: Day);
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Run()
+        public async Task TestRun()
         {
-            await Do("init", $"{Year}", $"{Day}");
-            var result = await Do("run", $"{Day}");
+            await Init(Year, Day);
+            var result = await Run(day: Day);
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Stats()
+        public async Task TestStats()
         {
-            var result = await Do("stats");
+            var result = await Stats();
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Post()
+        public async Task TestPost()
         {
-            await Do("init", $"{Year}", $"{Day}");
-            var result = await Do("post", "answer1", $"{Year}", $"{Day}");
+            await Init(Year, Day);
+            var result = await Post("answer1", Year, Day);
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Verify()
+        public async Task TestVerify()
         {
-            await Do("init", $"{Year}", $"{Day}");
-            await Do("run", $"{Year}", $"{Day}");
-            await Do("post", "answer1", $"{Year}", $"{Day}");
-            await Do("post", "answer2", $"{Year}", $"{Day}");
-            var result = await Do("verify", $"{Year}", $"{Day}");
+            await Init(Year, Day);
+            await Run(Year, Day);
+            await Post("answer1", Year, Day);
+            await Post("answer2", Year, Day);
+            var result = await Verify(Year, Day);
             Assert.Equal(0, result);
         }
     }
 
-    public class AfterAdvent : IntegrationTests
+    public class AfterAdvent(ITestOutputHelper output) : IntegrationTests(output, new(2017, 12, 27), (2017, 3))
     {
-        public AfterAdvent(ITestOutputHelper output) : base(output, new(2017, 12, 27), (2017, 3)) { }
-
+     
         [Fact]
-        public async Task Help()
+        public async Task TestInit()
         {
-            var result = await Do("--help");
-            Assert.Equal(0, result);
-        }
-
-        [Fact]
-        public async Task Init()
-        {
-            var result = await Do("init", $"{Year}", $"{Day}");
+            var result = await Init(Year, Day);
             Assert.Equal(0, result);
             Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "aoc.cs")));
             Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "sample.txt")));
@@ -197,10 +259,10 @@ public class IntegrationTests
         }
 
         [Fact]
-        public async Task InitTwice()
+        public async Task TestInitTwice()
         {
-            await Do("init", $"{Year}", $"{Day}");
-            var result = await Do("init", $"{Year}", $"{Day}", "--force");
+            await Init(Year, Day);
+            var result = await Init(Year, Day, true);
             Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "aoc.cs")));
             Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "sample.txt")));
             Assert.True(fileSystem.FileExists(Path.Combine($"Year{Year}", $"Day{Day:00}", "input.txt")));
@@ -208,96 +270,94 @@ public class IntegrationTests
         }
 
         [Fact]
-        public async Task Sync()
+        public async Task TestSync()
         {
-            await Do("init", $"{Year}", $"{Day}");
-            var result = await Do("sync", $"{Year}", $"{Day}");
+            await Init(Year, Day);
+            var result = await Sync(day: Day);
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Run()
+        public async Task TestRun()
         {
-            await Do("init", $"{Year}", $"{Day}");
-            var result = await Do("run", $"{Year}", $"{Day}");
+            await Init(Year, Day);
+            var result = await Run(day: Day);
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Stats()
+        public async Task TestStats()
         {
-            var result = await Do("stats");
+            var result = await Stats();
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Post()
+        public async Task TestPost()
         {
-            await Do("init", $"{Year}", $"{Day}");
-            await Do("post", "answer1", $"{Year}", $"{Day}");
-            var result = await Do("post", "answer2", $"{Year}", $"{Day}");
+            await Init(Year, Day);
+            await Post("answer1", Year, Day);
+            var result = await Post("answer2", Year, Day);
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Verify()
+        public async Task TestVerify()
         {
-            await Do("init", $"{Year}", $"{Day}");
-            await Do("run", $"{Year}", $"{Day}");
-            await Do("post", "answer1", $"{Year}", $"{Day}");
-            await Do("post", "answer2", $"{Year}", $"{Day}");
-            var result = await Do("verify", $"{Year}", $"{Day}");
+            await Init(Year, Day);
+            await Run(Year, Day);
+            await Post("answer1", Year, Day);
+            await Post("answer2", Year, Day);
+            var result = await Verify(Year, Day);
             Assert.Equal(0, result);
         }
     }
 
-    public class LockedPuzzle : IntegrationTests
+    public class LockedPuzzle(ITestOutputHelper output) : IntegrationTests(output, new(2017, 12, 1), (2019, 3))
     {
-        public LockedPuzzle(ITestOutputHelper output) : base(output, new(2017, 12, 1), (2019, 3)) { }
-
         [Fact]
-        public async Task Help()
+        public async Task TestHelp()
         {
-            var result = await Do("--help");
+            var result = await Help();
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Init()
+        public async Task TestInit()
         {
-            await Assert.ThrowsAnyAsync<AoCException>(() => Do("init", $"{Year}", $"{Day}"));
+            await Assert.ThrowsAnyAsync<AoCException>(() => Init(Year, Day));
         }
 
 
         [Fact]
-        public async Task Sync()
+        public async Task TestSync()
         {
-            await Assert.ThrowsAnyAsync<AoCException>(() => Do("sync", $"{Year}", $"{Day}"));
+            await Assert.ThrowsAnyAsync<AoCException>(() => Sync(Year, Day));
         }
 
         [Fact]
-        public async Task Run()
+        public async Task TestRun()
         {
-            await Assert.ThrowsAnyAsync<AoCException>(() => Do("run", $"{Year}", $"{Day}"));
+            await Assert.ThrowsAnyAsync<AoCException>(() => Run(Year, Day));
         }
 
         [Fact]
-        public async Task Stats()
+        public async Task TestStats()
         {
-            var result = await Do("stats");
+            var result = await Stats();
             Assert.Equal(0, result);
         }
 
         [Fact]
-        public async Task Post()
+        public async Task TestPost()
         {
-            await Assert.ThrowsAnyAsync<AoCException>(() => Do("post", "answer1", $"{Year}", $"{Day}"));
+            await Assert.ThrowsAnyAsync<AoCException>(() => Post("answer1", Year, Day));
         }
 
         [Fact]
-        public async Task Verify()
+        public async Task TestVerify()
         {
-            await Assert.ThrowsAnyAsync<AoCException>(() => Do("verify", $"{Year}", $"{Day}"));
+            await Assert.ThrowsAnyAsync<AoCException>(() => Verify(Year, Day));
         }
     }
 

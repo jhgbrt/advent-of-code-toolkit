@@ -42,7 +42,7 @@ public static class AoC
         IInputOutputService? io,
         IClock? clock,
         IAoCDbContext? aocDbContext,
-        IHttpClientWrapper? httpclient,
+        HttpMessageHandler? handler,
         IFileSystem? filesystem,
         string[] args
         )
@@ -69,7 +69,7 @@ public static class AoC
             io,
             clock,
             aocDbContext,
-            httpclient,
+            handler,
             filesystem,
             string.IsNullOrEmpty(loglevel) ? LogLevel.Warning : Enum.Parse<LogLevel>(loglevel, true),
             debug
@@ -131,7 +131,7 @@ public static class AoC
         IInputOutputService? io,
         IClock? clock,
         IAoCDbContext? aocDbContext,
-        IHttpClientWrapper? httpclient,
+        HttpMessageHandler? handler,
         IFileSystem? filesystem,
         LogLevel level,
         bool debug)
@@ -168,14 +168,7 @@ public static class AoC
             services.AddTransient<IFileSystem, FileSystem>();
         }
         services.AddSingleton(resolver);
-        if (httpclient is not null)
-        {
-            services.AddSingleton(httpclient);
-        }
-        else
-        {
-            services.AddTransient<IHttpClientWrapper, HttpClientWrapper>();
-        }
+
         services.AddTransient<AoCLogic>();
         services.AddSingleton(clock ?? SystemClock.Instance);
         services.AddSingleton(io ?? new InputOutputService());
@@ -203,8 +196,6 @@ public static class AoC
                 );
         }
 
-        if (httpclient is null)
-        {
             services.AddHttpClient<IHttpClientWrapper, HttpClientWrapper>(client =>
             {
                 client.BaseAddress = new Uri(baseAddress);
@@ -216,19 +207,19 @@ public static class AoC
                 }
             }).ConfigurePrimaryHttpMessageHandler(s =>
             {
-                var sessionCookie = configuration.SessionCookie;
-                var cookieContainer = new CookieContainer();
-                cookieContainer.Add(new Uri(baseAddress), new Cookie("session", sessionCookie));
-                var handler = new HttpClientHandler { CookieContainer = cookieContainer };
-                return handler;
+                if (handler is not null)
+                {
+                    return handler;
+                }
+                else
+                {
+                    var sessionCookie = configuration.SessionCookie;
+                    var cookieContainer = new CookieContainer();
+                    cookieContainer.Add(new Uri(baseAddress), new Cookie("session", sessionCookie));
+                    var handler = new HttpClientHandler { CookieContainer = cookieContainer };
+                    return handler;
+                }
             });
-        }
-        else
-        {
-            services.AddSingleton(httpclient);
-        }
-
-
 
         CommandRegistrar.RegisterCommands(services);
 
